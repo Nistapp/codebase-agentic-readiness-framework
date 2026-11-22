@@ -238,3 +238,20 @@ def check_hyg09(*, spec, target, inventory, stack, components, session) -> Check
         )
     reach = ", ".join(_coverage_label(eco) for eco in sorted(required)) or "no ecosystem with a manifest"
     return _outcome(spec, Verdict.PASS, f"dependency automation configured at {found[0]}; covers {reach}")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.checks import hyg
+    from audit.rules.reads import REPOSITORY_LEVEL, Reads, What, _held
+
+    return Reads(
+        where=(*_held(hyg, "_DEPENDENCY_AUTOMATION", REPOSITORY_LEVEL),),
+        what=What("key"),
+        binding="file",
+        note=(
+            "Dependabot: the package-ecosystem of each updates item, and target-branch with ignore or groups "
+            "is a defect; Renovate JSON: enabledManagers. Each detected ecosystem, plus github-actions with "
+            "GitHub CI, must be covered."
+        ),
+    )

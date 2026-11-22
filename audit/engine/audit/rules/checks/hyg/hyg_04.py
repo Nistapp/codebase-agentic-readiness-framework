@@ -41,3 +41,17 @@ def check_hyg04(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(GLOB, ".github/ISSUE_TEMPLATE/**"),
+            *_at(ROOT, ".github/ISSUE_TEMPLATE.md"),
+        ),
+        what=What("exists"),
+        binding="file",
+    )

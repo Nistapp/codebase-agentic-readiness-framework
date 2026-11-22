@@ -123,3 +123,31 @@ def check_hyg01(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import GLOB, Reads, What, _at
+
+    return Reads(
+        where=(*_at(GLOB, "README*"),),
+        what=What(
+            "word-list",
+            (
+                "todo",
+                "tbd",
+                "placeholder",
+                "lorem ipsum",
+                "coming soon",
+                "fill this in",
+                "<describe",
+            ),
+        ),
+        binding="file",
+        note=(
+            "Root files whose base name starts with readme, any case; README.md is read first. It needs 200 "
+            "trimmed characters, no stub marker, and one line that is not a heading. Under 400 characters a marker "
+            "anywhere counts, and lorem ipsum or <describe counts at any length; in a longer README a word marker "
+            "counts only when it opens a line and the line's end or punctuation follows it."
+        ),
+    )

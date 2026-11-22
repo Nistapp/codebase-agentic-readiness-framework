@@ -95,3 +95,18 @@ def check_hyg07(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import REPOSITORY_LEVEL, Reads, What, _at
+
+    return Reads(
+        where=(*_at(REPOSITORY_LEVEL, "CHANGELOG*", "CHANGES*", "HISTORY*"),),
+        what=What("exists"),
+        binding="file",
+        note=(
+            "The first match in sort order (any case, doc suffix or none) is dated by git against HEAD; at "
+            "most 365 days apart passes."
+        ),
+    )

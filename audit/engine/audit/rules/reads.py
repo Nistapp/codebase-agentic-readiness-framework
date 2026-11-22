@@ -35,7 +35,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from types import ModuleType
 
-from audit.rules.checks import _common, hyg, idx, tst
+from audit.rules.checks import _common, idx, tst
 
 ROOT = "root"
 ANY_DEPTH = "any-depth"
@@ -652,128 +652,6 @@ _DECLARED: dict[str, Reads] = {
             "Coverage config names count on presence at any depth; the root files are read for "
             "[tool.coverage, [coverage, --cov or jacoco; a runner config at any depth for a coverage key; "
             "package scripts and resolved verbs for --coverage, --cov, c8, nyc, jacoco or go test -cover."
-        ),
-    ),
-    "HYG-01": Reads(
-        where=(*_at(GLOB, "README*"),),
-        what=What(
-            "word-list",
-            (
-                "todo",
-                "tbd",
-                "placeholder",
-                "lorem ipsum",
-                "coming soon",
-                "fill this in",
-                "<describe",
-            ),
-        ),
-        binding="file",
-        note=(
-            "Root files whose base name starts with readme, any case; README.md is read first. It needs 200 "
-            "trimmed characters, no stub marker, and one line that is not a heading. Under 400 characters a marker "
-            "anywhere counts, and lorem ipsum or <describe counts at any length; in a longer README a word marker "
-            "counts only when it opens a line and the line's end or punctuation follows it."
-        ),
-    ),
-    "HYG-02": Reads(
-        where=(*_at(REPOSITORY_LEVEL, "CODEOWNERS"),),
-        what=What("exists"),
-        binding="file",
-    ),
-    "HYG-03": Reads(
-        where=(*_at(REPOSITORY_LEVEL, "pull_request_template*"),),
-        what=What("exists"),
-        binding="file",
-        note="The base name is matched case-insensitively.",
-    ),
-    "HYG-04": Reads(
-        where=(
-            *_at(GLOB, ".github/ISSUE_TEMPLATE/**"),
-            *_at(ROOT, ".github/ISSUE_TEMPLATE.md"),
-        ),
-        what=What("exists"),
-        binding="file",
-    ),
-    "HYG-05": Reads(
-        where=(*_at(REPOSITORY_LEVEL, "CONTRIBUTING*"),),
-        what=What("exists"),
-        binding="file",
-        note=(
-            "The base name starts with contributing, any case, and has a doc suffix (.md, .rst, .txt, "
-            ".markdown, .adoc) or none."
-        ),
-    ),
-    "HYG-06": Reads(
-        where=(*_at(REPOSITORY_LEVEL, "SECURITY*"),),
-        what=What("exists"),
-        binding="file",
-        note="The base name starts with security, any case, and has a doc suffix or none.",
-    ),
-    "HYG-07": Reads(
-        where=(*_at(REPOSITORY_LEVEL, "CHANGELOG*", "CHANGES*", "HISTORY*"),),
-        what=What("exists"),
-        binding="file",
-        note=(
-            "The first match in sort order (any case, doc suffix or none) is dated by git against HEAD; at "
-            "most 365 days apart passes."
-        ),
-    ),
-    "HYG-08": Reads(
-        where=(*_at(REPOSITORY_LEVEL, "*release*", case=FOLD),),
-        what=What("exists"),
-        binding="file",
-        note=(
-            "The lower-case base name holds release and ends with a doc suffix, so a release.yml workflow never counts."
-        ),
-    ),
-    "HYG-09": Reads(
-        where=(*_held(hyg, "_DEPENDENCY_AUTOMATION", REPOSITORY_LEVEL),),
-        what=What("key"),
-        binding="file",
-        note=(
-            "Dependabot: the package-ecosystem of each updates item, and target-branch with ignore or groups "
-            "is a defect; Renovate JSON: enabledManagers. Each detected ecosystem, plus github-actions with "
-            "GitHub CI, must be covered."
-        ),
-    ),
-    "HYG-10": Reads(
-        where=(*_at(GLOB, "LICENSE*", "LICENCE*", "COPYING*", "COPYRIGHT*", "UNLICENSE*"),),
-        what=What("exists"),
-        binding="file",
-        note="Root files only, any case, with a doc suffix or none.",
-    ),
-    "HYG-11": Reads(
-        where=(
-            *_at(GLOB, ".github/rulesets/**/*.json"),
-            *_at(ANY_DEPTH, ".github/settings.yml", "*.tf"),
-            *_at(
-                GLOB,
-                "**/*branch-protection*",
-                "**/*branch_protection*",
-                ".github/workflows/*.yml",
-                ".github/workflows/*.yaml",
-            ),
-            *_at(ANY_DEPTH, ".gitlab-ci.yml"),
-        ),
-        what=What("key"),
-        binding="line",
-        note=(
-            "Declared rules: ruleset JSON, the branches: list of .github/settings.yml, Terraform protection "
-            "resources, and any path holding branch-protection or branch_protection (a document records, "
-            "another file declares). With an integration branch and another protected branch, one GitHub or "
-            "GitLab CI line must read the pull request's source branch, outside a group: or ref: key. "
-            ".github/settings.yml passes Inventory.has at any depth but is read at the root only."
-        ),
-    ),
-    "HYG-13": Reads(
-        where=(*_at(REPOSITORY_LEVEL, "CONTRIBUTING*"),),
-        what=What("phrase"),
-        binding="paragraph",
-        note=(
-            "Item (b) needs a CI word and either same or the gate command in one paragraph (lines between "
-            "blank lines); items (a), a link to README.md or AGENTS.md or a setup command, and (c), words for"
-            " branches, commits and pull requests, are file-wide. The link target is never read."
         ),
     ),
 }

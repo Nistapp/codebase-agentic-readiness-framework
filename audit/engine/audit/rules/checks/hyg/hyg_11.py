@@ -153,3 +153,32 @@ def check_hyg11(*, spec, target, inventory, stack, components, session) -> Check
         Verdict.UNKNOWN,
         "no CI provider recognised; whether branch protection can be declared as code is provider-dependent",
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(GLOB, ".github/rulesets/**/*.json"),
+            *_at(ANY_DEPTH, ".github/settings.yml", "*.tf"),
+            *_at(
+                GLOB,
+                "**/*branch-protection*",
+                "**/*branch_protection*",
+                ".github/workflows/*.yml",
+                ".github/workflows/*.yaml",
+            ),
+            *_at(ANY_DEPTH, ".gitlab-ci.yml"),
+        ),
+        what=What("key"),
+        binding="line",
+        note=(
+            "Declared rules: ruleset JSON, the branches: list of .github/settings.yml, Terraform protection "
+            "resources, and any path holding branch-protection or branch_protection (a document records, "
+            "another file declares). With an integration branch and another protected branch, one GitHub or "
+            "GitLab CI line must read the pull request's source branch, outside a group: or ref: key. "
+            ".github/settings.yml passes Inventory.has at any depth but is read at the root only."
+        ),
+    )

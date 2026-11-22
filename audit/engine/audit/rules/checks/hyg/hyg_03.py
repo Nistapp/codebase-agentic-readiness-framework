@@ -40,3 +40,15 @@ def check_hyg03(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import REPOSITORY_LEVEL, Reads, What, _at
+
+    return Reads(
+        where=(*_at(REPOSITORY_LEVEL, "pull_request_template*"),),
+        what=What("exists"),
+        binding="file",
+        note="The base name is matched case-insensitively.",
+    )

@@ -168,3 +168,19 @@ def check_hyg13(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import REPOSITORY_LEVEL, Reads, What, _at
+
+    return Reads(
+        where=(*_at(REPOSITORY_LEVEL, "CONTRIBUTING*"),),
+        what=What("phrase"),
+        binding="paragraph",
+        note=(
+            "Item (b) needs a CI word and either same or the gate command in one paragraph (lines between "
+            "blank lines); items (a), a link to README.md or AGENTS.md or a setup command, and (c), words for"
+            " branches, commits and pull requests, are file-wide. The link target is never read."
+        ),
+    )

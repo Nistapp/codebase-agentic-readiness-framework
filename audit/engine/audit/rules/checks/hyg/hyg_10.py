@@ -37,3 +37,15 @@ def check_hyg10(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import GLOB, Reads, What, _at
+
+    return Reads(
+        where=(*_at(GLOB, "LICENSE*", "LICENCE*", "COPYING*", "COPYRIGHT*", "UNLICENSE*"),),
+        what=What("exists"),
+        binding="file",
+        note="Root files only, any case, with a doc suffix or none.",
+    )

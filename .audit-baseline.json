@@ -1028,10 +1028,10 @@
     },
     {
       "data": {
-        "denominator": 1332,
+        "denominator": 1344,
         "kind": "ratio",
         "method": "python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
-        "numerator": 881,
+        "numerator": 893,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -1040,7 +1040,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "881/1332 public symbols documented (66%); method: python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
+      "summary": "893/1344 public symbols documented (66%); method: python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1509,15 +1509,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "d9e395e5f5799ecad4a6b790acb6bc828764abb6",
+    "framework_revision": "ed3a56540658587c39105a85adbcf0116ad10265",
     "git_branch": "refactor/engine-check-modules",
     "git_dirty": false,
-    "git_sha": "d9e395e5f5799ecad4a6b790acb6bc828764abb6",
+    "git_sha": "ed3a56540658587c39105a85adbcf0116ad10265",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "34bba6464eac63ff",
     "ruleset_revision": "2026-11-20.25",
-    "scanned_at": "2026-11-22T05:44:30+00:00",
+    "scanned_at": "2026-11-22T05:50:18+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {

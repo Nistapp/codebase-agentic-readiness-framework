@@ -47,3 +47,17 @@ def check_hyg08(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import FOLD, REPOSITORY_LEVEL, Reads, What, _at
+
+    return Reads(
+        where=(*_at(REPOSITORY_LEVEL, "*release*", case=FOLD),),
+        what=What("exists"),
+        binding="file",
+        note=(
+            "The lower-case base name holds release and ends with a doc suffix, so a release.yml workflow never counts."
+        ),
+    )
