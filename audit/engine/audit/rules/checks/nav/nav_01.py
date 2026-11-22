@@ -59,3 +59,55 @@ def check_nav01(*, spec, target, inventory, stack, components, session) -> Check
             + ", ".join(sorted(stack.ecosystems)),
         )
     return _unknown(spec, "no build manifest declares a component; stack not recognised")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import COMPONENTS, GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(
+                ROOT,
+                "package.json",
+                "pnpm-workspace.yaml",
+                "pom.xml",
+                "settings.gradle",
+                "settings.gradle.kts",
+                "go.work",
+                "Cargo.toml",
+                via=COMPONENTS,
+            ),
+            *_at(
+                ROOT,
+                "pyproject.toml",
+                "build.gradle",
+                "build.gradle.kts",
+                "go.mod",
+                "Gemfile",
+                "composer.json",
+                via=COMPONENTS,
+            ),
+            *_at(ROOT, "*.sln", "*.slnx", "*.csproj", "*.fsproj", "*.vbproj", via=COMPONENTS),
+            *_at(
+                GLOB,
+                "apps/*",
+                "services/*",
+                "packages/*",
+                "components/*",
+                "modules/*",
+                "libs/*",
+                "workers/*",
+                via=COMPONENTS,
+            ),
+        ),
+        what=What("key"),
+        binding="file",
+        note=(
+            "Workspace members are read from the root manifests (components.py); a member or candidate counts"
+            " when a build manifest is found under it. When the root folder itself holds no build manifest, a"
+            " top-level folder with one in it is a candidate too. The root counts as declared when any of the nine "
+            "manifest names is found at any depth, or a .NET solution or project file is in the root folder"
+            " itself (in a member's or candidate's own folder for that member or candidate)."
+        ),
+    )

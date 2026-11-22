@@ -53,3 +53,21 @@ def check_nav04(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(GLOB, "docs/architecture/**", "docs/adr/**"),
+            *_at(ANY_DEPTH, "*.mmd", "*.puml", "*.drawio", "*.excalidraw", "*.svg", "*.png"),
+        ),
+        what=What("exists"),
+        binding="file",
+        note=(
+            "Any file under docs/architecture/ or docs/adr/, or any file whose lower-case name ends with a "
+            "diagram suffix; a Mermaid block inside a page does not count."
+        ),
+    )

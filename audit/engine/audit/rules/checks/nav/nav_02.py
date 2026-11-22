@@ -188,3 +188,70 @@ def check_nav02(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(
+                ROOT,
+                "package.json",
+                "index.js",
+                "index.ts",
+                "index.mjs",
+                "index.cjs",
+                "src/index.js",
+                "src/index.ts",
+                "src/index.mjs",
+                "server.js",
+                "server.ts",
+                "src/server.js",
+                "src/server.ts",
+                "main.js",
+                "main.ts",
+                "main.mjs",
+                "main.cjs",
+                "src/main.js",
+                "src/main.ts",
+                "app.js",
+                "app.ts",
+                "src/app.js",
+                "src/app.ts",
+                "main.py",
+                "app.py",
+                "src/main.py",
+                "src/app.py",
+                "manage.py",
+                "pyproject.toml",
+                "setup.py",
+                "setup.cfg",
+                "src/main.rs",
+                "src/bin/main.rs",
+                "main.rs",
+                "Cargo.toml",
+                "Program.cs",
+                "program.cs",
+                "src/Program.cs",
+                "config.ru",
+                "app.rb",
+                "main.rb",
+                "bin/rails",
+                "bin/setup",
+                "index.php",
+                "public/index.php",
+                "bin/console",
+            ),
+            *_at(ANY_DEPTH, "__main__.py"),
+            *_at(GLOB, "**"),
+        ),
+        what=What("exists"),
+        binding="line",
+        note=(
+            "Fixed names are matched by exact path per detected ecosystem; source files (glob **) are grepped"
+            " for a line that starts with func main(, a JVM main method or a Spring Boot or Quarkus marker,"
+            " and build files for io.quarkus. A Python __main__ guard alone is not read."
+        ),
+    )

@@ -72,3 +72,19 @@ def check_nav03(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import GLOB, Reads, What, _at
+
+    return Reads(
+        where=(*_at(GLOB, "**"),),
+        what=What("exists"),
+        binding="file",
+        note=(
+            "Every scanned file: over 512 KiB, a folder with more than 50 files of its own, a binary, or a "
+            "generated file with .min. in its path. A file whose exact base name is a lockfile name "
+            "(stack.LOCKFILE_NAMES) is left out of the size count."
+        ),
+    )

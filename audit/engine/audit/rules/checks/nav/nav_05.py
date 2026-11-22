@@ -166,3 +166,22 @@ def check_nav05(*, spec, target, inventory, stack, components, session) -> Check
     return _outcome(
         spec, verdict, detail, data=Ratio(numerator=documented, denominator=total, unit="public symbols", method=method)
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, Reads, What, _at
+
+    return Reads(
+        where=(*_at(ANY_DEPTH, "*.py", "*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs"),),
+        what=What("phrase"),
+        binding="file",
+        note=(
+            "Python, parsed with ast: a module-level def, async def or class and a method of a public class, "
+            "each with a public name, is documented when ast finds its docstring; a test file (a tests or test "
+            "folder, a test_*.py or *_test.py name) is not read, and a file that does not parse falls back to "
+            "column-0 lines with the docstring on the next non-blank line. TypeScript or JavaScript: an export "
+            "declaration is documented when the line before (blank lines skipped) ends a /** */ block. Only the "
+            "main language is read."
+        ),
+    )
