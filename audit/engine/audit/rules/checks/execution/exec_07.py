@@ -156,3 +156,70 @@ def check_exec07(*, spec, target, inventory, stack, components, session) -> Chec
             )
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import GLOB, ROOT, Reads, What, _at, _runners, _unexercised
+
+    return Reads(
+        where=(
+            *_at(GLOB, "eslint.config.*"),
+            *_at(ROOT, ".eslintrc"),
+            *_at(GLOB, ".eslintrc.*"),
+            *_at(
+                ROOT,
+                "biome.json",
+                "biome.jsonc",
+                "ruff.toml",
+                ".ruff.toml",
+                ".flake8",
+                ".pylintrc",
+                ".golangci.yml",
+                ".golangci.yaml",
+                "clippy.toml",
+                ".stylelintrc",
+            ),
+            *_at(GLOB, ".stylelintrc.*"),
+            *_at(ROOT, "oxlint.json", ".oxlintrc.json"),
+            *_at(GLOB, "prettier.config.*"),
+            *_at(ROOT, ".prettierrc"),
+            *_at(GLOB, ".prettierrc.*"),
+            *_at(ROOT, ".clang-format", "rustfmt.toml", ".rustfmt.toml", "dprint.json"),
+            *_at(GLOB, "vitest.config.*", "jest.config.*"),
+            *_at(ROOT, "pytest.ini", "tox.ini"),
+            *_at(GLOB, ".mocharc.*"),
+            *_at(ROOT, "karma.conf.js"),
+            *_at(GLOB, "cypress.config.*"),
+            *_at(
+                ROOT,
+                "tsconfig.json",
+                "jsconfig.json",
+                "mypy.ini",
+                ".mypy.ini",
+                "pyrightconfig.json",
+                ".gitleaks.toml",
+                "semgrep.yml",
+                ".semgrep.yml",
+                ".snyk",
+                "osv-scanner.toml",
+                ".bandit",
+            ),
+            *_unexercised(
+                _runners(),
+                "EXEC-07 resolves the typecheck verb only when one pyright config stands beside one mypy config, and "
+                "the resolver looks a wrapper up only for a Gradle or Maven build; no fixture is both",
+                "gradlew",
+                "mvnw",
+            ),
+        ),
+        what=What("exists"),
+        binding="file",
+        threshold="one config per concern",
+        note=(
+            "Root files only, matched by fnmatch against the configs of six concerns, plus the [tool.*] "
+            "tables of the root pyproject.toml; more than one for a concern fails. One pyright config beside "
+            "one mypy config is a mirror when the typecheck verb, resolved on the runner manifests and "
+            "followed through the root Makefile, runs mypy."
+        ),
+    )

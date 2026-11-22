@@ -233,3 +233,41 @@ def check_exec01(*, spec, target, inventory, stack, components, session) -> Chec
         summary = "pinned: " + "; ".join(pinned) + "; modules no pin reaches: " + "; ".join(gaps)
         return _outcome(spec, Verdict.PARTIAL, summary, partial)
     return _outcome(spec, Verdict.PASS, "pinned: " + "; ".join(pinned))
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(
+                ANY_DEPTH,
+                ".nvmrc",
+                ".node-version",
+                ".python-version",
+                "gradlew",
+                "mvnw",
+                "global.json",
+                "rust-toolchain.toml",
+                "rust-toolchain",
+                ".ruby-version",
+                ".php-version",
+                ".tool-versions",
+                "package.json",
+                "pyproject.toml",
+                "go.mod",
+                "composer.json",
+            ),
+        ),
+        what=What("exists"),
+        binding="file",
+        threshold="every ecosystem pinned and every module reached",
+        note=(
+            "Pin files count by existence; .tool-versions needs a line for the ecosystem (java for jvm), package.json "
+            "engines.node, pyproject.toml requires-python, go.mod a go directive and composer.json "
+            "config.platform.php or require.php. A module manifest no pin"
+            " reaches (its folder or a parent) is PARTIAL; a parent go.mod or composer.json does not reach a"
+            " nested one."
+        ),
+    )

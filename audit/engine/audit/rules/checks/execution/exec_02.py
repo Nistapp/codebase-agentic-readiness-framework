@@ -500,3 +500,56 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
         )
     )
     return _outcome(spec, verdict, detail, findings + partial)
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, Reads, What, _GO_FIXTURE, _at
+
+    return Reads(
+        where=(
+            *_at(
+                ANY_DEPTH,
+                "package-lock.json",
+                "npm-shrinkwrap.json",
+                "pnpm-lock.yaml",
+                "yarn.lock",
+                "bun.lock",
+                "bun.lockb",
+                "poetry.lock",
+                "uv.lock",
+                "Pipfile.lock",
+                "pdm.lock",
+                "gradle.lockfile",
+                "Cargo.lock",
+                "go.sum",
+                "Gemfile.lock",
+                "composer.lock",
+                "packages.lock.json",
+            ),
+            *_at(
+                ANY_DEPTH,
+                "package.json",
+                "pyproject.toml",
+                "requirements.txt",
+                "requirements-dev.txt",
+                "Cargo.toml",
+                "Directory.Build.props",
+                "Directory.Build.targets",
+                "Directory.Packages.props",
+            ),
+            *_at(ANY_DEPTH, "go.mod", unexercised=_GO_FIXTURE),
+            *_at(GLOB, "**/*.csproj", "**/*.fsproj", "**/*.vbproj"),
+        ),
+        what=What("exists"),
+        binding="file",
+        threshold="every lockfile tracked and in step with the manifest beside it",
+        note=(
+            "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest"
+            " first, and whether git tracks each one; a tracked lockfile the walk skipped as ignored counts "
+            "too. Every tracked lockfile is compared with the dependency "
+            "names of the manifests in its own folder; for .NET those are the PackageReference names of the "
+            "project files in that folder, and a package reference in a Directory.* file in that folder or "
+            "above it leaves the lockfile unverified."
+        ),
+    )

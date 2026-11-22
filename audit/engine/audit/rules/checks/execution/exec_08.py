@@ -319,3 +319,46 @@ def check_exec08(*, spec, target, inventory, stack, components, session) -> Chec
         else f"{len(held)} literal tool version(s) repeat a manifest pin"
     )
     return _outcome(spec, verdict, summary, findings)
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _GO_FIXTURE, _at
+
+    return Reads(
+        where=(
+            *_at(
+                ANY_DEPTH,
+                ".gitlab-ci.yml",
+                ".justfile",
+                ".lefthook.yaml",
+                ".lefthook.yml",
+                "GNUmakefile",
+                "Justfile",
+                "Makefile",
+                "Taskfile.yaml",
+                "Taskfile.yml",
+                "justfile",
+                "lefthook.yaml",
+                "lefthook.yml",
+                "makefile",
+                "package.json",
+            ),
+            *_at(GLOB, "**/*.mk", ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml", ".husky/*"),
+            *_at(ROOT, "renovate.json", ".renovaterc", ".renovaterc.json", ".github/renovate.json"),
+            *_at(ANY_DEPTH, "pyproject.toml"),
+            *_at(ANY_DEPTH, "go.mod", unexercised=_GO_FIXTURE),
+            *_at(ANY_DEPTH, "Cargo.toml"),
+            *_at(GLOB, "**/requirements*.txt"),
+        ),
+        what=What("word-list"),
+        binding="line",
+        threshold="no literal tool version outside a manifest",
+        note=(
+            "Each non-comment line, split at shell operators: a launcher (npx, uvx, pip install, go install, "
+            "cargo install and others) then a name@version or name==version token in the same segment; in a "
+            "workflow also the version input of four installer actions. A file a Renovate custom manager "
+            "matches is skipped, and every package.json, pyproject.toml, requirements*.txt, go.mod and "
+            "Cargo.toml is read to see whether a manifest holds the version."
+        ),
+    )

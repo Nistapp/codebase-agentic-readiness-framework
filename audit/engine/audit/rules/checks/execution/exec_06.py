@@ -380,3 +380,26 @@ def check_exec06(*, spec, target, inventory, stack, components, session) -> Chec
             )
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(ROOT, "README.md", "AGENTS.md", "CLAUDE.md"),
+            *_at(GLOB, "README*"),
+            *_runners(),
+            *_at(ANY_DEPTH, "gradlew", "mvnw"),
+        ),
+        what=What("fenced-command"),
+        binding="line",
+        threshold="every documented command resolves",
+        note=(
+            "Fenced bash, sh, shell, console and zsh blocks in the three root docs only, continuations "
+            "joined, repeats and placeholders skipped. The first word must be a known tool, a shell keyword, "
+            "a resolved verb, an npm script or bin of the root package.json, a root Makefile target or a real"
+            " path."
+        ),
+    )

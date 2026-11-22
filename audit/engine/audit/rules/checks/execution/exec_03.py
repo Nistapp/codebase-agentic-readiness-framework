@@ -163,3 +163,43 @@ def check_exec03(*, spec, target, inventory, stack, components, session) -> Chec
             )
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(ROOT, "README.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md"),
+            *_at(GLOB, "README*"),
+            *_at(
+                ANY_DEPTH,
+                ".devcontainer/devcontainer.json",
+                ".devcontainer.json",
+                "docker-compose.yml",
+                "docker-compose.yaml",
+                "compose.yml",
+                "compose.yaml",
+                "Dockerfile",
+                "setup.sh",
+                "bootstrap.sh",
+                "dev-setup.sh",
+                "Dockerfile.*",
+                "*.Dockerfile",
+                "*.dockerfile",
+            ),
+            *_at(GLOB, ".devcontainer/*.json", ".devcontainer/*/devcontainer.json"),
+            *_at(ROOT, "Makefile", "package.json"),
+        ),
+        what=What("fenced-command"),
+        binding="line",
+        threshold="a documented non-interactive setup command",
+        note=(
+            "A fenced shell command or an inline code span in the four docs whose tool and first argument "
+            "install or set up passes. "
+            "Else a setup file (at any depth, a Dockerfile with a variant in its name included) or a setup "
+            "target (setup, bootstrap, install, dev, dev-setup) of the root Makefile or package.json named "
+            "anywhere in the four docs passes; present but not named is PARTIAL."
+        ),
+    )

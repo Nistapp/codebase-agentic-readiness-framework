@@ -255,3 +255,29 @@ def check_exec04(*, spec, target, inventory, stack, components, session) -> Chec
         ],
         data=keys,
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(GLOB, "**/*.sh", "**/*.bash", "**/*.zsh", "**/*.fish", "**/*.ksh", "**/*.ps1"),
+            *_at(ANY_DEPTH, "Dockerfile"),
+            *_at(GLOB, "**"),
+            *_at(ANY_DEPTH, ".env.example", ".env.sample", ".env.template", "env.example"),
+        ),
+        what=What("key"),
+        binding="line",
+        threshold="every referenced key declared by an example file that covers each file reading it",
+        note=(
+            "References: ${VAR} and ${VAR:?msg} in shell files and Dockerfile, less the keys the same file "
+            "assigns, and os.environ, getenv, process.env and ENV[...] in every file of kind source or script. "
+            "A shell reference with a fallback (${VAR:-x}, ${VAR-x}, ${VAR:=x}, ${VAR:+x}) is optional: listed, "
+            "never missing. Declared keys are the KEY= lines of the four example file names at any depth; an "
+            "example file covers the files in its own folder and below it, so a key counts when every file "
+            "reading it is covered by one that names it. A fixed allow-list of host, CI and shell-set names "
+            "is exempt."
+        ),
+    )
