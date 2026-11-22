@@ -69,8 +69,10 @@
       "_engine_adapter.py",
       "_jsonschema_subset.py",
       "_summary.py",
+      "_render_attention.py",
       "_render_evidence.py",
       "_render_facts.py",
+      "_render_sections.py",
       "_render_terms.py",
       "_render_text.py"
     ]
