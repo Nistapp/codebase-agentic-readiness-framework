@@ -125,3 +125,30 @@ def check_cmd04(*, spec, target, inventory, stack, components, session) -> Check
             )
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import Reads, What, _runners
+
+    return Reads(
+        where=(*_runners(),),
+        what=What(
+            "key",
+            (
+                "format:check",
+                "lint",
+                "typecheck",
+                "test",
+                "check",
+                "security",
+            ),
+        ),
+        binding="section",
+        threshold="no read-only verb invokes a write verb",
+        note=(
+            "The command of each resolved read-only verb, segment by segment: a write verb through a runner "
+            "or a writing tool form (prettier --write, ruff format, eslint --fix, npm install and others) "
+            "fails."
+        ),
+    )

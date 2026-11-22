@@ -109,3 +109,19 @@ def check_cmd03(*, spec, target, inventory, stack, components, session) -> Check
             )
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import Reads, What, _runners
+
+    return Reads(
+        where=(*_runners(),),
+        what=What("key", ("check",)),
+        binding="section",
+        threshold="every second check delegates to the first",
+        note=(
+            "Every runner that declares check (lifecycle tasks left out); each after the first must call the "
+            "first by a per-runner pattern or a check call through another runner."
+        ),
+    )

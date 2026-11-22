@@ -130,3 +130,31 @@ def check_cmd01(*, spec, target, inventory, stack, components, session) -> Check
         verdict = Verdict.PARTIAL if verdict is Verdict.PASS else verdict
         findings.append(_makefile_parse_finding(spec, parse_errors, Severity.DEGRADER))
     return _outcome(spec, verdict, detail, findings, data=surface)
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import Reads, What, _runners
+
+    return Reads(
+        where=(*_runners(),),
+        what=What(
+            "key",
+            (
+                "format",
+                "format:check",
+                "lint",
+                "typecheck",
+                "test",
+                "check",
+                "security",
+            ),
+        ),
+        binding="file",
+        threshold="all seven verbs on one runner",
+        note=(
+            "Every runner (package.json, the Makefile, the Taskfile, pyproject.toml, the Gradle and the Maven "
+            "build) counts only at the root, where it is read. A root gradlew or mvnw only chooses the launcher. "
+            "format:check is also read under the spelling its runner accepts."
+        ),
+    )
