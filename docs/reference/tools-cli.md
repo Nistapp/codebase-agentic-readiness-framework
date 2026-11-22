@@ -239,7 +239,7 @@ The draft starts with no checks, no findings and a summary computed from them. T
 
 ### import-engine
 
-Brings the engine's report into a draft: its checks and findings, the stack and components it detected, its file counts, the probes it ran and its unattested items. The report is the JSON that [`engine.py`](#enginepy) wrote. The rules of the conversion are in [Engine schema v2 mapping](../../audit/schema/SCHEMA.md#engine-schema-v2-mapping). The conversion is [`convert`](../../audit/tools/_engine_adapter.py#L726-L739), a pure function of the engine's report, and [`apply_import`](../../audit/tools/report.py#L585-L645) applies its result to the draft in one validated step, as every other change is applied.
+Brings the engine's report into a draft: its checks and findings, the stack and components it detected, its file counts, the probes it ran and its unattested items. The report is the JSON that [`engine.py`](#enginepy) wrote. The rules of the conversion are in [Engine schema v2 mapping](../../audit/schema/SCHEMA.md#engine-schema-v2-mapping). The conversion is [`convert`](../../audit/tools/_engine_adapter.py#L726-L739), a pure function of the engine's report, and [`apply_import`](../../audit/tools/_report_import.py#L77-L137) applies its result to the draft in one validated step, as every other change is applied.
 
 ```text
 python3 audit/tools/report.py import-engine <draft> <engine report>
