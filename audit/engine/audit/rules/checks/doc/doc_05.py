@@ -118,3 +118,36 @@ def check_doc05(*, spec, target, inventory, stack, components, session) -> Check
         ],
         data=data,
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import GLOB, Reads, What, _at
+
+    return Reads(
+        where=(*_at(GLOB, "docs/**/*.md", "docs/**/*.markdown"),),
+        what=What(
+            "word-list",
+            (
+                "simply",
+                "just",
+                "obviously",
+                "clearly",
+                "basically",
+                "easily",
+                "utilize",
+                "utilise",
+                "leverage",
+                "in order to",
+                "and/or",
+                "etc",
+            ),
+        ),
+        binding="file",
+        threshold="at most 10% long sentences and 1 vague word per 1,000 words",
+        note=(
+            "Prose only (fences, tables, headings, comments, code spans and prose-check off regions skipped);"
+            " a sentence over 25 words, or 20 in a numbered step, is long. Each page under docs/explanation/ "
+            "or docs/tutorials/, less README.md and index.md, needs a Mermaid block."
+        ),
+    )

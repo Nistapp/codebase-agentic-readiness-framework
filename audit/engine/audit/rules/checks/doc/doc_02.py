@@ -78,3 +78,19 @@ def check_doc02(*, spec, target, inventory, stack, components, session) -> Check
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ROOT, Reads, What, _at
+
+    return Reads(
+        where=(*_at(ROOT, "docs/STYLE_GUIDE.md", "AGENTS.md", "CLAUDE.md"),),
+        what=What("exists"),
+        binding="file",
+        threshold="present and named",
+        note=(
+            "The exact path docs/STYLE_GUIDE.md, never a suffix match. The entry file (doc.py's own reader) "
+            "must hold STYLE_GUIDE.md on any line, else PARTIAL."
+        ),
+    )

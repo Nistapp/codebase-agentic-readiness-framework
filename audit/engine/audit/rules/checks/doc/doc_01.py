@@ -63,3 +63,19 @@ def check_doc01(*, spec, target: Target, inventory, stack, components, session) 
             ),
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(GLOB, "docs/**/*.md", "docs/**/*.markdown"),
+            *_at(ROOT, "docs"),
+        ),
+        what=What("exists"),
+        binding="file",
+        threshold="one or more Markdown files under docs/",
+        note=("With no Markdown file, the folder docs is looked for on disk: present is PARTIAL, absent is FAIL."),
+    )

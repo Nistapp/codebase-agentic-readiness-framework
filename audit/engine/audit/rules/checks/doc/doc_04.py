@@ -186,3 +186,35 @@ def check_doc04(*, spec, target, inventory, stack, components, session) -> Check
     if findings:
         return _outcome(spec, Verdict.PARTIAL, "; ".join(summaries), findings)
     return _outcome(spec, Verdict.PASS, f"{len(entries)} ADR(s) indexed in {index}")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(GLOB, "docs/architecture/adrs/**/*.md", "docs/adr/**/*.md"),
+            *_at(
+                ROOT,
+                "docs/architecture/adrs/README.md",
+                "docs/architecture/adrs/index.md",
+                "docs/architecture/adrs/_index.md",
+                "docs/architecture/README.md",
+                "docs/architecture/index.md",
+                "docs/adr/README.md",
+                "docs/adr/index.md",
+                "docs/adr/_index.md",
+                "docs/README.md",
+                "docs/index.md",
+            ),
+        ),
+        what=What("exists"),
+        binding="file",
+        threshold="every ADR listed in the index and none retired",
+        note=(
+            "Entries are NNN- or NNNN-slug.md files in the first folder that holds a file, less a template; "
+            "each must appear in the index by file name or its first four characters. A status line, a "
+            "superseded-by or replaced-by line, or a Status section that retires a record is PARTIAL."
+        ),
+    )

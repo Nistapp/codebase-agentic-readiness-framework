@@ -111,3 +111,24 @@ def check_doc03(*, spec, target, inventory, stack, components, session) -> Check
     by = sorted({d.rule.source for d in decisions.values() if d.ignored and d.rule is not None})
     via = f" by {', '.join(by)}" if by else ""
     return _outcome(spec, Verdict.PASS, f"{', '.join(present_roots)}/ present, ignored{via}, and untracked")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit import ignore
+    from audit.rules.checks import doc
+    from audit.rules.reads import ANY_DEPTH, ROOT, Reads, What, _held
+
+    return Reads(
+        where=(
+            *_held(doc, "_SCRATCH_ROOTS", ROOT),
+            *_held(ignore, "IGNORE_FILE_NAMES", ROOT, {".gitignore": ANY_DEPTH}),
+        ),
+        what=What("exists"),
+        binding="file",
+        note=(
+            "The scratch folders in the scan or on disk, the files git tracks there, and every ignore rule: "
+            "the five root ignore files and each nested .gitignore. The folder's own .gitignore and a file a "
+            "! rule re-includes are allowed."
+        ),
+    )

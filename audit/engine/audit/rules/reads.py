@@ -36,7 +36,7 @@ from dataclasses import dataclass, replace
 from types import ModuleType
 
 from audit import ignore
-from audit.rules.checks import _common, con, doc, hyg, idx, tst
+from audit.rules.checks import _common, con, hyg, idx, tst
 
 ROOT = "root"
 ANY_DEPTH = "any-depth"
@@ -156,8 +156,8 @@ _GO_FIXTURE = (
 )
 
 
-#: The reads of every implemented engine check, in registry order. The agent checks have no code and no entry.
-READS: dict[str, Reads] = {
+#: The reads that a family with no module per check still declares here, keyed by check id.
+_DECLARED: dict[str, Reads] = {
     "IDX-01": Reads(
         where=(*_held(idx, "_PROJECT_CONFIGS", ANY_DEPTH),),
         what=What("phrase", ("codebase-memory-mcp",)),
@@ -529,92 +529,6 @@ READS: dict[str, Reads] = {
             "level 2-6 conventions sections that are not about git or docs. Five items over all sources "
             "together (naming, layering, error handling and logging, testing, a formatter or linter config "
             "name), plus TBD or TODO outside code."
-        ),
-    ),
-    "DOC-01": Reads(
-        where=(
-            *_at(GLOB, "docs/**/*.md", "docs/**/*.markdown"),
-            *_at(ROOT, "docs"),
-        ),
-        what=What("exists"),
-        binding="file",
-        threshold="one or more Markdown files under docs/",
-        note=("With no Markdown file, the folder docs is looked for on disk: present is PARTIAL, absent is FAIL."),
-    ),
-    "DOC-02": Reads(
-        where=(*_at(ROOT, "docs/STYLE_GUIDE.md", "AGENTS.md", "CLAUDE.md"),),
-        what=What("exists"),
-        binding="file",
-        threshold="present and named",
-        note=(
-            "The exact path docs/STYLE_GUIDE.md, never a suffix match. The entry file (doc.py's own reader) "
-            "must hold STYLE_GUIDE.md on any line, else PARTIAL."
-        ),
-    ),
-    "DOC-03": Reads(
-        where=(
-            *_held(doc, "_SCRATCH_ROOTS", ROOT),
-            *_held(ignore, "IGNORE_FILE_NAMES", ROOT, {".gitignore": ANY_DEPTH}),
-        ),
-        what=What("exists"),
-        binding="file",
-        note=(
-            "The scratch folders in the scan or on disk, the files git tracks there, and every ignore rule: "
-            "the five root ignore files and each nested .gitignore. The folder's own .gitignore and a file a "
-            "! rule re-includes are allowed."
-        ),
-    ),
-    "DOC-04": Reads(
-        where=(
-            *_at(GLOB, "docs/architecture/adrs/**/*.md", "docs/adr/**/*.md"),
-            *_at(
-                ROOT,
-                "docs/architecture/adrs/README.md",
-                "docs/architecture/adrs/index.md",
-                "docs/architecture/adrs/_index.md",
-                "docs/architecture/README.md",
-                "docs/architecture/index.md",
-                "docs/adr/README.md",
-                "docs/adr/index.md",
-                "docs/adr/_index.md",
-                "docs/README.md",
-                "docs/index.md",
-            ),
-        ),
-        what=What("exists"),
-        binding="file",
-        threshold="every ADR listed in the index and none retired",
-        note=(
-            "Entries are NNN- or NNNN-slug.md files in the first folder that holds a file, less a template; "
-            "each must appear in the index by file name or its first four characters. A status line, a "
-            "superseded-by or replaced-by line, or a Status section that retires a record is PARTIAL."
-        ),
-    ),
-    "DOC-05": Reads(
-        where=(*_at(GLOB, "docs/**/*.md", "docs/**/*.markdown"),),
-        what=What(
-            "word-list",
-            (
-                "simply",
-                "just",
-                "obviously",
-                "clearly",
-                "basically",
-                "easily",
-                "utilize",
-                "utilise",
-                "leverage",
-                "in order to",
-                "and/or",
-                "etc",
-            ),
-        ),
-        binding="file",
-        threshold="at most 10% long sentences and 1 vague word per 1,000 words",
-        note=(
-            "Prose only (fences, tables, headings, comments, code spans and prose-check off regions skipped);"
-            " a sentence over 25 words, or 20 in a numbered step, is long. Each page under docs/explanation/ "
-            "or docs/tutorials/, less README.md and index.md, needs a Mermaid block."
         ),
     ),
     "CMD-01": Reads(
@@ -2050,6 +1964,29 @@ READS: dict[str, Reads] = {
 #:
 #: Left out after the same review: ``CMD-01``, since a verb added on a second runner turns ``PASS`` into ``PARTIAL``
 #: (``check_cmd01``), and the ``CLAUDE.md`` place of ``AGT-08``.
+
+
+def _gathered() -> dict[str, Reads]:
+    """The reads of every implemented engine check, in registry order. The agent checks have no code and no entry.
+
+    A check's reads come from its own module's ``reads()``, or from ``_DECLARED`` while its family keeps one module.
+    """
+    import importlib
+
+    from audit.rules.registry import REGISTRY
+
+    table: dict[str, Reads] = {}
+    for spec in REGISTRY:
+        if spec.id in _DECLARED:
+            table[spec.id] = _DECLARED[spec.id]
+        elif spec.impl is not None:
+            table[spec.id] = importlib.import_module(spec.impl.__module__).reads()
+    return table
+
+
+READS: dict[str, Reads] = _gathered()
+
+
 _ENTRY_FILES: tuple[str, ...] = ("AGENTS.md", "CLAUDE.md")
 _ROOT_DOCUMENTS: tuple[str, ...] = (*_ENTRY_FILES, "README.md", "CONTRIBUTING.md")
 _RUNNER_PATHS: tuple[str, ...] = tuple(place.path for place in _runners())
