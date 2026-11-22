@@ -453,7 +453,8 @@ Rows 16 and 17 name the branch that row 9 protects: revert them with row 9, befo
 - Do not apply a ruleset file (`gh api -X POST` or `PUT`); the owner does.
 - Do not invent a mailbox, a response time or a second reviewer.
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
-- Do not copy a private runbook, another repository's page, or its values into a repository's file.
+- Do not copy a private runbook, another repository's page, or its values into a repository's file. This echoes
+  the hard rule [Keep private content private](../SKILL.md#hard-rules).
 - Do not choose a licence.
 - Do not add a contributing item the owner has not accepted, or a rule the repository does not show. Do not write
   contributing text that does not come from `greenfield/templates/`.

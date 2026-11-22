@@ -31,7 +31,7 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 - Preferences this playbook reads, when present: `layout.command_runner` (per component or one root runner),
   `format.mass_reformat` (forbids a whole-tree rewrite), `tests.stack_dependent` (whether `test` needs a live
   local stack), `ci.edits_authorised` (whether build files and CI may be changed). A step that conflicts with
-  one stops and asks.
+  one stops and asks ([state contract](../state.md#skip-defer-and-preferences)).
 - No earlier theme is needed. T1 Command surface and quality tools runs before T4 CI parity, Git hooks and commit
   messages, T5 Tests and baselines, and T7 AGENTS.md and governance ([themes](../SKILL.md#themes)), because those themes
   name these verbs.
@@ -114,7 +114,8 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#command-surface-map).
   ratchet or baseline mode (`configure-quality-tools`), or `check` turns red on today's code.
 - `typecheck` = `compileJava compileTestJava` (javac is the type checker). `-Xlint:all -Werror` is a later,
   owner-chosen hardening, not T1.
-- Invoke only through the wrapper (`./gradlew <task>`), never a system `gradle`.
+- Invoke only through the wrapper (`./gradlew <task>`), never a system `gradle`. The rule is in
+  [`spec/command-surface.md`](../../spec/command-surface.md#spelling-per-runner).
 
 ### Node (npm, pnpm, yarn)
 

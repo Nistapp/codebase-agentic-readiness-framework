@@ -155,12 +155,10 @@ and that a state file exists in the workspace. Change nothing in the target.
    `init` never replaces a state; if it says a state exists, resume.
    - **Resume.** Run `progress.py show` and read `data.skipped`, the preferences and the theme progress. If the
      workspace holds more than one state, pass `--label`.
-   - **Adopt** a state the target keeps (step 3). Theme branches can be ahead of the integration branch, so pick
-     the branch whose state has the newest log entry. Read it from that branch's worktree. Without one, add a
-     detached worktree: `git -C <repo> worktree add --detach <dir> <branch>`, and remove it afterwards. Then run
+   - **Adopt** a state the target keeps (step 3). Pick the branch and its checkout as [Move a state kept in the
+     target](state.md#move-a-state-kept-in-the-target) says, then run
      `python3 implement/tools/progress.py adopt --target <that checkout> --workspace <workspace> --phase <phase>`.
-     Tell the owner which branch you chose. `data.may_remove` lists the in-repo files the owner may now remove.
-     Offer that removal as a change in the next theme branch. Remove nothing without the owner's consent.
+     Remove nothing without the owner's consent.
 7. **Version skew.** Compare the report's catalogue version (`source_reports[].catalogue_version` in `progress.py
    show --json`) with `catalogue_version` in this recipe's `catalogue.json` (one folder above the tools). When they
    differ, tell the owner that check IDs, severities and playbook lists may have changed since the audit, and from
@@ -192,22 +190,21 @@ changes nothing in the target.
 4. **Record each answer** the moment it is given, with the owner's words (short) as the reason:
    `progress.py skip F-nnn --reason "<owner's words>" --by owner --workspace <workspace> --phase <phase>`, likewise
    `defer`. Relay the owner's answer verbatim. `--by owner` is a claim you make; the tool cannot check it.
-5. **Preferences.** Ask what the owner wants fixed for the whole run: tools already preferred, scope limits (for
-   example no mass reformat), and extra work. Record each choice, and any blanket grant ("go with the
-   recommendations" for a stated kind of change), with `progress.py pref set <key> <value> --reason "<short reason>"
-   --by owner --workspace <workspace> --phase <phase>`. A key matches `^[a-z0-9][a-z0-9._-]{0,63}$` (lowercase:
-   `extra.t3`, not `extra.T3`) and takes one value. When the owner chooses no extras, record the key `extra.none`
-   with value `none`, so the next session knows the question was asked. Keep reasons short: they become table rows in
-   the generated file. Also ask whether the agent may push the theme branch and open a pull request, and record the
-   answer as `ci.pr_by_agent` (`yes` or `no`); without `yes` the recipe stops at a local branch ([ADR
-   0003](docs/architecture/adrs/0003-push-and-pr-policy.md)). Ask here, too, for the keys most playbooks read:
-   `ci.edits_authorised` (may build files and CI workflows change, and which), `format.mass_reformat` (`no` forbids
-   reformatting the tree), `layout.command_runner` (one root runner, or one per component) and
-   `tests.stack_dependent` (does `test` need a live local stack). When the AGT-01 finding says no instruction
-   file exists, ask `agents_md.create` too (`yes` or `no`): earlier themes write to that file
-   ([Stage 3, step 11](#stage-3-apply)). Every other key is listed, with its effect, in the
-   Preconditions of the playbook that reads it, and is asked in that theme's Stage 2. A key that is absent when a
-   step needs it is asked then, never assumed.
+5. **Preferences.** Ask what the owner wants fixed for the whole run: tools already preferred, scope limits (for example
+   no mass reformat), and extra work. Record each choice, and any blanket grant ("go with the recommendations" for a
+   stated kind of change), with `progress.py pref set <key> <value> --reason "<short reason>" --by owner --workspace
+   <workspace> --phase <phase>`. A key follows the [key format](state.md#skip-defer-and-preferences) and takes one
+   value. When the owner chooses no extras, record the key `extra.none` with value `none`, so the next session knows the
+   question was asked. Keep reasons short: they become table rows in the generated file. Also ask whether the agent may
+   push the theme branch and open a pull request, and record the answer as `ci.pr_by_agent` (`yes` or `no`); without
+   `yes` the recipe stops at a local branch ([ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md)). Ask here,
+   too, for the keys most playbooks read: `ci.edits_authorised` (may build files and CI workflows change, and which),
+   `format.mass_reformat` (`no` forbids reformatting the tree), `layout.command_runner` (one root runner, or one per
+   component) and `tests.stack_dependent` (does `test` need a live local stack). When the AGT-01 finding says no
+   instruction file exists, ask `agents_md.create` too (`yes` or `no`): earlier themes write to that file
+   ([Stage 3, step 11](#stage-3-apply)). Every other key is listed, with its effect, in the Preconditions of the
+   playbook that reads it, and is asked in that theme's Stage 2. A key that is absent when a step needs it is asked
+   then, never assumed.
 6. **Placeholders the owner still owes** (a second reviewer, a security contact, a review date) are not Stage 1
    questions; raise each in the theme that needs it (Stage 2, step 6).
 7. **Render.** Run `progress.py render`, or pass `--render` to the last write. The STATE.md then matches the JSON.
