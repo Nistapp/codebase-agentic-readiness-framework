@@ -127,3 +127,50 @@ def check_tool01(*, spec, target, inventory, stack, components, session) -> Chec
     return _unknown(
         spec, "no recognised ecosystem, runner manifest or formatter config, so a formatter cannot be ruled out"
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(
+                ANY_DEPTH,
+                ".prettierrc",
+                ".prettierrc.json",
+                ".prettierrc.json5",
+                ".prettierrc.yml",
+                ".prettierrc.yaml",
+                ".prettierrc.toml",
+                ".prettierrc.js",
+                ".prettierrc.cjs",
+                ".prettierrc.mjs",
+                "prettier.config.js",
+                "prettier.config.cjs",
+                "prettier.config.mjs",
+                "biome.json",
+                "biome.jsonc",
+                ".dprint.json",
+                "dprint.json",
+                "ruff.toml",
+                ".ruff.toml",
+                "black.toml",
+                ".black.toml",
+                "rustfmt.toml",
+                ".rustfmt.toml",
+                ".clang-format",
+                "pint.json",
+                ".php-cs-fixer.php",
+                ".php-cs-fixer.dist.php",
+            ),
+            *_runners(),
+        ),
+        what=What("key"),
+        binding="file",
+        note=(
+            "Formatter config names count on presence at any depth; the root pyproject.toml is read for "
+            "[tool.black|ruff|autopep8|yapf] and the root package.json for a prettier key. The format verb is"
+            " resolved from the runner manifests."
+        ),
+    )

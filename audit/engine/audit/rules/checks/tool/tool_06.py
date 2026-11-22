@@ -208,3 +208,50 @@ def check_tool06(*, spec, target, inventory, stack, components, session) -> Chec
         )
 
     return _unknown(spec, "no recognised ecosystem and no hook configuration, so a commit convention cannot be judged")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(
+                ANY_DEPTH,
+                "commitlint.config.js",
+                "commitlint.config.cjs",
+                "commitlint.config.mjs",
+                "commitlint.config.ts",
+                ".commitlintrc",
+                ".commitlintrc.json",
+                ".commitlintrc.js",
+                ".commitlintrc.cjs",
+                ".commitlintrc.yml",
+                ".commitlintrc.yaml",
+                ".commitlintrc.toml",
+            ),
+            *_at(
+                ANY_DEPTH,
+                ".husky/commit-msg",
+                ".githooks/commit-msg",
+                ".pre-commit-config.yaml",
+                "lefthook.yml",
+                "lefthook.yaml",
+            ),
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
+            *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
+            *_at(ROOT, ".circleci/config.yml"),
+            *_at(GLOB, ".buildkite/**/*.yml"),
+            *_runners(),
+            *_at(GLOB, ".githooks/*", ".husky/*", "**"),
+        ),
+        what=What("phrase"),
+        binding="line",
+        note=(
+            "Local: commitlint config names at any depth, a commitlint key in the root package.json, a "
+            "commit-msg hook file (presence matched at any depth), or commit-msg/commitlint/conventional in "
+            "the root hook-manager files. CI: one workflow line runs a commit-message tool, a pull-request "
+            "title action, a script the local commit-msg stage names, or a runner target that does. The FAIL "
+            "path reads the hook wiring as TOOL-05 does: hook-manager files, .githooks/, .husky/, core.hooksPath."
+        ),
+    )

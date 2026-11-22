@@ -222,3 +222,29 @@ def check_tool07(*, spec, target, inventory, stack, components, session) -> Chec
         )
     named = f"; names {', '.join(protected)}" if protected else ""
     return _outcome(spec, Verdict.PASS, f"branch guard at {where}{named}")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(ROOT, ".pre-commit-config.yaml", "lefthook.yml", "lefthook.yaml"),
+            *_at(ANY_DEPTH, "pre-commit", "commit-msg"),
+            *_at(GLOB, ".githooks/*", ".husky/*", "**"),
+            *_at(ROOT, "package.json"),
+            *_at(GLOB, ".github/rulesets/**/*.json"),
+            *_at(ROOT, ".github/settings.yml"),
+            *_at(ANY_DEPTH, "*.tf"),
+        ),
+        what=What("phrase"),
+        binding="line",
+        note=(
+            "The branch read (git symbolic-ref HEAD, git branch --show-current, git rev-parse --abbrev-ref "
+            "HEAD) is one line, and its non-zero exit must be in the same indented block of a hook-manager "
+            "file or anywhere in a pre-commit or commit-msg script outside .git/. The hook-manager files are "
+            "found at any depth but read at the root; core.hooksPath is grepped in every manifest, config, "
+            "script, CI and build file (glob **)."
+        ),
+    )

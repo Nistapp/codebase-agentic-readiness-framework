@@ -222,3 +222,26 @@ def check_tool03(*, spec, target, inventory, stack, components, session) -> Chec
         "no recognised strict type-check configuration and no ecosystem this "
         "pack knows one for, so type-checking cannot be judged",
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, ROOT, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(ROOT, "tsconfig.json", "jsconfig.json"),
+            *_at(ANY_DEPTH, "mypy.ini", ".mypy.ini"),
+            *_at(ANY_DEPTH, "pyproject.toml", "setup.cfg"),
+            *_at(ROOT, "pyrightconfig.json"),
+            *_at(ANY_DEPTH, "*.csproj", "Directory.Build.props", "Directory.Build.targets", "global.json"),
+            *_runners(),
+        ),
+        what=What("key"),
+        binding="file",
+        note=(
+            "mypy.ini, .mypy.ini, pyproject.toml and setup.cfg are kept when found at any depth but read at "
+            "the root, so a nested-only copy counts as present but not strict; global.json counts on presence"
+            " only. The typecheck verb is resolved from the runner manifests and must carry --strict."
+        ),
+    )

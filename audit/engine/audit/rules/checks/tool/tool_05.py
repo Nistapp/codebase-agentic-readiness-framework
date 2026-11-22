@@ -61,3 +61,23 @@ def check_tool05(*, spec, target, inventory, stack, components, session) -> Chec
         )
 
     return _unknown(spec, "no recognised ecosystem and no hook configuration, so a hook chain cannot be ruled out")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(ANY_DEPTH, ".pre-commit-config.yaml", "lefthook.yml", "lefthook.yaml"),
+            *_at(GLOB, ".githooks/*", ".husky/*", "**"),
+            *_runners(),
+        ),
+        what=What("exists"),
+        binding="file",
+        note=(
+            "A hook-manager file at any depth, or core.hooksPath in any manifest, config, script, CI or build"
+            " file (glob **), is wired; .husky/ is wired only when a root package.json script names husky. "
+            "With no hook chain, the FAIL cites the runner manifests that the runner resolver finds."
+        ),
+    )

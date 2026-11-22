@@ -195,3 +195,25 @@ def check_tool04(*, spec, target, inventory, stack, components, session) -> Chec
         spec,
         "no recognised ecosystem, runner manifest or dependency-audit verb, so a dependency scan cannot be ruled out",
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_runners(),
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
+            *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
+            *_at(ROOT, ".circleci/config.yml"),
+            *_at(GLOB, ".buildkite/**/*.yml"),
+        ),
+        what=What("phrase"),
+        binding="line",
+        note=(
+            "A resolved verb, a root-Makefile recipe line it reaches, or one workflow line must run a "
+            "dependency-audit command (npm audit, pip-audit, osv-scanner and others) or a scanner action or "
+            "template. Commented workflow lines are skipped; Dependabot and Renovate do not count."
+        ),
+    )

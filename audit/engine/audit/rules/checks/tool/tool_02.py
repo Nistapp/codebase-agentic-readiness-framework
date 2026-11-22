@@ -123,3 +123,53 @@ def check_tool02(*, spec, target, inventory, stack, components, session) -> Chec
         )
 
     return _unknown(spec, "no recognised ecosystem, runner manifest or linter config, so a linter cannot be ruled out")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(
+                ANY_DEPTH,
+                ".eslintrc",
+                ".eslintrc.json",
+                ".eslintrc.js",
+                ".eslintrc.cjs",
+                ".eslintrc.mjs",
+                ".eslintrc.yml",
+                ".eslintrc.yaml",
+                "eslint.config.js",
+                "eslint.config.cjs",
+                "eslint.config.mjs",
+                "eslint.config.ts",
+                "biome.json",
+                "biome.jsonc",
+                "ruff.toml",
+                ".ruff.toml",
+                ".flake8",
+                ".pylintrc",
+                "pylintrc",
+                ".golangci.yml",
+                ".golangci.yaml",
+                ".golangci.toml",
+                "clippy.toml",
+                ".clippy.toml",
+                ".rubocop.yml",
+                "checkstyle.xml",
+                ".stylelintrc",
+                ".stylelintrc.json",
+                "phpcs.xml",
+                ".phpcs.xml",
+            ),
+            *_runners(),
+        ),
+        what=What("key"),
+        binding="file",
+        note=(
+            "Linter config names count on presence at any depth; the root pyproject.toml is read for "
+            "[tool.ruff|pylint|flake8] and the root package.json for an eslintConfig key. The lint verb is "
+            "resolved from the runner manifests."
+        ),
+    )
