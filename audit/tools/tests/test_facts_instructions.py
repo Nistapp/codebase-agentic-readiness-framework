@@ -158,7 +158,7 @@ class InstructionCase(RepoCase):
     def seen_by(self, check: str, target: Path) -> set[str]:
         """The set that `check` (`AGT-01` or `AGT-08`) gets from `instruction_paths`, recorded while the check runs."""
         scan = facts.engine_module("audit.scan")
-        agt = facts.engine_module("audit.rules.checks.agt")
+        agt = facts.engine_module("audit.rules.checks.agt." + check.replace("-", "_").lower())
         spec = facts.engine_module("audit.rules.registry").REGISTRY_BY_ID[check]
         real = agt.instruction_paths
         answers: list[set[str]] = []

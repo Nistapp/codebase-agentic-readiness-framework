@@ -28,8 +28,8 @@ different in kind: a module tree can be packed into one **archive** that runs an
    It also holds the implementation, the `reads()` declaration and the helpers only that check uses. Helpers
    that two or more checks of the family use are in `<family>/_shared.py`. The package's `__init__.py` re-exports
    those names. It also assembles the family's `SPECS` and `IMPLEMENTATIONS`. The registry joins the families'
-   `SPECS` in the written order of `FAMILIES`. Three families are still one module each: `idx.py`, `agt.py` and
-   `tst.py`. Their tests reach into the module's namespace, which a split would break.
+   `SPECS` in the written order of `FAMILIES`. Two families are still one module each: `idx.py` and `tst.py`.
+   Their tests reach into the module's namespace, which a split would break.
 2. **No install step, ever, to run the tool**: `python3 -m audit <target>` works from a fresh clone with no
    virtualenv, no `pip install`, no `PYTHONPATH`. This is why there is no `src/` layout. Nothing outside the
    standard library is imported.

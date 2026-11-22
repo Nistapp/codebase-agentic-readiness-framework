@@ -126,7 +126,8 @@ class Agt01Tests(unittest.TestCase):
             root = Path(tmp)
             support.write(root, "AGENTS.md", BODY)
             with mock.patch(
-                "audit.rules.checks.agt.V.mis_cased_canonical_candidates", return_value=["Agents.md", "agents.md"]
+                "audit.rules.checks.agt.agt_01.V.mis_cased_canonical_candidates",
+                return_value=["Agents.md", "agents.md"],
             ):
                 outcome = check_agt01(
                     spec=REGISTRY_BY_ID["AGT-01"],
@@ -379,7 +380,7 @@ class Agt08Tests(unittest.TestCase):
                 with tempfile.TemporaryDirectory() as tmp:
                     root = Path(tmp)
                     support.write(root, "AGENTS.md", BODY)
-                    with mock.patch("audit.rules.checks.agt.V.classify_present", return_value=classified):
+                    with mock.patch("audit.rules.checks.agt.agt_08.V.classify_present", return_value=classified):
                         outcome = check_agt08(
                             spec=REGISTRY_BY_ID["AGT-08"],
                             target=None,

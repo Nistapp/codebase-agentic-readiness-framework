@@ -263,8 +263,8 @@ flowchart LR
    a fixture reaches the same verdict. Write the check in its own module, `audit/rules/checks/<family>/<pack>_NN.py`,
    with its `SPEC = declare(...)` (`audit/rules/spec.py`) and its implementation. Add the module to the family's
    `SPECS` and `IMPLEMENTATIONS` in `<family>/__init__.py`, in catalogue order. A helper that two or more checks of
-   the family use goes in `<family>/_shared.py`. In `idx.py`, `agt.py` and `tst.py`, which are still one module each,
-   add the row to that module's `SPECS`.
+   the family use goes in `<family>/_shared.py`. In `idx.py` and `tst.py`, which are still one module each, add the
+   row to that module's `SPECS`.
 3. Add the failure mode to [Why These Checks](../user-overview/03-why-these-checks.md). No failure mode, no check.
 4. Emit a short human `summary`. Where the check has table-shaped facts, also emit a typed `data` payload from
    `audit/rules/payloads.py` (ADR-0007). The renderer builds check tables from the payload `kind`, never
@@ -273,7 +273,7 @@ flowchart LR
    of the check's family, `tests/packs/<family>/matrix.py`. A fixture that belongs to no one family goes in
    `tests/packs/cross_family/matrix.py`.
 6. Declare what the check reads in its module's `reads()`, which returns a `Reads`. It imports the types and
-   helpers of `audit/rules/reads.py` inside the function. A check of `idx.py`, `agt.py` or `tst.py` uses
+   helpers of `audit/rules/reads.py` inside the function. A check of `idx.py` or `tst.py` uses
    `_DECLARED` in `audit/rules/reads.py` instead. Give the places, the text and the binding. Take the paths
    from the check's own constant with `_held` where one exists. Give a place `via` when the scan's file kinds or
    component detection read it before the check runs. Give it `case=FOLD` when the check lower-cases the name. Set
