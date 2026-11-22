@@ -37,7 +37,7 @@
     "symbol": "census_findings"
   },
   {
-    "enforced_by": "implement/tools/progress.py",
+    "enforced_by": "implement/tools/_progress_transitions.py",
     "enforcement": "tool-refusal",
     "home": {
       "path": "implement/SKILL.md",
@@ -50,7 +50,7 @@
     "symbol": "find_item"
   },
   {
-    "enforced_by": "implement/tools/progress.py",
+    "enforced_by": "implement/tools/_progress_transitions.py",
     "enforcement": "tool-refusal",
     "home": {
       "path": "implement/SKILL.md",
@@ -101,7 +101,7 @@
     "symbol": "a6_branch_rule"
   },
   {
-    "enforced_by": "implement/tools/progress.py",
+    "enforced_by": "implement/tools/_progress_transitions.py",
     "enforcement": "tool-refusal",
     "home": {
       "path": "implement/SKILL.md",
@@ -164,7 +164,7 @@
     "statement": "Nothing private crosses into an open-source repository, and nothing from a target into the framework."
   },
   {
-    "enforced_by": "implement/tools/progress.py",
+    "enforced_by": "implement/tools/_progress_refs.py",
     "enforcement": "tool-refusal",
     "home": {
       "path": "implement/SKILL.md",
@@ -190,7 +190,7 @@
     "symbol": "a12_no_mass_rewrite"
   },
   {
-    "enforced_by": "implement/tools/progress.py",
+    "enforced_by": "implement/tools/_progress_transitions.py",
     "enforcement": "tool-refusal",
     "home": {
       "path": "implement/SKILL.md",
