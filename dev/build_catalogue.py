@@ -81,6 +81,7 @@ def engine_checks(root: Path = ROOT) -> list[Check]:
             "id": spec.id,
             "pack": spec.pack,
             "title": spec.title,
+            "tier": spec.tier,
             "phase": spec.phase,
             "severity": spec.severity.value,
             "scored": spec.scored,
