@@ -1,15 +1,17 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""Rule-pack registry — one table, mirroring docs/architecture/contributor-deep-dive/02-check-catalogue.md.
+"""Rule-pack registry — the catalogue, assembled from the check families.
 
-The catalogue page is the design of record; this module is its executable form. A change to either
-updates both in the same change set (enforced socially, and by the self-verification docstring in
-the catalogue's § Adding a Check).
+Each check family module under ``audit/rules/checks/`` declares its checks (``SPECS``) beside their
+implementations; this module joins the families, in the written order of ``FAMILIES``, into one
+catalogue. ``docs/architecture/contributor-deep-dive/02-check-catalogue.md`` is the design of record. A
+change to a check's declaration updates that page in the same change set (enforced socially, and by
+the self-verification docstring in the catalogue's § Adding a Check).
 
-Three things live here and nowhere else:
+Three things are joined or kept here:
 
-* the **id → metadata** table (tier, severity, phase anchor, scored/not)
+* the **id → metadata** table (tier, severity, phase anchor, scored/not), in catalogue order
 * **framework anchors**: the Phase-1 heading each pack traces back to, resolvable by ``--verify-rules``
 * **applicability**: which packs apply to a detected stack, so an unsupported ecosystem degrades to
   ``UNKNOWN`` instead of passing silently
@@ -18,248 +20,16 @@ Three things live here and nowhere else:
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
-from audit.findings import Severity, Verdict
+from audit.rules.checks import agt, base, ci, cmd, con, doc, execution, hyg, idx, nav, sec, tool, tst
+from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
+from audit.rules.spec import Anchor as Anchor
+from audit.rules.spec import CheckSpec as CheckSpec
 
-
-@dataclass(frozen=True)
-class Anchor:
-    """A heading in the framework's documentation that justifies a pack."""
-
-    file: str
-    heading: str
-    phase: int = 1
-
-
-#: Where in the framework each pack comes from. Paths are relative to the framework repo root.
-PACK_ANCHORS: dict[str, Anchor] = {
-    "IDX": Anchor("docs/framework/phased-approach.md", "Phase 1: Agentic Bootstrap"),
-    "AGT": Anchor("docs/framework/phased-approach.md", "Phase 1: Agentic Bootstrap"),
-    "DOC": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
-    "CMD": Anchor("docs/framework/phased-approach.md", "Activities"),
-    "TOOL": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
-    "CI": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
-    "BASE": Anchor("docs/framework/phased-approach.md", "Activities"),
-    "CON": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
-    "EXEC": Anchor("docs/framework/phased-approach.md", "Activities"),
-    "TST": Anchor("docs/framework/phased-approach.md", "Activities"),
-    "NAV": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
-    "SEC": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
-    "HYG": Anchor("docs/framework/phased-approach.md", "Phase 1: Agentic Bootstrap"),
-}
-
-
-@dataclass
-class CheckSpec:
-    id: str
-    title: str
-    tier: str  # A (artifact) | B (contract) | C (executed probe)
-    severity: Severity
-    evidence_rule: str
-    phase: int = 1
-    scored: bool = True
-    ecosystems: tuple[str, ...] = ()  # empty = applies to every stack
-    status: str = "planned"  # implemented | planned | blocked
-    impl: Callable | None = None
-
-    # -- convenience -----------------------------------------------------
-    @property
-    def pack(self) -> str:
-        return self.id.split("-")[0]
-
-    @property
-    def anchor(self) -> Anchor | None:
-        return PACK_ANCHORS.get(self.pack)
-
-    def applies_to(self, stack) -> bool:
-        return not self.ecosystems or bool(set(self.ecosystems) & stack.ecosystems)
-
-    def run(self, **kwargs):
-        """Execute the check, or report it honestly as unimplemented."""
-        from audit.evaluate import CheckOutcome
-
-        if self.status == "blocked":
-            return CheckOutcome(
-                self.id,
-                self.title,
-                self.tier,
-                self.severity,
-                self.phase,
-                Verdict.UNKNOWN,
-                self.status,
-                summary="blocked: this ruleset cannot evaluate the check, so it carries weight 0",
-            )
-        if self.impl is None:
-            return CheckOutcome(
-                self.id,
-                self.title,
-                self.tier,
-                self.severity,
-                self.phase,
-                Verdict.UNKNOWN,
-                self.status,
-                summary=f"not implemented in ruleset {_revision()}",
-            )
-        return self.impl(spec=self, **kwargs)
-
-
-def _revision() -> str:
-    from audit import __ruleset_revision__
-
-    return __ruleset_revision__
-
-
-def _c(
-    check_id: str,
-    title: str,
-    tier: str,
-    sev: Severity,
-    status: str = "planned",
-    scored: bool = True,
-    rule: str = "",
-    ecosystems: tuple[str, ...] = (),
-) -> CheckSpec:
-    return CheckSpec(
-        id=check_id,
-        title=title,
-        tier=tier,
-        severity=sev,
-        evidence_rule=rule,
-        status=status,
-        scored=scored,
-        ecosystems=ecosystems,
-    )
-
-
-_S = Severity
-
-#: The catalogue. Order here is the order in the report and in ``--list-checks``.
-_CATALOGUE: tuple[CheckSpec, ...] = (
-    # -- IDX ------------------------------------------------------------
-    _c("IDX-01", "codebase-memory-mcp registered for this repository", "A", _S.BLOCKER),
-    _c("IDX-02", "An index exists for this checkout", "A", _S.BLOCKER),
-    _c("IDX-03", "Index freshness", "C", _S.DEGRADER),
-    # -- AGT ------------------------------------------------------------
-    _c("AGT-01", "Instruction file present, canonical, and non-trivial", "A", _S.BLOCKER),
-    _c("AGT-02", "Component coverage by instruction files", "A", _S.DEGRADER),
-    _c("AGT-03", "Documentation contract named", "B", _S.DEGRADER),
-    _c("AGT-04", "Definition of done stated", "B", _S.DEGRADER),
-    _c("AGT-05", "Seven verbs named", "B", _S.DEGRADER),
-    _c("AGT-06", "Architectural boundaries declared", "B", _S.DEGRADER),
-    _c("AGT-07", "Do-not-do / deny rules present", "B", _S.DEGRADER),
-    _c("AGT-08", "No competing instruction files, and the reach matrix is stated", "B", _S.DEGRADER),
-    _c("AGT-09", "Branch and release boundary declared", "B", _S.DEGRADER),
-    _c("AGT-10", "Instruction indirection resolved", "B", _S.DEGRADER),
-    _c("AGT-12", "Communication rules stated", "B", _S.COSMETIC),
-    _c(
-        "AGT-13",
-        "Coding conventions written",
-        "B",
-        _S.COSMETIC,
-        rule="A conventions file (root, docs/ or .github/) or a conventions section of AGENTS.md or CONTRIBUTING.md "
-        "covers naming, layering, error handling and logging, and testing, links the formatter or linter config, "
-        "and holds no stub word; docs/STYLE_GUIDE.md never counts.",
-    ),
-    # -- DOC ------------------------------------------------------------
-    _c("DOC-01", "docs/ exists", "A", _S.DEGRADER),
-    _c("DOC-02", "docs/STYLE_GUIDE.md exists", "A", _S.DEGRADER),
-    _c("DOC-03", "artefacts/ exists and is ignored", "B", _S.DEGRADER),
-    _c("DOC-04", "ADR directory and index", "A", _S.COSMETIC),
-    _c("DOC-05", "Docs are readable", "B", _S.COSMETIC),
-    # -- CMD ------------------------------------------------------------
-    _c("CMD-01", "Seven verbs resolvable on one runner", "B", _S.BLOCKER),
-    _c("CMD-02", "check composes the read-only verbs", "B", _S.BLOCKER),
-    _c("CMD-03", "No divergent second definition", "B", _S.DEGRADER),
-    _c("CMD-04", "Write verbs separated from read-only verbs", "B", _S.DEGRADER),
-    # -- TOOL -----------------------------------------------------------
-    _c("TOOL-01", "Formatter configured", "B", _S.DEGRADER),
-    _c("TOOL-02", "Linter configured", "B", _S.DEGRADER),
-    _c("TOOL-03", "Type checker configured", "A", _S.DEGRADER),
-    _c("TOOL-04", "Dependency / security scan verb", "A", _S.DEGRADER),
-    _c("TOOL-05", "Local hook chain active", "B", _S.DEGRADER),
-    _c("TOOL-06", "Commit convention enforced", "A", _S.COSMETIC),
-    _c("TOOL-07", "Local guard against commits to a protected branch", "B", _S.COSMETIC),
-    # -- CI -------------------------------------------------------------
-    _c("CI-01", "Pipeline present, triggered on PRs", "B", _S.BLOCKER),
-    _c("CI-02", "Local↔CI parity", "B", _S.BLOCKER),
-    _c("CI-03", "CI-only steps flagged", "B", _S.DEGRADER),
-    _c("CI-05", "Workflow files are linted", "B", _S.DEGRADER),
-    # -- BASE -----------------------------------------------------------
-    _c("BASE-01", "Baseline artifact exists", "A", _S.DEGRADER),
-    _c("BASE-02", "Current violation counts measured", "B", _S.DEGRADER),
-    _c("BASE-03", "No-new-violations mechanism", "B", _S.DEGRADER),
-    _c("BASE-04", "Coverage floor configured", "A", _S.DEGRADER),
-    # -- CON ------------------------------------------------------------
-    _c(
-        "CON-01",
-        "Allow/deny artifact present",
-        "B",
-        _S.BLOCKER,
-        rule="The prohibitions section of the instruction file is the deny list (decision 0001): it names at least "
-        "one path or pattern, in a code span, that matches a file or directory of the repository.",
-    ),
-    _c("CON-02", "Test directories protected", "B", _S.BLOCKER),
-    _c("CON-03", "artefacts/ excluded from index and agent reads", "B", _S.DEGRADER),
-    _c(
-        "CON-04",
-        "Draft allow/deny emitted",
-        "—",
-        _S.COSMETIC,
-        scored=False,
-        status="planned",
-        rule="Emitter, not a check: writes a draft list from the scan.",
-    ),
-    # -- EXEC -----------------------------------------------------------
-    _c("EXEC-01", "Toolchain pinned / wrapper committed", "A", _S.BLOCKER),
-    _c("EXEC-02", "Lockfile committed and consistent", "B", _S.BLOCKER),
-    _c("EXEC-03", "Non-interactive setup path", "A", _S.BLOCKER),
-    _c("EXEC-04", "Env-var inventory complete", "B", _S.BLOCKER),
-    _c("EXEC-05", "No generated artifacts committed in-tree", "B", _S.DEGRADER),
-    _c("EXEC-06", "Documented commands resolve", "B", _S.DEGRADER),
-    _c("EXEC-07", "No competing configs for one concern", "B", _S.DEGRADER),
-    _c("EXEC-08", "Tool versions visible to dependency automation", "B", _S.DEGRADER),
-    # -- TST ------------------------------------------------------------
-    _c("TST-01", "Test verb exists, suite non-empty", "A", _S.BLOCKER),
-    _c("TST-02", "Suite status known", "C", _S.DEGRADER),
-    _c("TST-03", "Skip / xfail census", "B", _S.DEGRADER),
-    _c("TST-04", "Fast path documented", "B", _S.DEGRADER),
-    _c("TST-05", "Coverage configuration present", "A", _S.COSMETIC),
-    # -- NAV ------------------------------------------------------------
-    _c("NAV-01", "Declared component boundaries", "A", _S.DEGRADER),
-    _c("NAV-02", "Obvious entry points", "B", _S.DEGRADER),
-    _c("NAV-03", "Structural red flags", "B", _S.COSMETIC),
-    _c("NAV-04", "Architecture orientation artifact", "A", _S.COSMETIC, scored=False),
-    _c("NAV-05", "Public-symbol documentation coverage", "B", _S.COSMETIC, scored=False),
-    # -- SEC ------------------------------------------------------------
-    _c("SEC-01", ".env untracked and ignored", "B", _S.BLOCKER),
-    _c("SEC-02", "No key-shaped strings in tracked files", "B", _S.BLOCKER),
-    _c("SEC-03", "Ignore patterns cover secret shapes", "B", _S.DEGRADER),
-    # -- HYG (informational, never scored) -------------------------------
-    _c("HYG-01", "README present and non-placeholder", "A", _S.COSMETIC, scored=False),
-    _c("HYG-02", "CODEOWNERS present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-03", "Pull-request template present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-04", "Issue templates present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-05", "CONTRIBUTING present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-06", "SECURITY present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-07", "CHANGELOG present and recent", "A", _S.COSMETIC, scored=False),
-    _c("HYG-08", "Release process documented", "A", _S.COSMETIC, scored=False),
-    _c("HYG-09", "Dependency update automation configured", "A", _S.COSMETIC, scored=False),
-    _c("HYG-10", "License present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-11", "Branch protection declared as code", "B", _S.COSMETIC, scored=False),
-    _c(
-        "HYG-13",
-        "Contributing rules written",
-        "B",
-        _S.COSMETIC,
-        scored=False,
-        rule="The CONTRIBUTING document (root, .github/, .gitlab/ or docs/) points to the setup command, names the gate "
-        "command and says CI runs the same, and states the rules for branches, commits and pull requests; no "
-        "CONTRIBUTING document is UNKNOWN, because HYG-05 owns that finding.",
-    ),
-)
+#: The check families, in catalogue order. Within a family, its ``SPECS`` give the order. This order is the order
+#: in the report and in ``--list-checks``, and ``ruleset_hash`` reads it.
+FAMILIES = (idx, agt, doc, cmd, tool, ci, base, con, execution, tst, nav, sec, hyg)
 
 
 def _attach_implementations(specs: tuple[CheckSpec, ...]) -> tuple[CheckSpec, ...]:
@@ -278,7 +48,8 @@ def _attach_implementations(specs: tuple[CheckSpec, ...]) -> tuple[CheckSpec, ..
     return specs
 
 
-REGISTRY: tuple[CheckSpec, ...] = _attach_implementations(_CATALOGUE)
+#: The catalogue: every family's declared checks, in order, wired to their implementations.
+REGISTRY: tuple[CheckSpec, ...] = _attach_implementations(tuple(spec for family in FAMILIES for spec in family.SPECS))
 
 REGISTRY_BY_ID: dict[str, CheckSpec] = {spec.id: spec for spec in REGISTRY}
 

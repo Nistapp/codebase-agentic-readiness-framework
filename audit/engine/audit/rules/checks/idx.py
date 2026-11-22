@@ -66,7 +66,8 @@ from pathlib import Path
 from urllib.parse import quote
 
 from audit.evaluate import CheckOutcome
-from audit.findings import Evidence, Finding, Verdict, statement
+from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.rules.payloads import Payload
 
 #: The server this pack checks for, matched as a literal in configuration text.
@@ -599,6 +600,13 @@ def check_idx03(*, spec, target, inventory, stack, components, session) -> Check
         ],
     )
 
+
+#: The IDX checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("IDX-01", "codebase-memory-mcp registered for this repository", "A", Severity.BLOCKER),
+    declare("IDX-02", "An index exists for this checkout", "A", Severity.BLOCKER),
+    declare("IDX-03", "Index freshness", "C", Severity.DEGRADER),
+)
 
 IMPLEMENTATIONS = {
     "IDX-01": check_idx01,

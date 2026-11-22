@@ -28,7 +28,9 @@ same manifest by two slightly different rules will one day disagree in the same 
 2. **`audit/rules/checks/_common.py`** is a **private** module holding the shared verb resolver
    (`resolve_verbs`) and fenced-command extractor (`extract_fenced_commands`). It is deliberately
    **absent from `MODULE_NAMES`** in `audit/rules/checks/__init__.py`: the registry must not load it,
-   because it defines no `IMPLEMENTATIONS` and is not a pack. Packs import it directly.
+   because it defines no `IMPLEMENTATIONS` and is not a pack. Packs import it directly. A family package's own
+   `_shared.py` (ADR-0005) holds the helpers that two or more of its checks use. It is private to the family. It
+   is not in `MODULE_NAMES` either.
 3. **These are internal helpers with no public contract and no rule-pack status.** They are not part
    of the CLI, the catalogue, or `ruleset_hash`, and nothing outside `audit/` may depend on them.
    They may be reshaped when real usage in units 03–13 shows which helpers are genuinely shared; a

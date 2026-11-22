@@ -113,8 +113,10 @@ audit/                     the tool: standard library only, no install step
   findings.py              finding model, severity ordering, sentence form
   rules/
     variants.py            THE instruction-variant table (one data structure, in code)
-    registry.py            check catalogue + framework anchors + ruleset hash
-    checks/                one module per check family; idx.py, agt.py, execution.py, cmd.py, sec.py, doc.py, nav.py, tool.py, ci.py, tst.py, base.py, con.py and hyg.py are implemented
+    spec.py                the check specification type and declare()
+    registry.py            check catalogue (joined from the families) + framework anchors + ruleset hash
+    reads.py               what each check reads, gathered from the check modules' reads()
+    checks/                one package per check family, one module per check (doc/doc_01.py, ...); idx.py, agt.py and tst.py are one module each
   report/                  report model (schema v2), Markdown template, writer
 tools/build.py             python3 tools/build.py  ->  dist/audit.pyz
 tests/                     stdlib unittest suite + fixtures

@@ -39,6 +39,7 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit import globs
 from audit.rules.checks._common import (
     PROHIBITION_LINE_RE,
@@ -1679,6 +1680,30 @@ def check_agt13(*, spec, target, inventory, stack, components, session) -> Check
         ],
     )
 
+
+#: The AGT checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("AGT-01", "Instruction file present, canonical, and non-trivial", "A", Severity.BLOCKER),
+    declare("AGT-02", "Component coverage by instruction files", "A", Severity.DEGRADER),
+    declare("AGT-03", "Documentation contract named", "B", Severity.DEGRADER),
+    declare("AGT-04", "Definition of done stated", "B", Severity.DEGRADER),
+    declare("AGT-05", "Seven verbs named", "B", Severity.DEGRADER),
+    declare("AGT-06", "Architectural boundaries declared", "B", Severity.DEGRADER),
+    declare("AGT-07", "Do-not-do / deny rules present", "B", Severity.DEGRADER),
+    declare("AGT-08", "No competing instruction files, and the reach matrix is stated", "B", Severity.DEGRADER),
+    declare("AGT-09", "Branch and release boundary declared", "B", Severity.DEGRADER),
+    declare("AGT-10", "Instruction indirection resolved", "B", Severity.DEGRADER),
+    declare("AGT-12", "Communication rules stated", "B", Severity.COSMETIC),
+    declare(
+        "AGT-13",
+        "Coding conventions written",
+        "B",
+        Severity.COSMETIC,
+        rule="A conventions file (root, docs/ or .github/) or a conventions section of AGENTS.md or CONTRIBUTING.md "
+        "covers naming, layering, error handling and logging, and testing, links the formatter or linter config, "
+        "and holds no stub word; docs/STYLE_GUIDE.md never counts.",
+    ),
+)
 
 IMPLEMENTATIONS = {
     "AGT-01": check_agt01,

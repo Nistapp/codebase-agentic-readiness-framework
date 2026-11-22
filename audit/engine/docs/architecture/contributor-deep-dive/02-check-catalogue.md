@@ -2,7 +2,7 @@
 
 > **Audience:** Engineers & Maintainers
 > **Related ADRs:** [ADR-0003](../adrs/0003-component-depth-declared-depth-1.md) · [ADR-0004](../adrs/0004-no-llm-in-v1.md)
-> **Status:** Live for the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs (the `CON-04` emitter included); every catalogued check is implemented. This page is the design of record; `audit/rules/registry.py` is its executable form, and `python3 -m audit --list-checks` prints the current truth.
+> **Status:** Live for the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs (the `CON-04` emitter included); every catalogued check is implemented. This page is the design of record; each check's `SPEC` in its module under `audit/rules/checks/` is its executable form, assembled by `audit/rules/registry.py`, and `python3 -m audit --list-checks` prints the current truth.
 
 > [!NOTE]
 > The recipes' [`catalogue.json`](../../../../catalogue.json) is seeded from this registry through `--list-checks --format json`
@@ -245,14 +245,18 @@ flowchart LR
     B --> C["Failure mode in Why These Checks"]
     C --> D["summary and a typed data payload"]
     D --> E["A fixture that fails only this check"]
-    E --> R["Its reads declared in audit/rules/reads.py"]
+    E --> R["Its reads declared in reads() of its module"]
     R --> F["Summary table row and framework anchor"]
     F --> G["Merge"]
 ```
 
 1. Assign the next id in the appropriate group.
 2. State tier, phase anchor, severity, and a **falsifiable** evidence rule. Any reviewer who applies that rule to
-   a fixture reaches the same verdict.
+   a fixture reaches the same verdict. Write the check in its own module, `audit/rules/checks/<family>/<pack>_NN.py`,
+   with its `SPEC = declare(...)` (`audit/rules/spec.py`) and its implementation. Add the module to the family's
+   `SPECS` and `IMPLEMENTATIONS` in `<family>/__init__.py`, in catalogue order. A helper that two or more checks of
+   the family use goes in `<family>/_shared.py`. In `idx.py`, `agt.py` and `tst.py`, which are still one module each,
+   add the row to that module's `SPECS`.
 3. Add the failure mode to [Why These Checks](../user-overview/03-why-these-checks.md). No failure mode, no check.
 4. Emit a short human `summary`. Where the check has table-shaped facts, also emit a typed `data` payload from
    `audit/rules/payloads.py` (ADR-0007). The renderer builds check tables from the payload `kind`, never
@@ -260,7 +264,9 @@ flowchart LR
 5. Add a broken fixture that fails exactly this check and nothing else. Add its row to the fixture matrix table
    of the check's family, `tests/packs/<family>/matrix.py`. A fixture that belongs to no one family goes in
    `tests/packs/cross_family/matrix.py`.
-6. Declare what the check reads in `audit/rules/reads.py`: the places, the text and the binding. Take the paths
+6. Declare what the check reads in its module's `reads()`, which returns a `Reads`. It imports the types and
+   helpers of `audit/rules/reads.py` inside the function. A check of `idx.py`, `agt.py` or `tst.py` uses
+   `_DECLARED` in `audit/rules/reads.py` instead. Give the places, the text and the binding. Take the paths
    from the check's own constant with `_held` where one exists. Give a place `via` when the scan's file kinds or
    component detection read it before the check runs. Give it `case=FOLD` when the check lower-cases the name. Set
    `named_by_text` when the check looks up paths that the target's text names. Mark a place `unexercised`, with the
