@@ -71,3 +71,74 @@ def check_base02(*, spec, target, inventory, stack, components, session) -> Chec
         )
 
     return _unknown(spec, "no recognised ecosystem or counting configuration, so a count cannot be ruled out")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, ROOT, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(
+                ROOT,
+                "setup.cfg",
+                "tox.ini",
+            ),
+            *_at(
+                ANY_DEPTH,
+                ".eslintrc*",
+                "eslint.config.*",
+                "biome.json",
+                "biome.jsonc",
+                ".ruff.toml",
+                "ruff.toml",
+                ".flake8",
+                "pylintrc",
+                ".pylintrc",
+                "mypy.ini",
+                ".mypy.ini",
+                ".golangci.yml",
+                ".golangci.yaml",
+                "clippy.toml",
+                ".gitleaks.toml",
+                ".snyk",
+                "sonar-project.properties",
+                ".semgrep.yml",
+                ".semgrep.yaml",
+                ".eslint-baseline*",
+                ".ruff-baseline*",
+                ".mypy-baseline*",
+                "baseline.json",
+                "*baseline*.json",
+                "*baseline*.xml",
+                "coverage-baseline.*",
+                "*.baseline",
+                ".secrets.baseline",
+                ".gitleaksignore",
+            ),
+            *_runners(),
+            *_at(
+                ANY_DEPTH,
+                "package.json",
+                "pyproject.toml",
+                "setup.py",
+                "requirements*.txt",
+                "Pipfile",
+                "pom.xml",
+                "build.gradle",
+                "build.gradle.kts",
+                "go.mod",
+                "Cargo.toml",
+                "Gemfile",
+                "composer.json",
+            ),
+        ),
+        what=What("phrase"),
+        binding="line",
+        note=(
+            "A numeric budget (--max-warnings N, max-warnings|max-issues|max-problems N, violation-budget N) "
+            "on one line of the five root runner manifests, a counting config at any depth, or a resolved "
+            "verb command. Counting tools or baseline artifacts only give PARTIAL; the check never fails. With "
+            "no detected ecosystem, a project manifest at any depth still makes the check apply."
+        ),
+    )

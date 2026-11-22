@@ -95,3 +95,88 @@ def check_base01(*, spec, target, inventory, stack, components, session) -> Chec
         )
 
     return _unknown(spec, "no recognised ecosystem or configuration, so a baseline cannot be ruled out")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, ROOT, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(
+                ANY_DEPTH,
+                ".eslint-baseline*",
+                ".ruff-baseline*",
+                ".mypy-baseline*",
+                "baseline.json",
+                "*baseline*.json",
+                "*baseline*.xml",
+                "coverage-baseline.*",
+                "*.baseline",
+                ".secrets.baseline",
+                ".snyk",
+                ".gitleaksignore",
+            ),
+            *_at(ROOT, "AGENTS.md", "CLAUDE.md", "setup.cfg", "tox.ini"),
+            *_at(
+                ANY_DEPTH,
+                ".eslintrc*",
+                "eslint.config.*",
+                "biome.json",
+                "biome.jsonc",
+                ".ruff.toml",
+                "ruff.toml",
+                ".flake8",
+                "pylintrc",
+                ".pylintrc",
+                "mypy.ini",
+                ".mypy.ini",
+                ".golangci.yml",
+                ".golangci.yaml",
+                "clippy.toml",
+                ".gitleaks.toml",
+                "sonar-project.properties",
+                ".semgrep.yml",
+                ".semgrep.yaml",
+            ),
+            *_runners(),
+            *_at(
+                ANY_DEPTH,
+                "package.json",
+                "pyproject.toml",
+                "setup.py",
+                "requirements*.txt",
+                "Pipfile",
+                "pom.xml",
+                "build.gradle",
+                "build.gradle.kts",
+                "go.mod",
+                "Cargo.toml",
+                "Gemfile",
+                "composer.json",
+            ),
+        ),
+        what=What(
+            "phrase",
+            (
+                "quality baseline",
+                "baseline file",
+                "baseline report",
+                "baseline artifact",
+                "baseline count",
+                "baseline json",
+                "no new violations",
+                "violation budget",
+                "suppression file",
+                "suppression list",
+                "suppression count",
+            ),
+        ),
+        binding="file",
+        note=(
+            "A baseline name at any depth, or a mechanism phrase in the root AGENTS.md or CLAUDE.md, passes; "
+            "the phrase words are joined by \\s+ so they may span lines. The counting-tool configs, root "
+            "pyproject.toml, setup.cfg and tox.ini and the lint, typecheck and security verbs only give "
+            "PARTIAL. With no detected ecosystem, a project manifest at any depth still makes the check apply."
+        ),
+    )

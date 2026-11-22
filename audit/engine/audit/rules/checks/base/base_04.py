@@ -158,3 +158,58 @@ def check_base04(*, spec, target, inventory, stack, components, session) -> Chec
     return _unknown(
         spec, "no recognised ecosystem or test-runner configuration, so a coverage floor cannot be ruled out"
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(
+                ROOT,
+                ".coveragerc",
+                ".coveragerc.toml",
+                "setup.cfg",
+                "tox.ini",
+                "pytest.ini",
+                "pyproject.toml",
+                "package.json",
+                "AGENTS.md",
+                "CLAUDE.md",
+                "README.md",
+                "CONTRIBUTING.md",
+            ),
+            *_at(GLOB, "README*"),
+            *_at(
+                ANY_DEPTH,
+                "vitest.config.*",
+                "jest.config.*",
+                "vite.config.*",
+                "karma.conf.*",
+                "package.json",
+                "pyproject.toml",
+                "setup.py",
+                "requirements*.txt",
+                "Pipfile",
+                "pom.xml",
+                "build.gradle",
+                "build.gradle.kts",
+                "go.mod",
+                "Cargo.toml",
+                "Gemfile",
+                "composer.json",
+            ),
+        ),
+        what=What("phrase"),
+        binding="line",
+        note=(
+            "Config: fail_under = N or --cov-fail-under N in six root files, coverageThreshold or "
+            "--cov-fail-under in a package.json at any depth, a threshold key in a runner config at any depth "
+            "(whole-line // comments dropped), a jacocoTestCoverageVerification task with a minimum in a Gradle "
+            "build at any depth, or a jacoco-maven-plugin check goal with a <minimum> in a pom.xml at any depth. "
+            "Prose (PARTIAL): coverage within 40 characters of threshold, minimum, fail, floor or at least, "
+            "or within 20 of a percentage, on one line of the four root documents. With no detected ecosystem, "
+            "a project manifest at any depth still makes the check apply."
+        ),
+    )

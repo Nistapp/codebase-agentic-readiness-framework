@@ -112,3 +112,92 @@ def check_base03(*, spec, target, inventory, stack, components, session) -> Chec
         )
 
     return _unknown(spec, "no recognised ecosystem or configuration, so a ratchet cannot be ruled out")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(
+                ROOT,
+                "AGENTS.md",
+                "CLAUDE.md",
+                "README.md",
+                "CONTRIBUTING.md",
+            ),
+            *_at(GLOB, "README*"),
+            *_at(
+                ANY_DEPTH,
+                ".eslintrc*",
+                "eslint.config.*",
+                "biome.json",
+                "biome.jsonc",
+                ".ruff.toml",
+                "ruff.toml",
+                ".flake8",
+                "pylintrc",
+                ".pylintrc",
+                "mypy.ini",
+                ".mypy.ini",
+                ".golangci.yml",
+                ".golangci.yaml",
+                "clippy.toml",
+                ".gitleaks.toml",
+                ".snyk",
+                "sonar-project.properties",
+                ".semgrep.yml",
+                ".semgrep.yaml",
+                ".eslint-baseline*",
+                ".ruff-baseline*",
+                ".mypy-baseline*",
+                "baseline.json",
+                "*baseline*.json",
+                "*baseline*.xml",
+                "coverage-baseline.*",
+                "*.baseline",
+                ".secrets.baseline",
+                ".gitleaksignore",
+            ),
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
+            *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
+            *_at(ROOT, ".circleci/config.yml"),
+            *_at(GLOB, ".buildkite/**/*.yml"),
+            *_runners(),
+            *_at(
+                ANY_DEPTH,
+                "package.json",
+                "pyproject.toml",
+                "setup.py",
+                "requirements*.txt",
+                "Pipfile",
+                "pom.xml",
+                "build.gradle",
+                "build.gradle.kts",
+                "go.mod",
+                "Cargo.toml",
+                "Gemfile",
+                "composer.json",
+            ),
+        ),
+        what=What(
+            "phrase",
+            (
+                "ratchet",
+                "no new violations",
+                "violation budget",
+                "compare",
+                "comparison",
+                "regression",
+                "baseline",
+            ),
+        ),
+        binding="line",
+        note=(
+            "First a BASE-02 budget, then a baseline artifact whose base name appears in any CI file, then a "
+            "ratchet phrase in the four root documents; compare, comparison or regression must be within 48 "
+            "characters of baseline on one line. With no detected ecosystem, a project manifest at any depth "
+            "still makes the check apply."
+        ),
+    )
