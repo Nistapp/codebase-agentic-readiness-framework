@@ -58,7 +58,6 @@ from __future__ import annotations
 
 import contextlib
 import os
-import re
 import sys
 import tempfile
 from datetime import datetime, timezone
@@ -68,14 +67,14 @@ from typing import Any, Mapping, Sequence
 import _audit_tools_path  # noqa: F401  (puts audit/tools on sys.path in a checkout)
 import _common
 import validate_report
+import _progress_cmd_pref
+import _progress_cmd_refs
+import _progress_cmd_status
+import _progress_cmd_theme
 from _progress_next import cross_theme_checks as cross_theme_checks, next_step as next_step
 from _progress_refs import (
-    recorded_ref_tips,
-    ref_problems,
     ref_tips_name as ref_tips_name,
     refuse_existing_ref_tips,
-    target_outside_workspace,
-    target_ref_tips,
     try_ref_tips,
     write_ref_tips,
 )
@@ -83,7 +82,6 @@ from _progress_render import WRAP_COLUMNS as WRAP_COLUMNS, render_markdown
 from _progress_state import (
     ITEM_STATUSES as ITEM_STATUSES,
     NEEDS_REASON as NEEDS_REASON,
-    OWNER_ONLY,
     RECIPES,
     SCHEMA_VERSION as SCHEMA_VERSION,
     STATE_DIR,
@@ -118,19 +116,7 @@ from _progress_transitions import (
     LEGAL as LEGAL,
     THEME_ORDER,
     _commit,
-    _refuse,
-    apply_status,
-    acceptance_prefix,
-    find_item,
-    lost_checks,
-    open_state,
-    owner_move,
-    read_verdict,
     record,
-    refuse_unaccepted_loss,
-    require_owner,
-    short,
-    stamp,
 )
 
 #: The framework release these tools belong to: the state's `framework.release`. release-please rewrites the line.
@@ -576,207 +562,6 @@ def commit_change(args: Any, label: str, path: Path, state: dict[str, Any], summ
     return _common.Result(data=data, summary=f"progress: {summary}", warnings=warnings)
 
 
-def run_accept_lost(args: Any) -> _common.Result:
-    """`accept-lost`: the owner accepts the theme's latest ``lost`` verdict, with a reason, in one log entry."""
-    require_owner(args, "accept-lost")
-    label, path, state = open_state(args)
-    found = read_verdict(path.parent, label, args.theme)
-    if found is None:
-        raise _refuse(f"theme {args.theme} has no verdict to accept", "run check_regressions.py with --workspace")
-    verdict, digest = found
-    if verdict["status"] != "lost":
-        raise _refuse(f"theme {args.theme}'s verdict is {verdict['status']}; there is no lost pass to accept")
-    prefix = acceptance_prefix(args.theme, digest)
-    if any(str(entry.get("event", "")).startswith(prefix) for entry in state["log"]):
-        raise _refuse(f"the owner already accepted theme {args.theme}'s verdict {digest}")
-    record(state, args, f"{prefix} ({short(lost_checks(verdict))}): {short(args.reason)}")
-    return commit_change(args, label, path, state, f"theme {args.theme} lost verdict {digest} accepted by owner")
-
-
-def run_record_refs(args: Any) -> _common.Result:
-    """`record-refs`: record the target's ref tips for a state that has none, such as one made by older tools."""
-    label, path, state = open_state(args)
-    target = target_outside_workspace(args, path.parent)
-    ref_path = refuse_existing_ref_tips(path.parent, label)
-    tips = target_ref_tips(target)
-    write_ref_tips(ref_path, label, args.date, tips)
-    record(state, args, f"ref tips recorded for {len(tips)} refs of the target")
-    result = commit_change(args, label, path, state, f"recorded the tips of {len(tips)} refs")
-    result.data["ref_tips"] = str(ref_path)
-    return result
-
-
-def run_verify_refs(args: Any) -> _common.Result:
-    """`verify-refs`: exit 2 when a recorded ref lost history. Reads the target with read-only git; writes nothing."""
-    label, path = find_state(workspace_directory(args.workspace), args.label)
-    read_state(path)
-    target = _common.resolve_target(args.target)
-    recorded = recorded_ref_tips(path.parent, label)
-    current = target_ref_tips(target)
-    problems = ref_problems(target, recorded["refs"], current)
-    if problems:
-        refs = ", ".join(problem["ref"] for problem in problems)
-        raise _common.ValidationFailed(
-            short(f"{len(problems)} recorded refs lost history since {recorded['recorded']}: {refs}"),
-            errors=[problem["line"] for problem in problems],
-            hint="stop and ask the owner: restore the ref, accept it with "
-            "accept-ref REF --reason TEXT --by owner, or stop the theme",
-        )
-    new = sorted(set(current) - set(recorded["refs"]))
-    return _common.Result(
-        data={"status": "clean", "label": label, "checked": len(recorded["refs"]), "new": len(new)},
-        summary=(
-            f"progress: {len(recorded['refs'])} recorded refs keep their history; {len(new)} refs are new since "
-            f"{recorded['recorded']}"
-        ),
-    )
-
-
-def run_accept_ref(args: Any) -> _common.Result:
-    """`accept-ref`: the owner accepts one ref's lost history; its current tip becomes the recorded one."""
-    require_owner(args, "accept-ref")
-    label, path, state = open_state(args)
-    target = target_outside_workspace(args, path.parent)
-    recorded = recorded_ref_tips(path.parent, label)
-    tips: dict[str, str] = recorded["refs"]
-    if args.ref not in tips:
-        raise _refuse(
-            f"{args.ref} is not a recorded ref; a ref the run created needs no acceptance",
-            "name the ref as verify-refs prints it, for example refs/heads/main",
-        )
-    problem = next(iter(ref_problems(target, {args.ref: tips[args.ref]}, target_ref_tips(target))), None)
-    if problem is None:
-        raise _refuse(f"{args.ref} still holds its recorded tip {tips[args.ref]}; there is nothing to accept")
-    if problem["now"] is None:
-        del tips[args.ref]
-    else:
-        tips[args.ref] = problem["now"]
-    now = problem["now"] or "gone"
-    record(
-        state,
-        args,
-        f"ref {args.ref} {problem['what']} accepted by owner (recorded {problem['recorded']}, now {now}): "
-        f"{short(args.reason)}",
-    )
-    result = commit_change(args, label, path, state, f"ref {args.ref} {problem['what']} accepted by owner")
-    write_ref_tips(state_file(path.parent, ref_tips_name(label)), label, recorded["recorded"], tips)
-    return result
-
-
-def run_set_status(args: Any) -> _common.Result:
-    label, path, state = open_state(args)
-    item = find_item(state, args.finding)
-    old = item["status"]
-    apply_status(item, args.status, args)
-    if args.status == "done" and old != "done":
-        refuse_unaccepted_loss(state, path.parent, label, item["theme"], f"{args.finding} to done")
-    stamp(item, args)
-    if old == args.status:
-        record(state, args, f"{args.finding} note added by {args.by}: {short(args.note)}")
-        return commit_change(args, label, path, state, f"{args.finding} note added at {old}")
-    why = f": {short(args.reason)}" if args.reason else ""
-    record(state, args, f"{args.finding} {old} to {args.status} by {args.by}{why}")
-    return commit_change(args, label, path, state, f"{args.finding} {old} to {args.status}")
-
-
-def run_owner_move(args: Any) -> _common.Result:
-    new = {"skip": "skipped", "unskip": "queued", "defer": "deferred", "undefer": "queued"}[args.command]
-    require_owner(args, args.command)
-    if new in OWNER_ONLY and not args.reason:
-        raise _refuse(f"{args.command} needs --reason")
-    label, path, state = open_state(args)
-    item = find_item(state, args.finding)
-    old = item["status"]
-    owner_move(item, new, args)
-    stamp(item, args)
-    why = f": {short(args.reason)}" if args.reason else ""
-    record(state, args, f"{args.finding} {old} to {new} by owner{why}")
-    return commit_change(args, label, path, state, f"{args.finding} {old} to {new}")
-
-
-PREF_KEY = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
-
-
-def run_pref(args: Any) -> _common.Result:
-    require_owner(args, f"pref {args.action}")
-    if not PREF_KEY.match(args.key):
-        raise _common.ValidationFailed(
-            f"the change would make the state invalid: {args.key!r} is not a preference key",
-            hint="keys are lower case letters, digits, dot, underscore and hyphen (at most 64, not starting with a "
-            "symbol), for example node.version-file",
-        )
-    if args.action == "set" and args.value is None:
-        raise _refuse("pref set needs a value: pref set KEY VALUE --reason TEXT")
-    if args.action == "unset" and args.value is not None:
-        raise _refuse("pref unset takes only the key")
-    label, path, state = open_state(args)
-    existing = next((pref for pref in state["preferences"] if pref["key"] == args.key), None)
-    if args.action == "unset":
-        if existing is None:
-            raise _refuse(f"there is no preference {args.key}")
-        state["preferences"].remove(existing)
-        record(state, args, f"preference {args.key} unset: {short(args.reason)}")
-        return commit_change(args, label, path, state, f"unset preference {args.key}")
-    entry = {
-        "key": args.key,
-        "value": args.value,
-        "reason": args.reason,
-        "by": "owner",
-        "date": args.date,
-        "phase": args.phase,
-    }
-    if existing is None:
-        state["preferences"].append(entry)
-        record(state, args, f"preference {args.key} set to {short(args.value)}: {short(args.reason)}")
-    else:
-        if existing["value"] == args.value:
-            raise _refuse(f"preference {args.key} already has that value")
-        state["preferences"][state["preferences"].index(existing)] = entry
-        record(
-            state,
-            args,
-            f"preference {args.key} changed from {short(existing['value'])} to {short(args.value)}: "
-            f"{short(args.reason)}",
-        )
-    return commit_change(args, label, path, state, f"set preference {args.key}")
-
-
-def run_theme(args: Any) -> _common.Result:
-    label, path, state = open_state(args)
-    theme = next(entry for entry in state["themes"] if entry["id"] == args.theme)
-    old, new = theme["status"], args.status
-    if THEME_ORDER.index(new) <= THEME_ORDER.index(old):
-        raise _refuse(
-            f"theme {args.theme} is {old} and a theme only moves forward ({' to '.join(THEME_ORDER)})",
-            "" if old != new else "it is already there",
-        )
-    branch = args.branch or theme["branch"]
-    pr = args.pr if args.pr is not None else theme["pr"]
-    merged_sha = args.merged_sha or theme["merged_sha"]
-    if branch is None:
-        raise _refuse(f"theme {args.theme} to {new} needs --branch")
-    if new in ("pr_open", "merged") and pr is None:
-        raise _refuse(f"theme {args.theme} to {new} needs --pr")
-    if new == "merged" and merged_sha is None:
-        raise _refuse(f"theme {args.theme} to merged needs --merged-sha")
-    if new != "merged" and args.merged_sha:
-        raise _refuse("--merged-sha belongs to the merged status")
-    if new == "merged":
-        refuse_unaccepted_loss(state, path.parent, label, args.theme, f"theme {args.theme} to merged")
-    theme.update(status=new, phase=args.phase, branch=branch, pr=pr, merged_sha=merged_sha if new == "merged" else None)
-    detail = ", ".join(
-        part
-        for part in (
-            f"branch {branch}",
-            f"PR #{pr}" if pr else "",
-            f"merged as {merged_sha}" if merged_sha and new == "merged" else "",
-        )
-        if part
-    )
-    record(state, args, f"theme {args.theme} {old} to {new}: {detail}")
-    return commit_change(args, label, path, state, f"theme {args.theme} {old} to {new}")
-
-
 # --- Arguments ----------------------------------------------------------------------------------------
 
 
@@ -889,21 +674,21 @@ def handler(argv: Sequence[str]) -> _common.Result:
     if args.command == "show":
         return run_show(args)
     if args.command == "set-status":
-        return run_set_status(args)
+        return _progress_cmd_status.run_set_status(args, commit_change)
     if args.command in ("skip", "unskip", "defer", "undefer"):
-        return run_owner_move(args)
+        return _progress_cmd_status.run_owner_move(args, commit_change)
     if args.command == "pref":
-        return run_pref(args)
+        return _progress_cmd_pref.run_pref(args, commit_change)
     if args.command == "theme":
-        return run_theme(args)
+        return _progress_cmd_theme.run_theme(args, commit_change)
     if args.command == "accept-lost":
-        return run_accept_lost(args)
+        return _progress_cmd_theme.run_accept_lost(args, commit_change)
     if args.command == "record-refs":
-        return run_record_refs(args)
+        return _progress_cmd_refs.run_record_refs(args, commit_change)
     if args.command == "verify-refs":
-        return run_verify_refs(args)
+        return _progress_cmd_refs.run_verify_refs(args)
     if args.command == "accept-ref":
-        return run_accept_ref(args)
+        return _progress_cmd_refs.run_accept_ref(args, commit_change)
     return run_render(args)
 
 
