@@ -57,80 +57,73 @@ a ref that is gone) and logs the owner's reason.
 from __future__ import annotations
 
 import contextlib
-import hashlib
-import json
 import os
-import re
 import sys
 import tempfile
-import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import _audit_tools_path  # noqa: F401  (puts audit/tools on sys.path in a checkout)
 import _common
-import _jsonschema_subset as subset
 import validate_report
+import _progress_cmd_pref
+import _progress_cmd_refs
+import _progress_cmd_status
+import _progress_cmd_theme
+from _progress_next import cross_theme_checks as cross_theme_checks, next_step as next_step
+from _progress_refs import (
+    ref_tips_name as ref_tips_name,
+    refuse_existing_ref_tips,
+    try_ref_tips,
+    write_ref_tips,
+)
+from _progress_render import WRAP_COLUMNS as WRAP_COLUMNS, render_markdown
+from _progress_state import (
+    ITEM_STATUSES as ITEM_STATUSES,
+    NEEDS_REASON as NEEDS_REASON,
+    RECIPES,
+    SCHEMA_VERSION as SCHEMA_VERSION,
+    STATE_DIR,
+    STATE_SCHEMA as STATE_SCHEMA,
+    _date,
+    _finding_order,
+    _sha,
+    _sha_option,
+    encode_state,
+    file_sha256,
+    find_state as find_state,
+    read_state as read_state,
+    refuse_unknown_state_schema as refuse_unknown_state_schema,
+    short_sha,
+    state_errors as state_errors,
+    state_file as state_file,
+    state_names,
+    state_rule_errors as state_rule_errors,
+    status_counts,
+    summary_data,
+    sweep_temporaries,
+    verdict_name as verdict_name,
+    workspace_directory as workspace_directory,
+)
+from _progress_themes import (
+    CHECK_THEME as CHECK_THEME,
+    THEME_IDS as THEME_IDS,
+    THEME_PREDECESSORS as THEME_PREDECESSORS,
+    THEMES as THEMES,
+)
+from _progress_transitions import (
+    LEGAL as LEGAL,
+    THEME_ORDER,
+    _commit,
+    record,
+)
 
 #: The framework release these tools belong to: the state's `framework.release`. release-please rewrites the line.
 FRAMEWORK_RELEASE = "0.4.1"  # x-release-please-version
-SCHEMA_VERSION = "0.3"
 
-RECIPES = Path(__file__).resolve().parent.parent
 FRAMEWORK_ROOT = RECIPES.parent
-# The schemas sit beside the tools in the implement skill bundle (`scripts/schema/`) and in `audit/schema/` in a
-# framework checkout.
-_SCHEMA_DIR = next(
-    (d for d in (RECIPES / "schema", FRAMEWORK_ROOT / "audit" / "schema") if d.is_dir()), RECIPES / "schema"
-)
-STATE_SCHEMA = _SCHEMA_DIR / "readiness-state.schema.json"
-STATE_DIR = Path("docs") / "agentic-readiness"
-STATE_JSON_SUFFIX = "-agentic-readiness-state.json"
-STATE_MD_SUFFIX = "-agentic-readiness-STATE.md"
-MAX_STATE_BYTES = 8 * 1024 * 1024
-VERDICT_INFIX = "-regressions-"
-VERDICT_STATUSES = ("lost", "clean")
-REF_TIPS_SUFFIX = "-ref-tips.json"
-#: The refs whose tips `init` records and `verify-refs` checks (ADR 0007): branches, tags and the origin's branches.
-REF_NAMESPACES = ("refs/heads", "refs/tags", "refs/remotes/origin")
-MAX_REF_TIPS_BYTES = 8 * 1024 * 1024
 
-
-def _span(prefix: str, first: int, last: int, *, skip: Sequence[int] = ()) -> tuple[str, ...]:
-    return tuple(f"{prefix}-{number:02d}" for number in range(first, last + 1) if number not in skip)
-
-
-# The themes, in dependency order, and the checks each one owns. Every check in catalogue.json has exactly one theme;
-# a test holds the two together. CON-04 (unscored, no playbook) sits with CON-01..03: add-deny-rules reads its draft.
-THEMES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
-    ("T1", "Command surface and quality tools", _span("CMD", 1, 4) + _span("TOOL", 1, 4)),
-    ("T2", "Execution determinism", _span("EXEC", 1, 8, skip=(4,))),
-    ("T3", "Secrets and environment variables", _span("SEC", 1, 3) + ("EXEC-04",)),
-    ("T4", "CI parity, Git hooks and commit messages", _span("CI", 1, 5) + ("TOOL-05", "TOOL-06", "TOOL-07")),
-    ("T5", "Tests and baselines", _span("TST", 1, 5) + _span("BASE", 1, 4)),
-    ("T6", "Docs and navigation", _span("DOC", 1, 5) + _span("NAV", 1, 5)),
-    ("T7", "AGENTS.md and governance", _span("AGT", 1, 13) + _span("CON", 1, 4)),
-    ("T8", "Hygiene and index", _span("HYG", 1, 13, skip=(12,)) + _span("IDX", 1, 3)),
-)
-CHECK_THEME: dict[str, str] = {check: theme for theme, _, checks in THEMES for check in checks}
-THEME_IDS = tuple(theme for theme, _, _ in THEMES)
-# The edges of the theme diagram in implement/SKILL.md ("Themes"): each theme and the themes it waits for. THEMES is
-# in an order the diagram allows. A test holds this map, that order and the diagram together.
-THEME_PREDECESSORS: dict[str, tuple[str, ...]] = {
-    "T1": (),
-    "T2": (),
-    "T3": (),
-    "T4": ("T1", "T2"),
-    "T5": ("T1", "T4"),
-    "T6": (),
-    "T7": ("T3", "T5", "T6"),
-    "T8": ("T7",),
-}
-
-ITEM_STATUSES = ("queued", "in_progress", "done", "partial", "failed", "blocked", "deferred", "skipped")
-NEEDS_REASON = frozenset({"skipped", "deferred", "failed", "blocked"})
-OWNER_ONLY = frozenset({"skipped", "deferred"})
 
 INFO = _common.ToolInfo(
     name="progress",
@@ -168,172 +161,7 @@ INFO = _common.ToolInfo(
 )
 
 
-# --- Paths --------------------------------------------------------------------------------------------
-
-
-def state_names(label: str) -> tuple[str, str]:
-    if not _common.EXPLICIT_LABEL.match(label):
-        raise _common.UsageError(f"not a repository label: {label!r}")
-    return label + STATE_JSON_SUFFIX, label + STATE_MD_SUFFIX
-
-
-def state_file(directory: Path, name: str) -> Path:
-    """`directory / name`, refusing a symlink, so a write can never go through a link to somewhere else."""
-    path = directory / name
-    if path.is_symlink():
-        raise _common.PathNotAllowed(f"refusing a state file that is a symlink: {path}")
-    if path.exists() and not path.is_file():
-        raise _common.PathNotAllowed(f"the state path is not a file: {path}")
-    return path
-
-
-def workspace_directory(path: str | Path) -> Path:
-    """The workspace folder `--workspace` names, resolved. It must exist and be a directory."""
-    candidate = Path(path).expanduser()
-    try:
-        resolved = candidate.resolve(strict=True)
-    except (OSError, RuntimeError):
-        raise _common.UsageError(f"workspace not found: {candidate}") from None
-    if not resolved.is_dir():
-        raise _common.UsageError(f"workspace is not a directory: {resolved}")
-    return resolved
-
-
-def find_state(directory: Path, label: str | None) -> tuple[str, Path]:
-    """The label and the JSON path of the state in `directory`. Without `label` there must be exactly one state."""
-    if label is None:
-        found = sorted(directory.glob("*" + STATE_JSON_SUFFIX)) if directory.is_dir() else []
-        labels = [path.name[: -len(STATE_JSON_SUFFIX)] for path in found]
-        if not labels:
-            raise _common.UsageError(
-                f"no state in {directory}", hint="create one with: progress.py init --report <report> --target <repo>"
-            )
-        if len(labels) > 1:
-            raise _common.UsageError(f"{len(labels)} states in {directory}; pick one with --label: {', '.join(labels)}")
-        label = labels[0]
-    json_name, _ = state_names(label)
-    path = state_file(directory, json_name)
-    if not path.exists():
-        raise _common.UsageError(f"no state for {label!r} in {directory}")
-    return label, path
-
-
-def verdict_name(label: str, theme: str) -> str:
-    """The file name of the lost-pass verdict `check_regressions.py --workspace` writes for one theme of a state."""
-    state_names(label)  # refuses a label that is not a file name
-    if theme not in THEME_IDS:
-        raise _common.UsageError(f"no theme {theme!r}; the themes are {', '.join(THEME_IDS)}")
-    return f"{label}{VERDICT_INFIX}{theme}.json"
-
-
-def sweep_temporaries(directory: Path, names: Sequence[str]) -> int:
-    """Remove the temporary files an interrupted atomic write of one of `names` left behind. Returns how many."""
-    removed = 0
-    for name in names:
-        for path in sorted(directory.glob(f".{name}.*.tmp")):
-            if path.is_file() and not path.is_symlink():
-                path.unlink()
-                removed += 1
-    return removed
-
-
-# --- Validation ---------------------------------------------------------------------------------------
-
-
-def schema_validator() -> subset.SubsetValidator:
-    return subset.SubsetValidator(json.loads(STATE_SCHEMA.read_text(encoding="utf-8")))
-
-
-def state_rule_errors(state: dict[str, Any]) -> list[str]:
-    """The rules a schema in the subset cannot express. `state` has already passed the schema."""
-    errors: list[str] = []
-    themes = [theme["id"] for theme in state["themes"]]
-    if themes != list(THEME_IDS):
-        errors.append(f"/themes: must be {', '.join(THEME_IDS)}, each once and in that order")
-    seen: dict[str, str] = {}
-    for index, item in enumerate(state["items"]):
-        where = f"/items/{index} ({item['finding']})"
-        if item["finding"] in seen:
-            errors.append(f"{where}: the finding is already at {seen[item['finding']]}")
-        seen.setdefault(item["finding"], f"/items/{index}")
-        status = item["status"]
-        if status in NEEDS_REASON and item["reason"] is None:
-            errors.append(f"{where}: status {status} needs a reason")
-        if status in OWNER_ONLY and item["by"] != "owner":
-            errors.append(f"{where}: only the owner sets status {status}")
-        if status == "done" and item["debt"]:
-            errors.append(f"{where}: an item with debt is partial, never done")
-    for index, entry in enumerate(state["not_queued"]):
-        if entry["finding"] in seen:
-            errors.append(
-                f"/not_queued/{index} ({entry['finding']}): the finding is already at {seen[entry['finding']]}"
-            )
-        seen.setdefault(entry["finding"], f"/not_queued/{index}")
-    keys: set[str] = set()
-    for index, preference in enumerate(state["preferences"]):
-        if preference["key"] in keys:
-            errors.append(f"/preferences/{index}: the key {preference['key']} is already set")
-        keys.add(preference["key"])
-    paths: set[str] = set()
-    for index, report in enumerate(state["source_reports"]):
-        if report["path"] in paths:
-            errors.append(f"/source_reports/{index}: the report is already listed")
-        paths.add(report["path"])
-    return errors
-
-
-def state_errors(state: Any) -> list[str]:
-    """Every reason `state` is not a valid state: the schema's first, and the rules only when the schema passes."""
-    found = schema_validator().validate(state, limit=200)
-    if found:
-        return [f"schema: {violation}" for violation in found]
-    return [f"rule: {error}" for error in state_rule_errors(state)]
-
-
-def refuse_unknown_state_schema(state: Any) -> None:
-    """Raise `ValidationFailed` with a plain message when the state's `schema_version` is not the one these tools read."""
-    if not isinstance(state, dict) or state.get("schema_version", SCHEMA_VERSION) == SCHEMA_VERSION:
-        return
-    found = state["schema_version"]
-    release = (state.get("framework") or {}).get("release") or (state.get("recipe") or {}).get("version")
-    made_by = f"framework v{release}" if isinstance(release, str) else "an unknown framework release"
-    raise _common.ValidationFailed(
-        f"the state has schema {found!r} (made by {made_by}); these tools read schema {SCHEMA_VERSION!r}. Move the "
-        f"old state files aside and run init again from a final report (recommended), or use {made_by} to resume it."
-    )
-
-
-def read_state(path: Path) -> dict[str, Any]:
-    try:
-        size = path.stat().st_size
-    except OSError:
-        raise _common.UsageError(f"state not found: {path}") from None
-    if size > MAX_STATE_BYTES:
-        raise _common.UsageError(f"the state is {size} bytes and the limit is {MAX_STATE_BYTES}: {path}")
-    try:
-        text = path.read_bytes().decode("utf-8")
-    except UnicodeDecodeError:
-        raise _common.ValidationFailed("the file is not a state file: it is not UTF-8 text") from None
-    state = validate_report.parse_report(text, "state file")
-    refuse_unknown_state_schema(state)
-    errors = state_errors(state)
-    if errors:
-        raise _common.ValidationFailed(f"the state is not valid: {len(errors)} errors", errors=errors)
-    if not isinstance(state, dict):  # pragma: no cover - the schema requires an object
-        raise _common.ValidationFailed("the state is not an object")
-    return state
-
-
-def encode_state(state: dict[str, Any]) -> str:
-    return json.dumps(state, indent=2, ensure_ascii=False) + "\n"
-
-
 # --- init ---------------------------------------------------------------------------------------------
-
-
-def _finding_order(finding_id: str) -> tuple[int, str]:
-    digits = finding_id[2:]
-    return (int(digits) if digits.isdigit() else 0, finding_id)
 
 
 def framework_facts() -> dict[str, Any]:
@@ -357,11 +185,6 @@ def track_framework(state: dict[str, Any], args: Any) -> None:
             f"Framework moved from {describe_framework(state['last_framework'])} to {describe_framework(now)}.",
         )
         state["last_framework"] = now
-
-
-def short_sha(sha: str | None) -> str | None:
-    """A commit id cut to the 12 digits a state records (`validate_report.SHORT_SHA_CHARS`)."""
-    return sha[: validate_report.SHORT_SHA_CHARS] if sha else None
 
 
 def build_state(
@@ -454,39 +277,6 @@ def build_state(
             }
         ],
     }
-
-
-def file_sha256(path: Path) -> str:
-    """SHA-256 of the file's bytes, as 64 lower-case hex digits."""
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _date(text: str) -> str:
-    try:
-        datetime.strptime(text, "%Y-%m-%d")
-    except ValueError:
-        raise _common.UsageError(f"--date must be a date as YYYY-MM-DD, not {text!r}") from None
-    return text
-
-
-def _sha(text: str) -> str:
-    if not re.fullmatch(r"[0-9a-f]{7,40}", text):
-        raise _common.UsageError(f"--framework-rev must be 7 to 40 lower-case hex digits, not {text!r}")
-    return text
-
-
-def _sha_option(text: str) -> str:
-    if not re.fullmatch(r"[0-9a-f]{7,40}", text):
-        raise _common.UsageError(f"--merged-sha must be 7 to 40 lower-case hex digits, not {text!r}")
-    return short_sha(text) or text
-
-
-def try_ref_tips(target: Path) -> tuple[dict[str, str] | None, list[str]]:
-    """The target's ref tips for `init` and `adopt`, or None and a warning when git cannot list them."""
-    try:
-        return target_ref_tips(target), []
-    except _common.UsageError as exc:
-        return None, [f"no ref tips recorded, so verify-refs cannot guard the history: {exc}"]
 
 
 def run_init(args: Any) -> _common.Result:
@@ -676,168 +466,6 @@ def run_adopt(args: Any) -> _common.Result:
 # --- show ---------------------------------------------------------------------------------------------
 
 
-def status_counts(state: dict[str, Any]) -> dict[str, int]:
-    return {status: sum(item["status"] == status for item in state["items"]) for status in ITEM_STATUSES}
-
-
-def summary_data(state: dict[str, Any]) -> dict[str, Any]:
-    themes = []
-    for theme in sorted(state["themes"], key=lambda entry: entry["id"]):
-        mine = [item for item in state["items"] if item["theme"] == theme["id"]]
-        open_items = sum(item["status"] not in ("done", "skipped") for item in mine)
-        themes.append({"id": theme["id"], "status": theme["status"], "items": len(mine), "open": open_items})
-    skipped = sorted((item["finding"] for item in state["items"] if item["status"] == "skipped"), key=_finding_order)
-    return {
-        "label": state["repo"]["label"],
-        "items": len(state["items"]),
-        "statuses": status_counts(state),
-        "not_queued": len(state["not_queued"]),
-        "preferences": len(state["preferences"]),
-        "themes": themes,
-        "skipped": skipped,
-        "debt": sum(len(item["debt"]) for item in state["items"]),
-        "log_entries": len(state["log"]),
-    }
-
-
-#: The preference Stage 1 (triage) of implement/SKILL.md always records, so a state that holds it has been triaged.
-TRIAGE_KEY = "ci.pr_by_agent"
-OPEN_THEME = ("branch_open", "pr_open")
-LEFT = ("queued", "in_progress")
-
-
-def theme_ancestors(theme: str) -> list[str]:
-    """Every theme `theme` waits for in the diagram, directly or through another theme, in the order of THEMES."""
-    found: set[str] = set()
-    todo = list(THEME_PREDECESSORS[theme])
-    while todo:
-        earlier = todo.pop()
-        if earlier not in found:
-            found.add(earlier)
-            todo.extend(THEME_PREDECESSORS[earlier])
-    return [candidate for candidate in THEME_IDS if candidate in found]
-
-
-def playbook_themes() -> dict[str, str]:
-    """Each playbook's theme: the theme of THEMES that owns most of the checks the catalogue lists the playbook for."""
-    tally: dict[str, dict[str, int]] = {}
-    for check in validate_report.load_catalogue()["checks"]:
-        for playbook in check.get("playbooks", []):
-            counts = tally.setdefault(playbook, {})
-            theme = CHECK_THEME[check["id"]]
-            counts[theme] = counts.get(theme, 0) + 1
-    return {
-        playbook: max(THEME_IDS, key=lambda theme: (counts.get(theme, 0), -THEME_IDS.index(theme)))
-        for playbook, counts in tally.items()
-    }
-
-
-def cross_theme_checks() -> dict[str, str]:
-    """The checks a playbook of another theme closes (implement/SKILL.md, "Themes"), each with the theme that works it.
-
-    A check is one when none of the playbooks the catalogue lists for it belongs to the check's own theme. Its item is
-    worked in the theme of its first playbook, and is left out of both tests of :func:`next_theme`.
-    """
-    owners = playbook_themes()
-    crossing: dict[str, str] = {}
-    for check in validate_report.load_catalogue()["checks"]:
-        homes = [owners[playbook] for playbook in check.get("playbooks", [])]
-        if homes and CHECK_THEME[check["id"]] not in homes:
-            crossing[check["id"]] = homes[0]
-    return crossing
-
-
-def next_theme(state: dict[str, Any], crossing: Mapping[str, str]) -> str | None:
-    """The theme Stage 2, step 2 of implement/SKILL.md picks, or None when no theme can start.
-
-    It is the first `not_started` theme, in the order of THEMES, that has `queued` items its own playbooks work, and
-    whose every earlier theme in the diagram is `merged`, or is `not_started` with nothing left for its own playbooks
-    (no item `queued` or `in_progress`). A theme shown as `branch_open` or `pr_open` holds back the themes after it.
-    Items worked by another theme's playbook (`crossing`) count for neither test.
-    """
-    status = {theme["id"]: theme["status"] for theme in state["themes"]}
-    own: dict[str, list[str]] = {theme: [] for theme in THEME_IDS}
-    for item in state["items"]:
-        if item["check"] not in crossing:
-            own[item["theme"]].append(item["status"])
-
-    def satisfied(theme: str) -> bool:
-        return status[theme] == "merged" or (
-            status[theme] == "not_started" and not any(left in LEFT for left in own[theme])
-        )
-
-    for theme in THEME_IDS:
-        if status[theme] != "not_started" or "queued" not in own[theme]:
-            continue
-        if all(satisfied(earlier) for earlier in theme_ancestors(theme)):
-            return theme
-    return None
-
-
-def next_step(state: dict[str, Any]) -> dict[str, Any]:
-    """The stage and step of implement/SKILL.md a session goes on with, from the state alone.
-
-    The first rule that holds decides: an item left `in_progress` is resumed (Stage 3, step 4, and "Resuming"); a state
-    with no theme started and no `ci.pr_by_agent` preference has not been triaged (Stage 1); a `branch_open` theme with
-    `queued` items of its own goes on (Stage 3, step 4); a theme shown as `branch_open` or `pr_open` is checked for its
-    merge first (Stage 2, step 1); a theme :func:`next_theme` picks is planned (Stage 2, step 2); otherwise the run closes
-    out (Stage 5). `theme` is the theme the step works on, and `check_first` lists the themes Stage 2, step 1 checks.
-    """
-    crossing = cross_theme_checks()
-    items = state["items"]
-    themes = sorted(state["themes"], key=lambda entry: entry["id"])
-    check_first = [theme["id"] for theme in themes if theme["status"] in OPEN_THEME]
-    picked = next_theme(state, crossing)
-
-    def step(stage: int, number: int, text: str, theme: str | None) -> dict[str, Any]:
-        return {"stage": stage, "step": number, "text": text, "theme": theme, "check_first": check_first}
-
-    working = sorted(
-        (item for item in items if item["status"] == "in_progress"), key=lambda i: _finding_order(i["finding"])
-    )
-    if working:
-        item = working[0]
-        home = crossing.get(item["check"], item["theme"])
-        return step(
-            3,
-            4,
-            f"Stage 3, step 4: resume {item['finding']} ({home}) on its theme's branch; read the branch's git log "
-            "first, so nothing is committed twice.",
-            home,
-        )
-    triaged = any(pref["key"] == TRIAGE_KEY for pref in state["preferences"])
-    if not triaged and all(theme["status"] == "not_started" for theme in themes):
-        return step(
-            1,
-            1,
-            f"Stage 1, step 1: triage; no theme has started and the {TRIAGE_KEY} preference is not recorded.",
-            None,
-        )
-    for theme in themes:
-        mine = [item for item in items if item["theme"] == theme["id"] and item["check"] not in crossing] + [
-            item for item in items if crossing.get(item["check"]) == theme["id"]
-        ]
-        if theme["status"] == "branch_open" and any(item["status"] == "queued" for item in mine):
-            return step(
-                3, 4, f"Stage 3, step 4: go on with the next queued item of {theme['id']} on its branch.", theme["id"]
-            )
-    if check_first:
-        shown = ", ".join(f"{theme['id']} ({theme['status']})" for theme in themes if theme["id"] in check_first)
-        then = f"then {picked} is next" if picked else "no other theme can start until they merge"
-        return step(2, 1, f"Stage 2, step 1: check whether {shown} merged, and record each merge; {then}.", picked)
-    if picked:
-        return step(2, 2, f"Stage 2, step 2: plan {picked}, the next theme.", picked)
-    left = sorted((item["finding"] for item in items if item["status"] == "queued"), key=_finding_order)
-    if left:
-        return step(
-            5,
-            1,
-            f"Stage 5, step 1: close out; no theme is left to start, and no theme works the queued {' '.join(left)}.",
-            None,
-        )
-    return step(5, 1, "Stage 5, step 1: close out; no item is queued and no theme is open.", None)
-
-
 # Byte budgets for `show --json`, which together stay under the envelope's item budget.
 SHOW_BUDGETS = {"items": 24 * 1024, "preferences": 8 * 1024, "not_queued": 6 * 1024, "log": 8 * 1024}
 
@@ -879,238 +507,14 @@ def run_show(args: Any) -> _common.Result:
 # --- render -------------------------------------------------------------------------------------------
 
 
-def cell(text: object) -> str:
-    """`text` for one Markdown table cell: one line, with the pipe escaped."""
-    value = "" if text is None else str(text)
-    value = " ".join(value.split())
-    return value.replace("\\", "\\\\").replace("|", "\\|") or "-"
-
-
-def code(text: object) -> str:
-    return f"`{text}`" if text not in (None, "") and "`" not in str(text) else cell(text)
-
-
-WRAP_COLUMNS = 110  # prose lines in the Markdown view stay under markdownlint's MD013 limit (120)
-CELL_LIMIT = 100  # a preference cell longer than this is cut in its table row and given in full below the table
-
-
-def bullet(text: str) -> str:
-    """One Markdown list item, wrapped at `WRAP_COLUMNS`, continuation lines indented under the text."""
-    return "\n".join(
-        textwrap.wrap(
-            text,
-            WRAP_COLUMNS,
-            initial_indent="- ",
-            subsequent_indent="  ",
-            break_long_words=False,
-            break_on_hyphens=False,
-        )
-    )
-
-
-def clipped(text: object) -> str:
-    """`cell(text)`, cut to `CELL_LIMIT` characters with an ellipsis."""
-    value = cell(text)
-    return value if len(value) <= CELL_LIMIT else value[: CELL_LIMIT - 3].rstrip() + "..."
-
-
 def check_titles() -> dict[str, str]:
     """Each check's ID mapped to its title in the catalogue these tools carry."""
     return {check["id"]: check["title"] for check in validate_report.load_catalogue()["checks"]}
 
 
-def named_check(check_id: str, titles: Mapping[str, str]) -> str:
-    """The check ID and its title in one cell, so a reader never meets a bare ID; the ID alone for an unknown check."""
-    title = titles.get(check_id)
-    return f"{code(check_id)} {cell(title)}" if title else code(check_id)
-
-
-def _table(header: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
-    lines = ["| " + " | ".join(header) + " |", "|" + "|".join("---" for _ in header) + "|"]
-    lines += ["| " + " | ".join(row) + " |" for row in rows]
-    return lines
-
-
-def framework_cell(framework: Mapping[str, Any]) -> str:
-    """`` `v0.3.2` at `cafecafecafe` ``, or `` `v0.3.2` `` with no commit, plus the install when it is known."""
-    text = code(f"v{framework['release']}") + (f" at {code(framework['revision'])}" if framework["revision"] else "")
-    return f"{text} ({framework['install']})" if "install" in framework else text
-
-
 def render(state: dict[str, Any]) -> str:
     """The Markdown view of `state`. It reads keys by name and sorts every list, so key order never changes a byte."""
-    label = state["repo"]["label"]
-    json_name, _ = state_names(label)
-    items = sorted(state["items"], key=lambda item: (item["theme"], _finding_order(item["finding"])))
-    themes = sorted(state["themes"], key=lambda theme: theme["id"])
-    titles = {theme["id"]: theme["title"] for theme in themes}
-    checks = check_titles()
-
-    def named_theme(theme_id: str) -> str:
-        return f"{theme_id} {cell(titles[theme_id])}" if theme_id in titles else theme_id
-
-    out: list[str] = [
-        f"# Agentic readiness state: {label}",
-        "",
-        f"> Generated by `progress.py render` from `{json_name}`.",
-        "> Do not edit this file: change the state with `progress.py` and render it again.",
-        "",
-        "Read this file before changing tooling, CI, docs or `AGENTS.md`.",
-        "A skipped finding is final until the owner unskips it, and every preference binds.",
-        "",
-    ]
-    out += _table(
-        ("Field", "Value"),
-        [
-            ("Default branch", code(state["repo"]["default_branch"])),
-            ("Created by", framework_cell(state["framework"])),
-            ("Last written by", framework_cell(state["last_framework"])),
-        ]
-        + [
-            (
-                "Source report",
-                f"{code(report['path'])} at {code(report['git_sha']) if report['git_sha'] else 'no commit'}, "
-                f"catalogue {cell(report['catalogue_version'])}, made by {framework_cell(report)}",
-            )
-            for report in sorted(state["source_reports"], key=lambda report: report["path"])
-        ],
-    )
-    counts = status_counts(state)
-    out += ["", "## Summary", ""]
-    out += _table(
-        ("Status", "Items"),
-        [(status, str(count)) for status, count in counts.items()]
-        + [("total", str(len(items))), ("not queued (rejected in the audit)", str(len(state["not_queued"])))],
-    )
-    out += ["", "## Preferences", ""]
-    preferences = sorted(state["preferences"], key=lambda preference: preference["key"])
-    if preferences:
-        out += _table(
-            ("Key", "Value", "Reason", "By", "Date", "Phase"),
-            [
-                (code(p["key"]), clipped(p["value"]), clipped(p["reason"]), p["by"], p["date"], cell(p["phase"]))
-                for p in preferences
-            ],
-        )
-        long_text = [
-            p
-            for p in preferences
-            if clipped(p["value"]) != cell(p["value"]) or clipped(p["reason"]) != cell(p["reason"])
-        ]
-        if long_text:
-            out.append("")
-        for p in long_text:
-            out.append(bullet(f"{code(p['key'])}: value: {cell(p['value'])}; reason: {cell(p['reason'])}"))
-    else:
-        out.append("None recorded.")
-    out += ["", "## Themes", ""]
-    out += _table(
-        ("Theme", "Title", "Status", "Items", "Open", "Phase", "Branch", "PR", "Merged"),
-        [
-            (
-                theme["id"],
-                cell(theme["title"]),
-                theme["status"],
-                str(sum(item["theme"] == theme["id"] for item in items)),
-                str(sum(item["theme"] == theme["id"] and item["status"] not in ("done", "skipped") for item in items)),
-                cell(theme["phase"]),
-                code(theme["branch"]),
-                f"#{theme['pr']}" if theme["pr"] is not None else "-",
-                code(theme["merged_sha"]),
-            )
-            for theme in themes
-        ],
-    )
-    out += ["", "## Items by theme"]
-    for theme in themes:
-        mine = [item for item in items if item["theme"] == theme["id"]]
-        out += ["", f"### {theme['id']} {cell(titles[theme['id']])}", ""]
-        if not mine:
-            out.append("No items.")
-            continue
-        out += _table(
-            ("Finding", "Check", "Severity", "Status", "By", "Date", "Statement"),
-            [
-                (
-                    i["finding"],
-                    named_check(i["check"], checks),
-                    i["severity"],
-                    i["status"],
-                    i["by"],
-                    i["date"],
-                    cell(i["statement"]),
-                )
-                for i in mine
-            ],
-        )
-        details = [item for item in mine if item["reason"] or item["notes"] or item["commits"] or item["verification"]]
-        if details:
-            out.append("")
-        for item in details:
-            parts = []
-            if item["reason"]:
-                parts.append(f"reason: {cell(item['reason'])}")
-            if item["notes"]:
-                parts.append(f"notes: {cell(item['notes'])}")
-            if item["commits"]:
-                parts.append("commits: " + ", ".join(code(sha) for sha in item["commits"]))
-            if item["verification"]:
-                verification = item["verification"]
-                parts.append(f"verification: {code(verification['command'])} gave {cell(verification['result'])}")
-            out.append(bullet(f"**{item['finding']}**: " + "; ".join(parts)))
-    for heading, status in (("Skipped", "skipped"), ("Deferred", "deferred")):
-        chosen = [item for item in items if item["status"] == status]
-        out += ["", f"## {heading}", ""]
-        if chosen:
-            out += _table(
-                ("Finding", "Check", "Theme", "Reason", "By", "Date"),
-                [
-                    (
-                        i["finding"],
-                        named_check(i["check"], checks),
-                        named_theme(i["theme"]),
-                        cell(i["reason"]),
-                        i["by"],
-                        i["date"],
-                    )
-                    for i in chosen
-                ],
-            )
-        else:
-            out.append("None.")
-    out += ["", "## Debt", ""]
-    debt = [(item, entry) for item in items for entry in item["debt"]]
-    if debt:
-        out += _table(
-            ("Finding", "Check", "What", "Count", "Baseline file"),
-            [
-                (
-                    item["finding"],
-                    named_check(item["check"], checks),
-                    cell(entry["what"]),
-                    str(entry["count"]),
-                    code(entry["baseline_file"]),
-                )
-                for item, entry in debt
-            ],
-        )
-    else:
-        out.append("None recorded.")
-    out += ["", "## Not queued", ""]
-    rejected = sorted(state["not_queued"], key=lambda entry: _finding_order(entry["finding"]))
-    if rejected:
-        out += _table(
-            ("Finding", "Check", "Severity", "Audit note"),
-            [(e["finding"], named_check(e["check"], checks), e["severity"], cell(e["note"])) for e in rejected],
-        )
-    else:
-        out.append("None.")
-    out += ["", "## Log", ""]
-    out += _table(
-        ("Date", "Phase", "Event"),
-        [(entry["date"], cell(entry["phase"]), cell(entry["event"])) for entry in state["log"]],
-    )
-    return "\n".join(out) + "\n"
+    return render_markdown(state, check_titles())
 
 
 def run_render(args: Any) -> _common.Result:
@@ -1134,182 +538,6 @@ def run_render(args: Any) -> _common.Result:
 
 # --- Transitions --------------------------------------------------------------------------------------
 
-# The state diagram (PLAN.md section 5): where an item may go from each status. `done` is final.
-LEGAL: dict[str, tuple[str, ...]] = {
-    "queued": ("in_progress", "skipped", "deferred"),
-    "in_progress": ("done", "partial", "failed", "blocked"),
-    "partial": ("in_progress",),
-    "failed": ("in_progress",),
-    "blocked": ("queued",),
-    "deferred": ("queued",),
-    "skipped": ("queued",),
-    "done": (),
-}
-# Moves that have a command of their own, so `set-status` refuses them and names the command.
-OWN_COMMAND = {
-    ("queued", "skipped"): "skip",
-    ("queued", "deferred"): "defer",
-    ("skipped", "queued"): "unskip",
-    ("deferred", "queued"): "undefer",
-}
-THEME_ORDER = ("not_started", "branch_open", "pr_open", "merged")
-DEBT_FORMAT = re.compile(r"^what=(?P<what>.+?),count=(?P<count>[0-9]+)(?:,baseline=(?P<baseline>.+))?$")
-LOG_REASON_CHARS = 200
-
-
-def _refuse(message: str, hint: str = "") -> _common.UsageError:
-    return _common.UsageError(message, hint=hint)
-
-
-def illegal_transition(finding: str, old: str, new: str) -> _common.UsageError:
-    """The refusal for moving `finding` from `old` to `new`. Each kind of illegal move has its own message, and every
-    one ends by naming the states `old` may go to."""
-    refusal = _illegal_transition(finding, old, new)
-    allowed = f"from {old} it may go to: {', '.join(LEGAL[old])}" if LEGAL[old] else f"{old} has no next state"
-    hint = f"{refusal.hint}; {allowed}" if refusal.hint else allowed
-    return _refuse(str(refusal), hint)
-
-
-def _illegal_transition(finding: str, old: str, new: str) -> _common.UsageError:
-    if old == new:
-        return _refuse(f"{finding} is already {old}")
-    if old == "done":
-        return _refuse(f"{finding} is done and done is final", "a regression is a new finding in the next audit")
-    if old == "skipped":
-        return _refuse(
-            f"{finding} is skipped and only the owner can bring it back", f"unskip {finding} --by owner --phase ..."
-        )
-    if new in ("skipped", "deferred"):
-        return _refuse(
-            f"{finding} is {old}; only a queued item can be {new}",
-            "bring it back to queued first" if old != "queued" else "",
-        )
-    if old == "queued":
-        return _refuse(f"{finding} is queued and must be in_progress before it can be {new}")
-    if old == "deferred":
-        return _refuse(f"{finding} is deferred and goes back to queued only with undefer --by owner")
-    if old == "in_progress" and new in ("queued", "in_progress"):
-        return _refuse(f"{finding} is in_progress; end it as done, partial, failed or blocked")
-    if old in ("partial", "failed") and new in ("done", "blocked", "queued", "partial", "failed"):
-        return _refuse(f"{finding} is {old} and can only go back to in_progress, then be ended again")
-    if old == "blocked":
-        return _refuse(f"{finding} is blocked and can only go back to queued")
-    return _refuse(
-        f"{finding}: {old} to {new} is not allowed; from {old} it may go to {', '.join(LEGAL[old]) or 'nowhere'}"
-    )
-
-
-def short(text: str) -> str:
-    text = " ".join(text.split())
-    return text if len(text) <= LOG_REASON_CHARS else text[: LOG_REASON_CHARS - 3] + "..."
-
-
-def parse_debt(text: str) -> dict[str, Any]:
-    found = DEBT_FORMAT.match(text.strip())
-    if not found:
-        raise _refuse(f"--debt must look like what=TEXT,count=N[,baseline=FILE], not {text!r}")
-    return {"what": found["what"].strip(), "count": int(found["count"]), "baseline_file": found["baseline"]}
-
-
-def _commit(text: str) -> str:
-    if not re.fullmatch(r"[0-9a-f]{7,40}", text):
-        raise _refuse(f"--commit must be 7 to 40 lower-case hex digits, not {text!r}")
-    return short_sha(text) or text
-
-
-def find_item(state: dict[str, Any], finding: str) -> dict[str, Any]:
-    for item in state["items"]:
-        if item["finding"] == finding:
-            return item  # type: ignore[no-any-return]
-    for entry in state["not_queued"]:
-        if entry["finding"] == finding:
-            raise _refuse(f"{finding} was rejected in the audit and is never queued")
-    raise _refuse(f"no item for {finding}", "see the findings with: progress.py show --workspace DIR --json")
-
-
-def require_owner(args: Any, action: str) -> None:
-    if args.by != "owner":
-        raise _refuse(
-            f"{action} is an owner decision",
-            "ask the owner, then record their answer with --by owner",
-        )
-
-
-def add_note(item: dict[str, Any], args: Any) -> None:
-    """`set-status F S` when F is already S: record `--note` and any `--commit`, change nothing else."""
-    if not args.note:
-        raise _refuse(
-            f"{item['finding']} is already {item['status']}", "to add a note or commit without a move, pass --note"
-        )
-    item["notes"] = (item["notes"] + " " + args.note).strip()
-    for sha in args.commit or ():
-        if sha not in item["commits"]:
-            item["commits"].append(sha)
-
-
-def apply_status(item: dict[str, Any], new: str, args: Any) -> None:
-    """Move `item` to `new` as `set-status` asks. Raises a refusal; changes `item` only when nothing is refused."""
-    old = item["status"]
-    if old == new:
-        add_note(item, args)
-        return
-    if new not in LEGAL[old] or old == "skipped":
-        raise illegal_transition(item["finding"], old, new)
-    if (old, new) in OWN_COMMAND:
-        command = OWN_COMMAND[(old, new)]
-        raise _refuse(f"{item['finding']}: {old} to {new} has its own command", f"use {command} --by owner")
-    debt = [dict(entry) for entry in item["debt"]]
-    if args.clear_debt:
-        debt = []
-    for text in args.debt or ():
-        entry = parse_debt(text)
-        debt = [existing for existing in debt if existing["what"] != entry["what"]] + [entry]
-    verification = item["verification"]
-    if args.verification_command or args.verification_result:
-        if not (args.verification_command and args.verification_result):
-            raise _refuse("--verification-command and --verification-result go together")
-        verification = {"command": args.verification_command, "result": args.verification_result}
-    if new == "done":
-        if verification is None:
-            raise _refuse(
-                f"{item['finding']} cannot be done without a verification",
-                "give --verification-command and --verification-result",
-            )
-        if debt:
-            raise _refuse(
-                f"{item['finding']} still has {len(debt)} debt entries, and an item with debt is partial, never done",
-                "use partial, or --clear-debt if the debt is paid",
-            )
-    if new == "partial" and not debt:
-        raise _refuse(f"{item['finding']} cannot be partial without debt", "give --debt what=..,count=N")
-    if new in NEEDS_REASON and not args.reason:
-        raise _refuse(f"{item['finding']} cannot be {new} without --reason")
-    item["status"] = new
-    item["reason"] = args.reason if new in NEEDS_REASON else None
-    item["verification"] = verification
-    item["debt"] = debt
-    for sha in args.commit or ():
-        if sha not in item["commits"]:
-            item["commits"].append(sha)
-    if args.note:
-        item["notes"] = (item["notes"] + " " + args.note).strip()
-
-
-def owner_move(item: dict[str, Any], new: str, args: Any) -> None:
-    """`skip`, `defer`, `unskip` and `undefer`: the moves only the owner makes."""
-    old = item["status"]
-    if new not in LEGAL[old]:
-        raise illegal_transition(item["finding"], old, new)
-    leaves = {"unskip": "skipped", "undefer": "deferred"}.get(args.command)
-    if leaves and old != leaves:
-        raise _refuse(f"{item['finding']} is {old}, not {leaves}; {args.command} only brings back a {leaves} item")
-    item["status"] = new
-    item["reason"] = args.reason if new in OWNER_ONLY else None
-
-
-def record(state: dict[str, Any], args: Any, event: str) -> None:
-    state["log"].append({"date": args.date, "phase": args.phase, "event": event})
-
 
 def commit_change(args: Any, label: str, path: Path, state: dict[str, Any], summary: str) -> _common.Result:
     """Check the changed `state` whole, replace the JSON atomically, and the Markdown when `--render` is given.
@@ -1332,424 +560,6 @@ def commit_change(args: Any, label: str, path: Path, state: dict[str, Any], summ
     if not args.render:
         warnings.append(f"{md_name} is out of date; run render or pass --render")
     return _common.Result(data=data, summary=f"progress: {summary}", warnings=warnings)
-
-
-def open_state(args: Any) -> tuple[str, Path, dict[str, Any]]:
-    args.date = _date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    label, path = find_state(workspace_directory(args.workspace), args.label)
-    state = read_state(path)
-    if state["repo"]["label"] != label:
-        raise _common.ValidationFailed(f"the state in {path.name} is for {state['repo']['label']!r}, not {label!r}")
-    return label, path, state
-
-
-def stamp(item: dict[str, Any], args: Any) -> None:
-    item["by"] = args.by
-    item["date"] = args.date
-
-
-def read_verdict(directory: Path, label: str, theme: str) -> tuple[dict[str, Any], str] | None:
-    """The theme's lost-pass verdict in the workspace and the first 12 hex digits of its SHA-256; None when absent.
-
-    A verdict that is not what ``check_regressions.py --workspace`` writes is refused (exit 2): it was edited by hand.
-    """
-    path = state_file(directory, verdict_name(label, theme))
-    if not path.exists():
-        return None
-    raw = path.read_bytes()
-    try:
-        verdict = json.loads(raw.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        verdict = None
-    if (
-        not isinstance(verdict, dict)
-        or verdict.get("theme") != theme
-        or verdict.get("status") not in VERDICT_STATUSES
-        or not isinstance(verdict.get("stops"), list)
-    ):
-        raise _common.ValidationFailed(
-            f"{path.name} is not a check_regressions.py verdict for theme {theme}",
-            hint="run check_regressions.py again with --workspace and --theme, or tell the owner it was edited",
-        )
-    return verdict, hashlib.sha256(raw).hexdigest()[:12]
-
-
-def acceptance_prefix(theme: str, digest: str) -> str:
-    """How the log entry of an owner's acceptance of one lost verdict starts; :func:`run_accept_lost` writes it."""
-    return f"theme {theme} lost verdict {digest} accepted by owner"
-
-
-def lost_checks(verdict: Mapping[str, Any]) -> str:
-    return ", ".join(str(row.get("check")) for row in verdict["stops"] if isinstance(row, dict)) or "none listed"
-
-
-def refuse_unaccepted_loss(state: dict[str, Any], directory: Path, label: str, theme: str, action: str) -> None:
-    """Refuse `action` while the theme's latest verdict reads ``lost`` and the owner has not accepted that verdict.
-
-    A theme with no verdict file passes: a run without a base report, or older tools, wrote none (ADR 0005).
-    """
-    found = read_verdict(directory, label, theme)
-    if found is None or found[0]["status"] != "lost":
-        return
-    verdict, digest = found
-    prefix = acceptance_prefix(theme, digest)
-    if any(str(entry.get("event", "")).startswith(prefix) for entry in state["log"]):
-        return
-    raise _refuse(
-        f"{action} is refused: theme {theme} lost a pass ({lost_checks(verdict)}) and the owner has not decided",
-        "ask the owner: fix it and run check_regressions.py again, accept it with "
-        f"accept-lost {theme} --reason TEXT --by owner, or stop the theme",
-    )
-
-
-def run_accept_lost(args: Any) -> _common.Result:
-    """`accept-lost`: the owner accepts the theme's latest ``lost`` verdict, with a reason, in one log entry."""
-    require_owner(args, "accept-lost")
-    label, path, state = open_state(args)
-    found = read_verdict(path.parent, label, args.theme)
-    if found is None:
-        raise _refuse(f"theme {args.theme} has no verdict to accept", "run check_regressions.py with --workspace")
-    verdict, digest = found
-    if verdict["status"] != "lost":
-        raise _refuse(f"theme {args.theme}'s verdict is {verdict['status']}; there is no lost pass to accept")
-    prefix = acceptance_prefix(args.theme, digest)
-    if any(str(entry.get("event", "")).startswith(prefix) for entry in state["log"]):
-        raise _refuse(f"the owner already accepted theme {args.theme}'s verdict {digest}")
-    record(state, args, f"{prefix} ({short(lost_checks(verdict))}): {short(args.reason)}")
-    return commit_change(args, label, path, state, f"theme {args.theme} lost verdict {digest} accepted by owner")
-
-
-# --- Ref tips (ADR 0007) ----------------------------------------------------------------------------------
-
-REF_TIP = re.compile(r"^[0-9a-f]{12}\Z")
-REF_NAME = re.compile(r"^refs/(heads|tags|remotes/origin)/[^\x00-\x1f\x7f]+\Z")
-
-
-def ref_tips_name(label: str) -> str:
-    """The file name of the ref tips recorded for one state, beside it in the workspace."""
-    state_names(label)  # refuses a label that is not a file name
-    return label + REF_TIPS_SUFFIX
-
-
-def target_ref_tips(target: Path) -> dict[str, str]:
-    """Each branch, tag and origin branch of `target`, with the first 12 digits of the object it names.
-
-    Read-only git. A symbolic ref such as ``origin/HEAD`` is left out. A target that is not the top folder of a git
-    work tree is refused (exit 1): its refs would be another repository's.
-    """
-    top = validate_report.git_toplevel(target)
-    if top != target:
-        raise _refuse(
-            f"the target is not the top folder of a git work tree: {target}",
-            "pass the repository's root folder to --target",
-        )
-    done = validate_report.git_output(
-        target, ["for-each-ref", "--format=%(refname)%00%(objectname)%00%(symref)", *REF_NAMESPACES]
-    )
-    if done is None or done.returncode != 0:
-        why = done.stderr.strip() if done is not None else "git did not run"
-        raise _refuse(f"git could not list the refs of {target}: {why}")
-    tips: dict[str, str] = {}
-    for line in done.stdout.splitlines():
-        name, _, rest = line.partition("\0")
-        objectname, _, symref = rest.partition("\0")
-        if name and objectname and not symref:
-            tips[name] = objectname[: validate_report.SHORT_SHA_CHARS]
-    return tips
-
-
-def encode_ref_tips(label: str, recorded: str, tips: Mapping[str, str]) -> str:
-    document = {
-        "tool": "progress",
-        "kind": "ref-tips",
-        "label": label,
-        "recorded": recorded,
-        "refs": [{"ref": ref, "tip": tips[ref]} for ref in sorted(tips)],
-    }
-    return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
-
-
-def read_ref_tips(directory: Path, label: str) -> dict[str, Any] | None:
-    """The ref tips recorded beside the state: ``{"recorded": date, "refs": {ref: tip}}``. None when there is no file.
-
-    A file that is not one this tool writes is refused (exit 2): it was edited by hand.
-    """
-    path = state_file(directory, ref_tips_name(label))
-    if not path.exists():
-        return None
-    if path.stat().st_size > MAX_REF_TIPS_BYTES:
-        raise _common.ValidationFailed(f"{path.name} is larger than {MAX_REF_TIPS_BYTES} bytes")
-    try:
-        document = json.loads(path.read_bytes().decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
-        document = None
-    entries = document.get("refs") if isinstance(document, dict) else None
-    if not (
-        isinstance(document, dict)
-        and (document.get("tool"), document.get("kind"), document.get("label")) == ("progress", "ref-tips", label)
-        and isinstance(document.get("recorded"), str)
-        and isinstance(entries, list)
-        and all(
-            isinstance(entry, dict)
-            and isinstance(entry.get("ref"), str)
-            and REF_NAME.match(entry["ref"])
-            and isinstance(entry.get("tip"), str)
-            and REF_TIP.match(entry["tip"])
-            for entry in entries
-        )
-    ):
-        raise _common.ValidationFailed(
-            f"{path.name} is not a ref record that progress.py wrote",
-            hint="tell the owner it was edited; record-refs records new tips only when the file is gone",
-        )
-    refs = {entry["ref"]: entry["tip"] for entry in entries}
-    if len(refs) != len(entries):
-        raise _common.ValidationFailed(f"{path.name} lists a ref twice")
-    return {"recorded": document["recorded"], "refs": refs}
-
-
-def refuse_existing_ref_tips(directory: Path, label: str) -> Path:
-    """The path of the ref record for `label`, refusing one that exists: it is never replaced by a new recording."""
-    path = state_file(directory, ref_tips_name(label))
-    if path.exists():
-        raise _refuse(
-            f"a ref record already exists: {path}; it is never replaced",
-            "move it aside with the old state files to start a new run",
-        )
-    return path
-
-
-def write_ref_tips(path: Path, label: str, recorded: str, tips: Mapping[str, str]) -> None:
-    sweep_temporaries(path.parent, (path.name,))
-    _common.atomic_write_text(path, encode_ref_tips(label, recorded, tips))
-
-
-def ref_problems(target: Path, recorded: Mapping[str, str], current: Mapping[str, str]) -> list[dict[str, Any]]:
-    """Each recorded ref that lost history: gone, a branch that no longer contains its recorded tip, or a moved tag."""
-    problems: list[dict[str, Any]] = []
-    for ref, tip in sorted(recorded.items()):
-        now = current.get(ref)
-        if now == tip:
-            continue
-        if now is None:
-            what, line = "gone", f"{ref} is gone; it pointed at {tip}"
-        elif ref.startswith("refs/tags/"):
-            what, line = "moved", f"{ref} pointed at {tip} and now points at {now}"
-        else:
-            done = validate_report.git_output(target, ["merge-base", "--is-ancestor", tip, now])
-            if done is not None and done.returncode == 0:
-                continue  # it moved forward: the recorded tip is still in its history
-            gone = done is None or done.returncode != 1
-            what = "rewritten"
-            line = (
-                f"{ref} no longer contains its recorded tip {tip}; it is now {now}"
-                + (" (the recorded tip is no longer in the repository)" if gone else "")
-                + ": a rebase, an amend, a reset or a forced push"
-            )
-        problems.append({"ref": ref, "what": what, "recorded": tip, "now": now, "line": line})
-    return problems
-
-
-def recorded_ref_tips(directory: Path, label: str) -> dict[str, Any]:
-    found = read_ref_tips(directory, label)
-    if found is None:
-        raise _refuse(
-            f"no ref tips are recorded for {label} in {directory}, so the history check did not run",
-            "record them now with: progress.py record-refs --target REPO --workspace DIR --phase P; "
-            "refs are checked from then on",
-        )
-    return found
-
-
-def target_outside_workspace(args: Any, workspace: Path) -> Path:
-    target = _common.resolve_target(args.target)
-    if _common.is_within(target, workspace):
-        raise _common.PathNotAllowed(f"the workspace is inside the target: {workspace}")
-    return target
-
-
-def run_record_refs(args: Any) -> _common.Result:
-    """`record-refs`: record the target's ref tips for a state that has none, such as one made by older tools."""
-    label, path, state = open_state(args)
-    target = target_outside_workspace(args, path.parent)
-    ref_path = refuse_existing_ref_tips(path.parent, label)
-    tips = target_ref_tips(target)
-    write_ref_tips(ref_path, label, args.date, tips)
-    record(state, args, f"ref tips recorded for {len(tips)} refs of the target")
-    result = commit_change(args, label, path, state, f"recorded the tips of {len(tips)} refs")
-    result.data["ref_tips"] = str(ref_path)
-    return result
-
-
-def run_verify_refs(args: Any) -> _common.Result:
-    """`verify-refs`: exit 2 when a recorded ref lost history. Reads the target with read-only git; writes nothing."""
-    label, path = find_state(workspace_directory(args.workspace), args.label)
-    read_state(path)
-    target = _common.resolve_target(args.target)
-    recorded = recorded_ref_tips(path.parent, label)
-    current = target_ref_tips(target)
-    problems = ref_problems(target, recorded["refs"], current)
-    if problems:
-        refs = ", ".join(problem["ref"] for problem in problems)
-        raise _common.ValidationFailed(
-            short(f"{len(problems)} recorded refs lost history since {recorded['recorded']}: {refs}"),
-            errors=[problem["line"] for problem in problems],
-            hint="stop and ask the owner: restore the ref, accept it with "
-            "accept-ref REF --reason TEXT --by owner, or stop the theme",
-        )
-    new = sorted(set(current) - set(recorded["refs"]))
-    return _common.Result(
-        data={"status": "clean", "label": label, "checked": len(recorded["refs"]), "new": len(new)},
-        summary=(
-            f"progress: {len(recorded['refs'])} recorded refs keep their history; {len(new)} refs are new since "
-            f"{recorded['recorded']}"
-        ),
-    )
-
-
-def run_accept_ref(args: Any) -> _common.Result:
-    """`accept-ref`: the owner accepts one ref's lost history; its current tip becomes the recorded one."""
-    require_owner(args, "accept-ref")
-    label, path, state = open_state(args)
-    target = target_outside_workspace(args, path.parent)
-    recorded = recorded_ref_tips(path.parent, label)
-    tips: dict[str, str] = recorded["refs"]
-    if args.ref not in tips:
-        raise _refuse(
-            f"{args.ref} is not a recorded ref; a ref the run created needs no acceptance",
-            "name the ref as verify-refs prints it, for example refs/heads/main",
-        )
-    problem = next(iter(ref_problems(target, {args.ref: tips[args.ref]}, target_ref_tips(target))), None)
-    if problem is None:
-        raise _refuse(f"{args.ref} still holds its recorded tip {tips[args.ref]}; there is nothing to accept")
-    if problem["now"] is None:
-        del tips[args.ref]
-    else:
-        tips[args.ref] = problem["now"]
-    now = problem["now"] or "gone"
-    record(
-        state,
-        args,
-        f"ref {args.ref} {problem['what']} accepted by owner (recorded {problem['recorded']}, now {now}): "
-        f"{short(args.reason)}",
-    )
-    result = commit_change(args, label, path, state, f"ref {args.ref} {problem['what']} accepted by owner")
-    write_ref_tips(state_file(path.parent, ref_tips_name(label)), label, recorded["recorded"], tips)
-    return result
-
-
-def run_set_status(args: Any) -> _common.Result:
-    label, path, state = open_state(args)
-    item = find_item(state, args.finding)
-    old = item["status"]
-    apply_status(item, args.status, args)
-    if args.status == "done" and old != "done":
-        refuse_unaccepted_loss(state, path.parent, label, item["theme"], f"{args.finding} to done")
-    stamp(item, args)
-    if old == args.status:
-        record(state, args, f"{args.finding} note added by {args.by}: {short(args.note)}")
-        return commit_change(args, label, path, state, f"{args.finding} note added at {old}")
-    why = f": {short(args.reason)}" if args.reason else ""
-    record(state, args, f"{args.finding} {old} to {args.status} by {args.by}{why}")
-    return commit_change(args, label, path, state, f"{args.finding} {old} to {args.status}")
-
-
-def run_owner_move(args: Any) -> _common.Result:
-    new = {"skip": "skipped", "unskip": "queued", "defer": "deferred", "undefer": "queued"}[args.command]
-    require_owner(args, args.command)
-    if new in OWNER_ONLY and not args.reason:
-        raise _refuse(f"{args.command} needs --reason")
-    label, path, state = open_state(args)
-    item = find_item(state, args.finding)
-    old = item["status"]
-    owner_move(item, new, args)
-    stamp(item, args)
-    why = f": {short(args.reason)}" if args.reason else ""
-    record(state, args, f"{args.finding} {old} to {new} by owner{why}")
-    return commit_change(args, label, path, state, f"{args.finding} {old} to {new}")
-
-
-PREF_KEY = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
-
-
-def run_pref(args: Any) -> _common.Result:
-    require_owner(args, f"pref {args.action}")
-    if not PREF_KEY.match(args.key):
-        raise _common.ValidationFailed(
-            f"the change would make the state invalid: {args.key!r} is not a preference key",
-            hint="keys are lower case letters, digits, dot, underscore and hyphen (at most 64, not starting with a "
-            "symbol), for example node.version-file",
-        )
-    if args.action == "set" and args.value is None:
-        raise _refuse("pref set needs a value: pref set KEY VALUE --reason TEXT")
-    if args.action == "unset" and args.value is not None:
-        raise _refuse("pref unset takes only the key")
-    label, path, state = open_state(args)
-    existing = next((pref for pref in state["preferences"] if pref["key"] == args.key), None)
-    if args.action == "unset":
-        if existing is None:
-            raise _refuse(f"there is no preference {args.key}")
-        state["preferences"].remove(existing)
-        record(state, args, f"preference {args.key} unset: {short(args.reason)}")
-        return commit_change(args, label, path, state, f"unset preference {args.key}")
-    entry = {
-        "key": args.key,
-        "value": args.value,
-        "reason": args.reason,
-        "by": "owner",
-        "date": args.date,
-        "phase": args.phase,
-    }
-    if existing is None:
-        state["preferences"].append(entry)
-        record(state, args, f"preference {args.key} set to {short(args.value)}: {short(args.reason)}")
-    else:
-        if existing["value"] == args.value:
-            raise _refuse(f"preference {args.key} already has that value")
-        state["preferences"][state["preferences"].index(existing)] = entry
-        record(
-            state,
-            args,
-            f"preference {args.key} changed from {short(existing['value'])} to {short(args.value)}: "
-            f"{short(args.reason)}",
-        )
-    return commit_change(args, label, path, state, f"set preference {args.key}")
-
-
-def run_theme(args: Any) -> _common.Result:
-    label, path, state = open_state(args)
-    theme = next(entry for entry in state["themes"] if entry["id"] == args.theme)
-    old, new = theme["status"], args.status
-    if THEME_ORDER.index(new) <= THEME_ORDER.index(old):
-        raise _refuse(
-            f"theme {args.theme} is {old} and a theme only moves forward ({' to '.join(THEME_ORDER)})",
-            "" if old != new else "it is already there",
-        )
-    branch = args.branch or theme["branch"]
-    pr = args.pr if args.pr is not None else theme["pr"]
-    merged_sha = args.merged_sha or theme["merged_sha"]
-    if branch is None:
-        raise _refuse(f"theme {args.theme} to {new} needs --branch")
-    if new in ("pr_open", "merged") and pr is None:
-        raise _refuse(f"theme {args.theme} to {new} needs --pr")
-    if new == "merged" and merged_sha is None:
-        raise _refuse(f"theme {args.theme} to merged needs --merged-sha")
-    if new != "merged" and args.merged_sha:
-        raise _refuse("--merged-sha belongs to the merged status")
-    if new == "merged":
-        refuse_unaccepted_loss(state, path.parent, label, args.theme, f"theme {args.theme} to merged")
-    theme.update(status=new, phase=args.phase, branch=branch, pr=pr, merged_sha=merged_sha if new == "merged" else None)
-    detail = ", ".join(
-        part
-        for part in (
-            f"branch {branch}",
-            f"PR #{pr}" if pr else "",
-            f"merged as {merged_sha}" if merged_sha and new == "merged" else "",
-        )
-        if part
-    )
-    record(state, args, f"theme {args.theme} {old} to {new}: {detail}")
-    return commit_change(args, label, path, state, f"theme {args.theme} {old} to {new}")
 
 
 # --- Arguments ----------------------------------------------------------------------------------------
@@ -1864,21 +674,21 @@ def handler(argv: Sequence[str]) -> _common.Result:
     if args.command == "show":
         return run_show(args)
     if args.command == "set-status":
-        return run_set_status(args)
+        return _progress_cmd_status.run_set_status(args, commit_change)
     if args.command in ("skip", "unskip", "defer", "undefer"):
-        return run_owner_move(args)
+        return _progress_cmd_status.run_owner_move(args, commit_change)
     if args.command == "pref":
-        return run_pref(args)
+        return _progress_cmd_pref.run_pref(args, commit_change)
     if args.command == "theme":
-        return run_theme(args)
+        return _progress_cmd_theme.run_theme(args, commit_change)
     if args.command == "accept-lost":
-        return run_accept_lost(args)
+        return _progress_cmd_theme.run_accept_lost(args, commit_change)
     if args.command == "record-refs":
-        return run_record_refs(args)
+        return _progress_cmd_refs.run_record_refs(args, commit_change)
     if args.command == "verify-refs":
-        return run_verify_refs(args)
+        return _progress_cmd_refs.run_verify_refs(args)
     if args.command == "accept-ref":
-        return run_accept_ref(args)
+        return _progress_cmd_refs.run_accept_ref(args, commit_change)
     return run_render(args)
 
 
