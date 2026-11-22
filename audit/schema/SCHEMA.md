@@ -387,7 +387,7 @@ The engine's five fixed unattested items become `unattested[]` entries:
 ## Engine schema v2 mapping
 
 > [!NOTE]
-> Live: `report.py import-engine` applies this mapping once to a draft ([`apply_import`](../tools/report.py#L585-L645)), and the conversion is [`convert`](../tools/_engine_adapter.py#L726-L739), a pure function of the engine's report. [`model.py`](../engine/audit/report/model.py#L60-L158) builds the engine report.
+> Live: `report.py import-engine` applies this mapping once to a draft ([`apply_import`](../tools/_report_import.py#L77-L137)), and the conversion is [`convert`](../tools/_engine_adapter.py#L726-L739), a pure function of the engine's report. [`model.py`](../engine/audit/report/model.py#L60-L158) builds the engine report.
 
 Every field of the engine's schema v2 is either carried or named as not carried.
 

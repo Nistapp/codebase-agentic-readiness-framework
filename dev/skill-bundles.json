@@ -68,6 +68,12 @@
       "_common.py",
       "_engine_adapter.py",
       "_jsonschema_subset.py",
+      "_report_checks.py",
+      "_report_decisions.py",
+      "_report_draft.py",
+      "_report_findings.py",
+      "_report_import.py",
+      "_report_status.py",
       "_summary.py"
     ]
   },
