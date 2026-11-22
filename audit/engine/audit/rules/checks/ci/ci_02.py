@@ -116,3 +116,37 @@ def check_ci02(*, spec, target, inventory, stack, components, session) -> CheckO
         )
 
     return _outcome(spec, Verdict.PASS, detail)
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
+            *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
+            *_at(ROOT, ".circleci/config.yml"),
+            *_at(GLOB, ".buildkite/**/*.yml"),
+            *_runners(),
+        ),
+        what=What(
+            "key",
+            (
+                "run",
+                "script",
+                "command",
+                "commands",
+                "bash",
+            ),
+        ),
+        binding="line",
+        threshold="no CI verb without a local definition",
+        note=(
+            "Each step command (inline or each line of a block), split at shell operators outside quotes, is "
+            "mapped to a verb by runner or known tool and compared with the verbs resolved on the runner "
+            "manifests. echo and printf text and heredoc bodies are not commands. A step that runs a "
+            "repository shell script is read one script deep. No workflow, or no CI verb mapped, is UNKNOWN."
+        ),
+        named_by_text="each shell script a step runs is looked up with Inventory.has and read, one level deep",
+    )

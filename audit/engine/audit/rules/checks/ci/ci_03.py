@@ -81,3 +81,35 @@ def check_ci03(*, spec, target, inventory, stack, components, session) -> CheckO
     if not findings:
         return _outcome(spec, Verdict.PASS, "no CI-only steps")
     return _outcome(spec, Verdict.FAIL, f"{len(findings)} CI-only step(s)", findings)
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at, _runners
+
+    return Reads(
+        where=(
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
+            *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
+            *_at(ROOT, ".circleci/config.yml"),
+            *_at(GLOB, ".buildkite/**/*.yml"),
+            *_runners(),
+        ),
+        what=What(
+            "key",
+            (
+                "run",
+                "script",
+                "command",
+                "commands",
+                "bash",
+            ),
+        ),
+        binding="line",
+        threshold="no CI-only step",
+        note=(
+            "A step command that calls a runner target that is no verb, no package-manager built-in and no "
+            "target of any local runner fails. Commands split at shell operators outside quotes; echo and "
+            "printf text and heredoc bodies are not commands."
+        ),
+    )

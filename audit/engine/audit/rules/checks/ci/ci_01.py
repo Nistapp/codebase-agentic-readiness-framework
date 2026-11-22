@@ -80,3 +80,35 @@ def check_ci01(*, spec, target, inventory, stack, components, session) -> CheckO
             )
         ],
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
+            *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
+            *_at(ROOT, ".circleci/config.yml"),
+            *_at(GLOB, ".buildkite/**/*.yml"),
+        ),
+        what=What(
+            "key",
+            (
+                "pull_request",
+                "pull_request_target",
+                "merge_request",
+                "pr",
+                "changeRequest",
+            ),
+        ),
+        binding="file",
+        threshold="a workflow with a pull-request trigger",
+        note=(
+            "GitHub needs the key at a line start or pull_request in an on: [...] list, Azure pr: at a line "
+            "start; GitLab and Jenkins match anywhere, CircleCI and Buildkite never count. Inventory.match "
+            "also compares the base name, so .gitlab-ci.yml, Jenkinsfile and azure-pipelines.yml are found at"
+            " any depth."
+        ),
+    )

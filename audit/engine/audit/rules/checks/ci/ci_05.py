@@ -165,3 +165,34 @@ def check_ci05(*, spec, target, inventory, stack, components, session) -> CheckO
             )
         )
     return _outcome(spec, Verdict.PARTIAL, detail, findings)
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
+            *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
+            *_at(ROOT, ".circleci/config.yml"),
+            *_at(GLOB, ".buildkite/**/*.yml", "**"),
+        ),
+        what=What(
+            "word-list",
+            (
+                "actionlint",
+                "zizmor",
+                "check-jsonschema",
+                "glab ci lint",
+                "circleci config validate",
+            ),
+        ),
+        binding="line",
+        threshold="every provider's workflows linted locally",
+        note=(
+            "Local evidence is any line of a file of kind manifest, build, config, script or other that names"
+            " the provider's linter (check-jsonschema by its schema or hook names), never a workflow, a "
+            "lockfile or a dependabot or renovate config. Then each workflow line is read for the same names."
+        ),
+    )
