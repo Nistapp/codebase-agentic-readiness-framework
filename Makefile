@@ -190,8 +190,8 @@ test-dev-shard:
 	$(PYTHON) $(call test_shard,dev)
 
 # Every suite of `test` in TEST_SHARDS parts, for CI's Python 3.14 jobs: part <i> is shard <i> of each suite in
-# TEST_SHARDED_SUITES plus the targets in TEST_PART_<i>, run at once as `test` runs its suites. The dev checks' first
-# shard is test_implement_eval alone (about 40 s), so the small whole targets go with the second.
+# TEST_SHARDED_SUITES plus the targets in TEST_PART_<i>, run at once as `test` runs its suites. The dev checks' two
+# shards weigh the same (about 118 s each, measured 2026-11-23); the small whole targets go with the second.
 # dev/tests/test_ci_parity.py fails when the parts leave out a suite of `test`.
 TEST_PART_1 :=
 TEST_PART_2 := test-implement-tools test-greenfield verify-rules
