@@ -22,7 +22,7 @@ until the requirement and the traceability row exist.
 
 It refuses, and writes nothing, when the ID is malformed or taken, when its number is not above every number its
 family uses (agent-only checks included), when the family has no engine package, and when the family is still one
-module (``tst.py``): add such a check by hand, as the engine page ``02-check-catalogue.md``
+module (a ``<family>.py`` file; no family is today): add such a check by hand, as the engine page ``02-check-catalogue.md``
 § 15 says. It never bumps ``__ruleset_revision__``. Exit 1 for bad input, 2 for a refusal, 0 when the stubs are
 written. Standard library only.
 """
