@@ -15,9 +15,12 @@ folder first on ``sys.path`` (``audit/tools/tests/test_import_fixture_matrix.py`
 modules with the same names), so a module imported after it could come from the wrong folder.
 
 ``--measure`` runs every module of the suite one by one and rewrites the suite's weights (seconds, one decimal).
+After it, check that the engine's ``test_smoke`` and ``test_framework_default`` still share a shard (the Makefile's
+note above ``LOCAL_SHARDS``): both build ``audit/engine/dist/audit.pyz`` in place.
 
 The assignment is the same on every machine: the heaviest module first, each onto the shard with the least weight so
-far (ties by name and shard number). ``make test`` and ``make coverage`` never shard; only CI's jobs do.
+far (ties by name and shard number). CI's jobs shard into ``TEST_SHARDS`` parts. On Linux, ``make test`` shards into
+``LOCAL_SHARDS`` parts that run at once; ``make test TEST_JOBS=`` and ``make coverage`` never shard.
 """
 
 from __future__ import annotations
