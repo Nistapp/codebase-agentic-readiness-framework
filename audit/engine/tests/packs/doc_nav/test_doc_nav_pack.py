@@ -28,7 +28,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import support  # noqa: E402
-from audit.rules.checks.nav import _jvm_entry, _python_entry  # noqa: E402
+from audit.rules.checks.nav import LARGE_FILE_BYTES, _jvm_entry, _python_entry  # noqa: E402
+from audit.components import detect_components  # noqa: E402
+from audit.rules.checks.agt import check_agt02 as CHECK_AGT02  # noqa: E402
+from audit.rules.checks.nav import check_nav01 as CHECK_NAV01  # noqa: E402
+from audit.rules.checks.nav import check_nav03 as CHECK_NAV03  # noqa: E402
+from audit.rules.checks.nav import check_nav05 as CHECK_NAV05  # noqa: E402
+from audit.rules.checks.nav import _python_census, _python_test_file  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 from audit.rules.checks import _prose  # noqa: E402
 from audit.rules.checks.doc import _adr_tombstone  # noqa: E402
@@ -45,8 +51,11 @@ FIXTURES: dict[str, tuple[str, str]] = {
     "doc-04-adr-tombstone": ("DOC-04", "PARTIAL"),
     "doc-05-long-sentences": ("DOC-05", "FAIL"),
     "nav-01-no-manifest": ("NAV-01", "UNKNOWN"),
+    "nav-01-nested-manifest-only": ("NAV-01", "UNKNOWN"),
     "nav-02-no-entry": ("NAV-02", "FAIL"),
+    "nav-02-main-guard-only": ("NAV-02", "FAIL"),
     "nav-03-red-flags": ("NAV-03", "PARTIAL"),
+    "nav-05-methods": ("NAV-05", "PARTIAL"),
 }
 
 DOC_CHECKS = ("DOC-01", "DOC-02", "DOC-03", "DOC-04", "DOC-05")
@@ -232,7 +241,7 @@ class Nav02JvmEntryTests(unittest.TestCase):
 
 
 class Nav02PythonEntryTests(unittest.TestCase):
-    """`_python_entry` counts a line that starts with the guard, not a file that merely holds the text."""
+    """`_python_entry` reads `__main__.py`, conventional names and manifest scripts, never a guard alone."""
 
     GUARD = 'if __name__ == "__main__":\n    main()\n'
 
@@ -243,8 +252,17 @@ class Nav02PythonEntryTests(unittest.TestCase):
             support.write(Path(tmp.name), rel, text)
         return _python_entry(build_inventory(Path(tmp.name)))
 
-    def test_a_guard_line_is_an_entry_point(self):
-        self.assertEqual(self._entry({"tool.py": "def main():\n    pass\n\n" + self.GUARD}), ["tool.py"])
+    def test_a_guard_line_alone_is_not_an_entry_point(self):
+        self.assertEqual(self._entry({"scripts/tool.py": "def main():\n    pass\n\n" + self.GUARD}), [])
+
+    def test_a_guarded_file_counts_through_a_real_signal(self):
+        found = self._entry(
+            {
+                "main.py": "def main():\n    pass\n\n" + self.GUARD,
+                "pyproject.toml": '[project.scripts]\ntool = "pkg.cli:main"\n',
+            }
+        )
+        self.assertEqual(found, ["main.py", "pyproject.toml:entry point"])
 
     def test_a_regex_or_docstring_that_holds_the_guard_text_is_not(self):
         text = (
@@ -253,6 +271,284 @@ class Nav02PythonEntryTests(unittest.TestCase):
             "# if __name__ == '__main__': in a comment\n"
         )
         self.assertEqual(self._entry({"checks.py": text}), [])
+
+
+class Nav01ComponentManifestTests(unittest.TestCase):
+    """`NAV-01` in-process on built repositories: the Ruby, PHP and .NET manifests declare the root.
+
+    A .NET solution or project file has the project's own name, so it is matched by pattern, and only in the folder
+    itself. A named manifest declares the root only when it sits at the root: a nested `tools/x/package.json` does
+    not. The UNKNOWN summary names the recognised ecosystems instead of saying the stack is not recognised.
+    """
+
+    def nav01(self, files: dict[str, str]) -> tuple[dict, list[str]]:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        for rel, text in files.items():
+            support.write(Path(tmp.name), rel, text)
+        inventory = build_inventory(Path(tmp.name))
+        components = detect_components(inventory)
+        outcome = CHECK_NAV01(
+            spec=REGISTRY_BY_ID["NAV-01"],
+            target=None,
+            inventory=inventory,
+            stack=detect_stack(inventory),
+            components=components,
+            session=None,
+        )
+        return {"verdict": outcome.verdict.value, "summary": outcome.summary}, components.candidates
+
+    def test_a_ruby_php_or_dotnet_manifest_at_the_root_passes_and_is_named(self):
+        for rel in ("Gemfile", "composer.json", "App.sln", "App.slnx", "App.csproj", "App.fsproj", "App.vbproj"):
+            with self.subTest(rel=rel):
+                check, _ = self.nav01({rel: "{}\n"})
+                self.assertEqual(check, {"verdict": "PASS", "summary": f"single-root repository declares {rel}"})
+
+    def test_a_solution_file_is_named_before_a_project_file(self):
+        check, _ = self.nav01({"App.csproj": "<Project />\n", "App.sln": "\n"})
+        self.assertEqual(check["summary"], "single-root repository declares App.sln")
+
+    def test_a_dotnet_project_file_in_a_subfolder_does_not_declare_the_root(self):
+        check, _ = self.nav01({"src/App/App.csproj": "<Project />\n"})
+        self.assertEqual(check["verdict"], "UNKNOWN")
+        self.assertIn("ecosystems: dotnet", check["summary"])
+
+    def test_a_named_manifest_below_the_root_does_not_declare_the_root(self):
+        for rel in ("tools/x/package.json", "tools/x/go.mod", "tools/x/Gemfile", "tools/x/composer.json"):
+            with self.subTest(rel=rel):
+                check, _ = self.nav01({"README.md": "# x\n", rel: "{}\n"})
+                self.assertEqual(check["verdict"], "UNKNOWN")
+                self.assertTrue(check["summary"].startswith("no build manifest"), check["summary"])
+
+    def test_a_root_manifest_beside_a_nested_one_names_the_root_file(self):
+        check, _ = self.nav01({"tools/x/package.json": "{}\n", "Gemfile": "\n"})
+        self.assertEqual(check, {"verdict": "PASS", "summary": "single-root repository declares Gemfile"})
+
+    def test_a_member_manifest_is_read_from_the_member_folder_only(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        files = {
+            "settings.gradle": "include 'web'\n",
+            "web/README.md": "# web\n",
+            "apps/web/build.gradle": "\n",
+            "pnpm-workspace.yaml": "packages:\n  - '.tools/*'\n",
+            ".tools/lint/package.json": "{}\n",
+        }
+        for rel, text in files.items():
+            support.write(Path(tmp.name), rel, text)
+        manifests = {c.path: c.manifest for c in detect_components(build_inventory(Path(tmp.name))).components}
+        self.assertIsNone(manifests["web"])
+        self.assertEqual(manifests[".tools/lint"], ".tools/lint/package.json")
+
+    def test_a_manifest_that_only_ends_with_a_candidate_path_makes_no_candidate(self):
+        check, candidates = self.nav01({"apps/web/README.md": "# web\n", "mirror/apps/web/package.json": "{}\n"})
+        self.assertEqual(candidates, [])
+        self.assertEqual(check["verdict"], "UNKNOWN")
+
+    def test_a_dotnet_project_under_a_candidate_root_is_a_candidate(self):
+        check, candidates = self.nav01({"apps/web/Web.csproj": "<Project />\n", "apps/api/Gemfile": "\n"})
+        self.assertEqual(candidates, ["apps/api", "apps/web"])
+        self.assertEqual(check["verdict"], "PARTIAL")
+
+    def test_a_recognised_stack_with_no_manifest_the_detector_reads_names_its_ecosystems(self):
+        check, _ = self.nav01({"requirements.txt": "requests==2.32.3\n"})
+        self.assertEqual(check["verdict"], "UNKNOWN")
+        self.assertEqual(
+            check["summary"], "no build manifest the component detector reads declares a component; ecosystems: python"
+        )
+
+    def test_an_unrecognised_stack_says_so(self):
+        check, _ = self.nav01({"README.md": "# x\n"})
+        self.assertEqual(
+            check, {"verdict": "UNKNOWN", "summary": "no build manifest declares a component; stack not recognised"}
+        )
+
+    def test_with_no_root_manifest_each_top_level_app_folder_is_a_candidate(self):
+        """An app per folder and nothing at the root (issue #20): each app is a candidate, so NAV-01 is PARTIAL."""
+        files = {
+            "web/package.json": "{}\n",
+            "api/pom.xml": "<project />\n",
+            "docs/guide.md": "# Guide\n",
+            "tools/scripts/package.json": "{}\n",
+            ".github/package.json": "{}\n",
+        }
+        check, candidates = self.nav01(files)
+        self.assertEqual(candidates, ["api", "web"])
+        self.assertEqual(check, {"verdict": "PARTIAL", "summary": "2 candidate component(s), none declared"})
+
+    def test_a_root_manifest_keeps_top_level_folders_out_of_the_candidates(self):
+        check, candidates = self.nav01({"package.json": "{}\n", "web/package.json": "{}\n"})
+        self.assertEqual(candidates, [])
+        self.assertEqual(check, {"verdict": "PASS", "summary": "single-root repository declares package.json"})
+        _, candidates = self.nav01({"App.sln": "\n", "web/package.json": "{}\n"})
+        self.assertEqual(candidates, [])
+
+    def test_a_conventional_candidate_is_listed_once_before_the_top_level_ones(self):
+        _, candidates = self.nav01({"apps/web/package.json": "{}\n", "api/go.mod": "module x\n"})
+        self.assertEqual(candidates, ["apps/web", "api"])
+
+    def test_agt02_names_the_candidates_it_does_not_score(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        for rel in ("web/package.json", "api/package.json"):
+            support.write(Path(tmp.name), rel, "{}\n")
+        inventory = build_inventory(Path(tmp.name))
+        outcome = CHECK_AGT02(
+            spec=REGISTRY_BY_ID["AGT-02"],
+            target=None,
+            inventory=inventory,
+            stack=detect_stack(inventory),
+            components=detect_components(inventory),
+            session=None,
+        )
+        self.assertEqual(
+            (outcome.verdict.value, outcome.summary),
+            ("PASS", "no declared components; 2 candidate component(s) are not scored (ADR-0003): api, web"),
+        )
+
+
+class Nav03LockfileTests(unittest.TestCase):
+    """A lockfile over 512 KiB is large by design, so `NAV-03` leaves it out of the size count.
+
+    Each case copies `doc-nav-ok` (which passes `NAV-03`) and adds one file just over the limit. A fixture this
+    large is built in the test, never vendored. The match is by exact base name: a near name still counts.
+    """
+
+    PADDING = "x" * (LARGE_FILE_BYTES + 1)
+
+    def check(self, rel: str, text: str = PADDING) -> dict:
+        """Run `NAV-03` in-process (so coverage traces it) on `doc-nav-ok` plus one file at ``rel``."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "nav-03-large-lockfile"
+            shutil.copytree(support.fixture("doc-nav-ok"), root)
+            support.write(root, rel, text)
+            inventory = build_inventory(root)
+            outcome = CHECK_NAV03(
+                spec=REGISTRY_BY_ID["NAV-03"],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+        return {"verdict": outcome.verdict.value, "summary": outcome.summary}
+
+    def test_a_large_lockfile_at_the_root_passes_and_is_named(self):
+        check = self.check("package-lock.json")
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertIn("oversized(>524288 B): 0", check["summary"])
+        self.assertIn("lockfiles over the size, not counted: 1 (package-lock.json)", check["summary"])
+
+    def test_a_large_lockfile_in_a_subfolder_passes(self):
+        self.assertEqual(self.check("services/api/uv.lock")["verdict"], "PASS")
+
+    def test_a_large_file_with_a_near_lockfile_name_still_flags(self):
+        for rel in ("data.json", "package-lock.json.orig", "notes/yarn.lock.md", "Package-Lock.json"):
+            with self.subTest(rel=rel):
+                check = self.check(rel)
+                self.assertEqual(check["verdict"], "PARTIAL")
+                self.assertIn("oversized(>524288 B): 1", check["summary"])
+                self.assertNotIn("lockfiles over the size", check["summary"])
+
+    def test_a_small_lockfile_is_not_named(self):
+        check = self.check("package-lock.json", "{}\n")
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertNotIn("lockfiles", check["summary"])
+
+
+class Nav05PythonCensusTests(unittest.TestCase):
+    """`NAV-05` parses Python with `ast`, so it counts methods and reads a docstring after a multi-line signature.
+
+    The `nav-05-methods` fixture holds 8 public symbols, 6 of them documented:
+
+    * `geometry.py` (parsed): `Shape`, `area`, `scale` (a multi-line signature), `Unit` (a nested public class)
+      and `make_shape` (a multi-line signature) are documented; `perimeter` and `Unit.label` are not. The private
+      method `_cache_key`, the dunder `__repr__`, the private class `_Registry` (and its public method) and the
+      function `helper` inside `make_shape` are not counted.
+    * `legacy.py` does not parse (Python 2 `print`), so the column-0 rule reads it: `legacy_area`, documented.
+    * `tests/test_geometry.py` is a test file and is left out.
+
+    The column-0 rule alone gives 2 of 5 on this tree: it counts the test file and misses every method.
+    """
+
+    def _inventory(self, files: dict[str, str]):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        for rel, text in files.items():
+            support.write(root, rel, text)
+        return build_inventory(root)
+
+    def _run(self, inventory) -> dict:
+        outcome = CHECK_NAV05(
+            spec=REGISTRY_BY_ID["NAV-05"],
+            target=None,
+            inventory=inventory,
+            stack=detect_stack(inventory),
+            components=None,
+            session=None,
+        )
+        return {"verdict": outcome.verdict.value, "summary": outcome.summary, "data": outcome.data}
+
+    def test_fixture_census_counts_methods_and_skips_tests(self):
+        inventory = build_inventory(support.fixture("nav-05-methods"))
+        self.assertEqual(_python_census(inventory), (8, 6, 1))
+
+    def test_fixture_outcome_states_the_ratio_and_the_fallback(self):
+        check = self._run(build_inventory(support.fixture("nav-05-methods")))
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertTrue(check["summary"].startswith("6/8 public symbols documented (75%)"))
+        self.assertIn("methods of public classes", check["summary"])
+        self.assertIn("1 file(s) did not parse", check["summary"])
+        self.assertEqual((check["data"].numerator, check["data"].denominator), (6, 8))
+
+    def test_fixture_end_to_end_reports_the_same_numbers(self):
+        report = support.run_audit(support.fixture("nav-05-methods"))
+        check = next(c for c in report["checks"] if c["id"] == "NAV-05")
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertEqual((check["data"]["numerator"], check["data"]["denominator"]), (6, 8))
+
+    def test_documented_methods_pass_and_name_no_fallback(self):
+        inventory = self._inventory(
+            {
+                "pyproject.toml": '[project]\nname = "p"\n',
+                "src/p/core.py": (
+                    'class Box:\n    """A box."""\n\n    async def open(\n        self,\n    ) -> None:\n'
+                    '        """Open it."""\n'
+                ),
+            }
+        )
+        self.assertEqual(_python_census(inventory), (2, 2, 0))
+        check = self._run(inventory)
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertNotIn("did not parse", check["summary"])
+
+    def test_only_test_files_is_unknown(self):
+        inventory = self._inventory(
+            {"pyproject.toml": '[project]\nname = "p"\n', "tests/test_core.py": "def test_one():\n    pass\n"}
+        )
+        self.assertEqual(_python_census(inventory), (0, 0, 0))
+        self.assertEqual(self._run(inventory)["verdict"], "UNKNOWN")
+
+    def test_test_file_rule(self):
+        for rel in ("tests/test_a.py", "pkg/test/helpers.py", "a/b/tests/conftest.py", "test_a.py", "pkg/a_test.py"):
+            with self.subTest(rel=rel):
+                self.assertTrue(_python_test_file(rel))
+        for rel in ("src/testing.py", "src/contest.py", "latest/a.py", "src/attest_x.py", "tests.py"):
+            with self.subTest(rel=rel):
+                self.assertFalse(_python_test_file(rel))
+
+    def test_typescript_method_names_class_members_not_counted(self):
+        inventory = self._inventory(
+            {
+                "package.json": '{"name": "p"}\n',
+                "src/a.ts": "/** A box. */\nexport class Box {\n  open(): void {}\n}\n",
+            }
+        )
+        check = self._run(inventory)
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertEqual(check["data"].denominator, 1)
+        self.assertIn("class members not counted", check["summary"])
 
 
 class Doc04TemplateEntryTests(unittest.TestCase):

@@ -31,9 +31,10 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 - Preferences this playbook reads, when present: `layout.command_runner` (per component or one root runner),
   `format.mass_reformat` (forbids a whole-tree rewrite), `tests.stack_dependent` (whether `test` needs a live
   local stack), `ci.edits_authorised` (whether build files and CI may be changed). A step that conflicts with
-  one stops and asks.
-- No earlier theme is needed. T1 runs before T4, T5 and T7 because those themes (CI, hooks, baselines, `AGENTS.md`) name
-  these verbs.
+  one stops and asks ([state contract](../state.md#skip-defer-and-preferences)).
+- No earlier theme is needed. T1 Command surface and quality tools runs before T4 CI parity, Git hooks and commit
+  messages, T5 Tests and baselines, and T7 AGENTS.md and governance ([themes](../SKILL.md#themes)), because those themes
+  name these verbs.
 - A tool choice made by `configure-quality-tools` for each verb, or a recorded decision that the verb is
   `blocked` (see the `security` lockfile rule there).
 
@@ -47,7 +48,7 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 
    | Option | When | Pros | Cons |
    |---|---|---|---|
-   | Native runner (recommended) | Always the default | The spelling `spec/command-surface.md` fixes; the engine resolves it; one runner, no new tool | On Gradle and Maven, CMD-02 stays `UNKNOWN` in the engine; the agent verifies it (Verification) |
+   | Native runner (recommended) | Always the default | The spelling `spec/command-surface.md` fixes; the engine resolves it; one runner, no new tool | On Maven, and on Gradle with a plugin or task the engine does not know, CMD-02 stays `UNKNOWN`; the agent verifies it (Verification) |
    | Thin root `Makefile` on top | The owner wants the same `make <verb>` in every repository of an estate | One invocation style everywhere | A second runner: every target MUST delegate, or CMD-01 reads `PARTIAL` and CMD-03 `FAIL`; adds Make to every host |
    | Scripts folder (`scripts/verbs/*.sh`) | Only when no runner exists at all | Matches an existing `scripts/` habit | No row in the spec: the engine cannot resolve it and every spelling needs owner confirmation |
 
@@ -71,12 +72,15 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 1. Theme branch `agentic-readiness/<phase>-command-surface` ([Stage 3](../SKILL.md#stage-3-apply), step 1).
 2. **Name every verb** on the authoritative runner, spelled as the runner row in
    [`spec/command-surface.md`](../../spec/command-surface.md#spelling-per-runner) says. The command each verb
-   runs comes from `configure-quality-tools`.
+   runs comes from `configure-quality-tools`. A verb runs each tool by name, never as `npx <tool>@<version>`.
+   The version lives in the manifest, where "`EXEC-08` Tool versions visible to dependency automation" finds it.
 3. **Compose `check`**: `format:check`, then `typecheck`, then `test`, by calling the verbs by name (indirection)
    rather than repeating their commands. `lint` and `security` stay standalone verbs, not part of `check`.
 4. **Split writers out of read-only verbs** (CMD-04). A read-only verb that carries `--fix`, `--write` or calls
    `format` becomes two verbs: the read-only one keeps the name (`lint` without `--fix`) and the writer gets a
-   separate name (`lint:fix`, or folded into `format`). Never leave the writer under the read-only name.
+   separate name (`lint:fix`, or folded into `format`). Never leave the writer under the read-only name. Keep a
+   budget flag such as `--max-warnings 0` on the read-only verb. "`BASE-02` Current violation counts measured"
+   reads it there.
 5. **Delegate any second runner** (CMD-03). A root `Makefile`, `Taskfile` or dispatcher script calls the
    authoritative runner's verb (`npm run check`, `./gradlew check`, `make -C <component> check`) and composes
    nothing of its own.
@@ -92,6 +96,8 @@ this one owns the verb names and their wiring, that one owns which tool each ver
    for each verb per component (`spec/command-surface.md` rule 4). Fill an existing placeholder; do not
    rewrite the file, which is T7's job. With no instruction file, follow
    [Stage 3, step 11](../SKILL.md#stage-3-apply): create the skeleton, or write to `CONTRIBUTING.md`.
+   "`AGT-05` Seven verbs named" reads the list in the instruction file. Start each fenced command with a word
+   that resolves, as "`EXEC-06` Documented commands resolve" asks.
 
 ### Gradle
 
@@ -108,7 +114,8 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#command-surface-map).
   ratchet or baseline mode (`configure-quality-tools`), or `check` turns red on today's code.
 - `typecheck` = `compileJava compileTestJava` (javac is the type checker). `-Xlint:all -Werror` is a later,
   owner-chosen hardening, not T1.
-- Invoke only through the wrapper (`./gradlew <task>`), never a system `gradle`.
+- Invoke only through the wrapper (`./gradlew <task>`), never a system `gradle`. The rule is in
+  [`spec/command-surface.md`](../../spec/command-surface.md#spelling-per-runner).
 
 ### Node (npm, pnpm, yarn)
 
@@ -138,7 +145,7 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#com
 | 2 | `check` calls `format:check`, `typecheck` and `test`, in that order | `CMD-02` | wiring |
 | 3 | The writer split out of a read-only verb (only when a read-only verb writes) | `CMD-04` | wiring |
 | 4 | The second runner delegates to the authoritative one (only with a second runner) | `CMD-03` | wiring |
-| 5 | The verb commands and the setup command in the instruction file | `CMD-01`, `EXEC-03` | hand |
+| 5 | The verb commands and the setup command in the instruction file | `EXEC-03` | hand |
 
 ## Continue on error
 
@@ -157,7 +164,7 @@ This playbook installs names and wiring, so its own debt is rare. What counts:
 | Check | Command or file | Expected |
 |---|---|---|
 | CMD-01 | Run each verb once (`npm run <verb>`, `./gradlew <task>`, per component); read the runner manifest | All seven resolve on one runner per component; each exits as its tool says, not "command not found" |
-| CMD-02 | npm: read the `check` script. Gradle: `./gradlew check --dry-run` | npm: the three verbs by name, in order. Gradle: the task list holds the format-check, compile and `test` tasks; the engine's `UNKNOWN` here is its documented limit, not a gap |
+| CMD-02 | npm: read the `check` script. Gradle: `./gradlew check --dry-run` | npm: the three verbs by name, in order. Gradle: the task list holds the format-check, compile and `test` tasks; the engine reads the plugins and `check.dependsOn`, and its `UNKNOWN` (an unknown plugin or task) is its documented limit, not a gap |
 | CMD-03 | Read every second runner's `check` target | Each calls the authoritative runner's `check` and nothing else |
 | CMD-04 | `git status --porcelain` before and after running every read-only verb | Empty both times: no read-only verb wrote a file |
 | EXEC-03 | Read the instruction file | One non-interactive setup command per component |

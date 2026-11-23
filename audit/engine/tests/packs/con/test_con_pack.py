@@ -75,6 +75,24 @@ def deny_list(*entries: str, heading: str = "## Do Not Do") -> str:
     )
 
 
+#: Issue #9: a conventions section that says "never" three times opens a prohibitions section by its body, before the
+#: real one. Its paths beside the prohibitions are not a deny list, and a finding cites both headings.
+CONVENTIONS_FIRST = (
+    "# AGENTS.md\n\nThis file tells an agent how to work in this repository.\n\n"
+    "## 3. Architectural Patterns & Code Conventions\n\n"
+    "- Never use field injection.\n"
+    "- Do not log a request body.\n"
+    "- Never catch a bare exception.\n"
+    "- Where things are: `docs/` and `tests/`, mapped in\n"
+    "  `docs/overview.md`.\n\n"
+    "## 4. Security & Safety Guardrails\n\n"
+    "- You must not edit `.github/workflows/`.\n"
+    "- You must not hardcode a token,\n"
+    "  or open `.env`.\n"
+    "- You must not add a dependency.\n"
+)
+
+
 class Con01Tests(unittest.TestCase):
     """CON-01 reads the prohibitions section: does it name a path or pattern that exists? Decision 0001's table."""
 
@@ -92,6 +110,25 @@ class Con01Tests(unittest.TestCase):
 
     def named(self, *entries: str, files: dict[str, str] | None = None, dirs: tuple[str, ...] = ()):
         return self.audit({"AGENTS.md": deny_list(*entries), **(files or {})}, dirs)
+
+    def test_a_conventions_section_credits_only_the_paths_on_its_prohibitions(self):
+        files = {"AGENTS.md": CONVENTIONS_FIRST, "docs/overview.md": "# x\n"}
+        check, _ = self.audit(files, dirs=(".github/workflows",))
+        self.assertEqual(check["data"]["paths"], [".github/workflows/", ".env"])
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PASS", "the prohibitions section of AGENTS.md names paths that exist: .github/workflows/"),
+        )
+
+    def test_a_list_item_continues_on_its_indented_lines(self):
+        from audit.rules.checks._common import prohibitions_section
+
+        found = prohibitions_section(CONVENTIONS_FIRST)
+        self.assertEqual([span for _line, span in found.code_spans()], [".github/workflows/", ".env"])
+        self.assertEqual(
+            found.sections,
+            ((5, "3. Architectural Patterns & Code Conventions"), (13, "4. Security & Safety Guardrails")),
+        )
 
     def test_pass_when_the_section_names_a_path_that_exists(self):
         report = support.run_audit(support.fixture("con-01-names-existing-paths"))
@@ -420,6 +457,23 @@ class Con02Tests(unittest.TestCase):
 
     def test_a_subsection_is_part_of_the_section(self):
         text = deny_list("Never edit `docs/`.") + "\n### Tests\n\n- Do not touch `tests/`.\n"
+        check, _ = self.con02({"AGENTS.md": text})
+        self.assertEqual(check["verdict"], "PASS")
+
+    def test_paths_beside_the_prohibitions_of_a_conventions_section_do_not_protect_tests(self):
+        check, findings = self.con02({"AGENTS.md": CONVENTIONS_FIRST, "docs/overview.md": "# x\n"})
+        self.assertEqual(check["verdict"], "FAIL")
+        (finding,) = findings
+        self.assertEqual(
+            [(e["path"], e["line"], e["note"]) for e in finding["evidence"]],
+            [
+                ("AGENTS.md", 5, "3. Architectural Patterns & Code Conventions"),
+                ("AGENTS.md", 13, "4. Security & Safety Guardrails"),
+            ],
+        )
+
+    def test_a_path_on_a_prohibition_in_a_conventions_section_still_counts(self):
+        text = CONVENTIONS_FIRST.replace("- Never catch a bare exception.", "- Never edit `tests/`.")
         check, _ = self.con02({"AGENTS.md": text})
         self.assertEqual(check["verdict"], "PASS")
 

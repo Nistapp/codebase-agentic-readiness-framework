@@ -48,6 +48,8 @@ facts:
    version from them, and still run the tools through `uvx`, `npx` and `go tool`. The root [`.nvmrc`](../../../.nvmrc) pins
    Node for CI's `docs` job. [`test_tool_pins.py`](../../../dev/tests/test_tool_pins.py) fails when a pin is not
    exact, when a lockfile disagrees with its manifest, or when another file repeats a version.
+   detect-secrets has had no release in over two years. The owner keeps it on purpose
+   ([Secrets scan](../../reference/dev-tooling.md#secrets-scan)).
 6. **Data is not a dependency.** The greenfield template (`greenfield/templates/`) and the engine's test fixtures
    (`audit/engine/tests/fixtures/`) have entries that ignore every dependency. Their alerts stay visible; Dependabot
    never edits them. A fixture is test data (`AGENTS.md`).

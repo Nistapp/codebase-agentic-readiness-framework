@@ -15,9 +15,17 @@ folder first on ``sys.path`` (``audit/tools/tests/test_import_fixture_matrix.py`
 modules with the same names), so a module imported after it could come from the wrong folder.
 
 ``--measure`` runs every module of the suite one by one and rewrites the suite's weights (seconds, one decimal).
+It leaves ``dev/test_shard_groups.json`` alone.
 
-The assignment is the same on every machine: the heaviest module first, each onto the shard with the least weight so
-far (ties by name and shard number). ``make test`` and ``make coverage`` never shard; only CI's jobs do.
+A group in that file is a set of modules that must share a shard, because they use one fixed file (the engine's
+``test_smoke`` and ``test_framework_default`` both rebuild ``audit/engine/dist/audit.pyz`` in place). ``assign`` treats
+a group as one unit with the sum of its weights, at every shard count. A test finds the modules that run the engine's
+``build.py`` and fails when they are not in one group.
+
+The assignment is the same on every machine: the heaviest unit (a module or a group) first, each onto the shard with
+the least weight so far (ties by name and shard number). CI's jobs shard into ``TEST_SHARDS`` parts. On Linux,
+``make test`` shards into ``LOCAL_SHARDS`` parts that run at once, and ``make coverage`` does the same for the
+engine's and the audit tools' suites. With ``TEST_JOBS=`` neither shards.
 """
 
 from __future__ import annotations
@@ -34,6 +42,7 @@ from pathlib import Path
 DEV = Path(__file__).resolve().parent
 REPO = DEV.parent
 WEIGHTS = DEV / "test_shard_weights.json"
+GROUPS = DEV / "test_shard_groups.json"
 #: Each suite: the folder its tests run from, and the start folder of its discovery (relative to the first), as the
 #: Makefile's test-<suite> target runs it.
 SUITES = {
@@ -77,14 +86,44 @@ def load_weights(path: Path = WEIGHTS) -> dict[str, dict[str, float]]:
     return data
 
 
-def assign(modules: Sequence[str], weights: dict[str, float], count: int) -> list[list[str]]:
-    """Every module in exactly one of ``count`` shards, balanced by weight; each shard sorted by name."""
+def load_groups(suite: str, path: Path = GROUPS) -> list[list[str]]:
+    """The suite's groups of modules that must share a shard (each entry's ``why`` is for the reader)."""
+    if not path.exists():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return [[str(name) for name in entry["modules"]] for entry in data.get(suite, [])]
+
+
+def assign(
+    modules: Sequence[str],
+    weights: dict[str, float],
+    count: int,
+    groups: Sequence[Sequence[str]] = (),
+) -> list[list[str]]:
+    """Every module in exactly one of ``count`` shards, balanced by weight; each shard sorted by name.
+
+    A group is placed as one unit with the sum of its weights. A group that names a module not in ``modules``, or a
+    module in two groups, raises ``ValueError``."""
+    known = set(modules)
+    grouped: set[str] = set()
+    for group in groups:
+        missing = sorted(set(group) - known)
+        if missing:
+            raise ValueError(f"a shard group names modules that do not exist: {', '.join(missing)}")
+        if grouped & set(group):
+            raise ValueError(f"a module is in two shard groups: {', '.join(sorted(grouped & set(group)))}")
+        grouped |= set(group)
+    units = [sorted(group) for group in groups] + [[name] for name in modules if name not in grouped]
+
+    def weight(unit: list[str]) -> float:
+        return sum(weights.get(name, DEFAULT_WEIGHT) for name in unit)
+
     shards: list[list[str]] = [[] for _ in range(count)]
     loads = [0.0] * count
-    for module in sorted(modules, key=lambda name: (-weights.get(name, DEFAULT_WEIGHT), name)):
+    for unit in sorted(units, key=lambda u: (-weight(u), u[0])):
         lightest = min(range(count), key=lambda i: (loads[i], i))
-        shards[lightest].append(module)
-        loads[lightest] += weights.get(module, DEFAULT_WEIGHT)
+        shards[lightest].extend(unit)
+        loads[lightest] += weight(unit)
     return [sorted(shard) for shard in shards]
 
 
@@ -149,7 +188,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     index, count = args.shard
-    selected = assign(modules, load_weights().get(args.suite, {}), count)[index - 1]
+    try:
+        selected = assign(modules, load_weights().get(args.suite, {}), count, load_groups(args.suite))[index - 1]
+    except ValueError as error:
+        raise SystemExit(f"test_shard: {error}") from error
     print(f"test_shard: {args.suite} shard {index}/{count}: {len(selected)} of {len(modules)} modules", file=sys.stderr)
     return run(root, start, selected)
 

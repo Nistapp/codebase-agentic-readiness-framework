@@ -1,0 +1,125 @@
+[
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "define-command-surface/row-1",
+    "note": "Step 6 adds the test verb the same way.",
+    "origin": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "row": 1,
+      "step": "Step 2"
+    },
+    "to": [
+      "package.json",
+      "Makefile",
+      "Taskfile.yml",
+      "pyproject.toml",
+      "build.gradle",
+      "build.gradle.kts",
+      "pom.xml"
+    ],
+    "touches": [
+      "EXEC-08",
+      "CMD-01",
+      "CMD-03",
+      "CMD-04",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TST-01"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "define-command-surface/row-2",
+    "origin": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "row": 2,
+      "step": "Step 3"
+    },
+    "to": [
+      "package.json",
+      "Makefile",
+      "Taskfile.yml",
+      "pyproject.toml",
+      "build.gradle",
+      "build.gradle.kts",
+      "pom.xml"
+    ],
+    "touches": [
+      "CMD-02",
+      "CMD-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "define-command-surface/row-3",
+    "origin": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "row": 3,
+      "step": "Step 4"
+    },
+    "to": [
+      "package.json",
+      "Makefile",
+      "Taskfile.yml",
+      "pyproject.toml",
+      "build.gradle",
+      "build.gradle.kts",
+      "pom.xml"
+    ],
+    "touches": [
+      "BASE-02",
+      "CMD-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "define-command-surface/row-4",
+    "origin": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "row": 4,
+      "step": "Step 5"
+    },
+    "to": [
+      "Makefile",
+      "Taskfile.yml"
+    ],
+    "touches": [
+      "CMD-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "fenced-command"
+    ],
+    "id": "define-command-surface/row-5",
+    "note": "CONTRIBUTING.md only when no instruction file may be created (implement/SKILL.md, Stage 3 step 11).",
+    "origin": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "row": 5,
+      "step": "Steps 7 and 8"
+    },
+    "to": [
+      "AGENTS.md",
+      "CONTRIBUTING.md"
+    ],
+    "touches": [
+      "AGT-05",
+      "EXEC-06",
+      "EXEC-03"
+    ]
+  }
+]

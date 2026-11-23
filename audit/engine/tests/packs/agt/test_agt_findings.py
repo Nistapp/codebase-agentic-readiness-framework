@@ -50,7 +50,10 @@ def evidence_of(finding: dict) -> list[tuple]:
 class Agt01Tests(unittest.TestCase):
     def test_no_instruction_file_is_one_finding_with_the_plain_id(self):
         report = audit({"README.md": "# x\n"})
-        self.assertEqual((check_of(report, "AGT-01")["verdict"], check_of(report, "AGT-01")["summary"]), ("FAIL", ""))
+        self.assertEqual(
+            (check_of(report, "AGT-01")["verdict"], check_of(report, "AGT-01")["summary"]),
+            ("FAIL", "no agent-instruction file in the repository"),
+        )
         (finding,) = findings_of(report, "AGT-01")
         self.assertEqual(
             summary_of(finding),
@@ -97,15 +100,15 @@ class Agt01Tests(unittest.TestCase):
         (finding,) = findings_of(report, "AGT-01")
         self.assertIn("exists but is a stub — contains the placeholder marker 'todo'.", finding["statement"])
 
-    def test_a_file_that_differs_only_by_case_is_a_blocker_named_by_its_path(self):
+    def test_a_file_that_differs_only_by_case_is_a_partial_degrader_named_by_its_path(self):
         report = audit({"agents.md": BODY})
-        (finding,) = [f for f in findings_of(report, "AGT-01") if f["severity"] == "BLOCKER"]
+        (finding,) = [f for f in findings_of(report, "AGT-01") if f["id"] == "AGT-01:agents.md"]
         self.assertEqual(
             summary_of(finding),
             (
                 "AGT-01:agents.md",
-                "BLOCKER",
-                "FAIL",
+                "DEGRADER",
+                "PARTIAL",
                 "An agent cannot rely on the instruction file being found because agents.md differs from AGENTS.md "
                 "only by case, and case-sensitive filesystems will not find it.",
                 "Rename to AGENTS.md exactly (Warp also requires ALL CAPS).",
@@ -123,7 +126,8 @@ class Agt01Tests(unittest.TestCase):
             root = Path(tmp)
             support.write(root, "AGENTS.md", BODY)
             with mock.patch(
-                "audit.rules.checks.agt.V.mis_cased_canonical_candidates", return_value=["Agents.md", "agents.md"]
+                "audit.rules.checks.agt.agt_01.V.mis_cased_canonical_candidates",
+                return_value=["Agents.md", "agents.md"],
             ):
                 outcome = check_agt01(
                     spec=REGISTRY_BY_ID["AGT-01"],
@@ -164,21 +168,25 @@ class Agt01Tests(unittest.TestCase):
         report = audit({"AGENTS.md": BODY, "GEMINI.md": BODY})
         self.assertEqual([f["id"] for f in findings_of(report, "AGT-01")], [])
 
-    def test_only_a_nested_canonical_file_is_a_nested_file_and_not_a_vendor_finding(self):
+    def test_only_a_nested_canonical_file_is_a_nested_only_finding_and_not_a_vendor_finding(self):
         report = audit({"sub/AGENTS.md": BODY})
         self.assertEqual(
             (check_of(report, "AGT-01")["verdict"], check_of(report, "AGT-01")["summary"]),
-            ("PASS", "1 nested instruction file(s)"),
+            ("PARTIAL", "1 nested instruction file(s)"),
         )
-        self.assertEqual(findings_of(report, "AGT-01"), [])
+        self.assertEqual([f["id"] for f in findings_of(report, "AGT-01")], ["AGT-01:nested-only"])
 
     def test_a_root_file_with_nested_files_counts_only_the_nested_ones(self):
         report = audit({"AGENTS.md": BODY, "a/AGENTS.md": BODY, "b/AGENTS.md": BODY})
         self.assertEqual(check_of(report, "AGT-01")["summary"], "2 nested instruction file(s)")
 
-    def test_a_governed_root_file_alone_says_nothing(self):
+    def test_a_governed_root_file_alone_is_named_in_the_summary(self):
+        # A summary is never empty (issue #21): the PASS names the file it rests on.
         report = audit({"AGENTS.md": BODY})
-        self.assertEqual((check_of(report, "AGT-01")["verdict"], check_of(report, "AGT-01")["summary"]), ("PASS", ""))
+        self.assertEqual(
+            (check_of(report, "AGT-01")["verdict"], check_of(report, "AGT-01")["summary"]),
+            ("PASS", "instruction file(s): AGENTS.md"),
+        )
 
     def test_an_override_is_named_by_its_own_path_and_its_harness_when_it_is_at_the_root(self):
         report = audit({"AGENTS.md": BODY, "AGENTS.override.md": BODY})
@@ -238,6 +246,7 @@ class Agt08Tests(unittest.TestCase):
                 "reached": 20,
                 "total": 28,
                 "reached_tools": [
+                    "Amp",
                     "Augment Code",
                     "Bolt (StackBlitz)",
                     "Charm Crush",
@@ -252,7 +261,6 @@ class Agt08Tests(unittest.TestCase):
                     "Kiro (AWS)",
                     "OpenAI Codex CLI",
                     "Roo Code",
-                    "Sourcegraph Amp",
                     "Trae",
                     "Warp",
                     "Windsurf / Devin Desktop",
@@ -372,7 +380,7 @@ class Agt08Tests(unittest.TestCase):
                 with tempfile.TemporaryDirectory() as tmp:
                     root = Path(tmp)
                     support.write(root, "AGENTS.md", BODY)
-                    with mock.patch("audit.rules.checks.agt.V.classify_present", return_value=classified):
+                    with mock.patch("audit.rules.checks.agt.agt_08.V.classify_present", return_value=classified):
                         outcome = check_agt08(
                             spec=REGISTRY_BY_ID["AGT-08"],
                             target=None,
@@ -389,6 +397,42 @@ class Agt08Tests(unittest.TestCase):
                     ),
                     finding.statement,
                 )
+
+    def test_a_claude_md_that_only_imports_agents_md_is_a_pointer_not_a_competitor_or_a_shadow(self):
+        stated = BODY + "This file is read by Claude Code, Codex and Cursor.\n"
+        for stub in ("@AGENTS.md\n", "# CLAUDE.md\n\nSee AGENTS.md.\n", "<!-- note -->\n@./AGENTS.md\n"):
+            with self.subTest(stub=stub):
+                report = audit({"AGENTS.md": stated, "CLAUDE.md": stub})
+                check = check_of(report, "AGT-08")
+                self.assertEqual(findings_of(report, "AGT-08"), [])
+                self.assertEqual(check["verdict"], "PASS")
+                self.assertIn("pointer files at AGENTS.md, not competitors: CLAUDE.md", check["summary"])
+                self.assertIn("Anthropic Claude Code", check["data"]["reached_tools"])
+
+    def test_a_claude_md_that_imports_agents_md_beside_its_own_rules_competes_but_shadows_nothing(self):
+        report = audit({"AGENTS.md": BODY, "CLAUDE.md": "@AGENTS.md\n\n" + BODY})
+        ids = [f["id"] for f in findings_of(report, "AGT-08")]
+        self.assertIn("AGT-08:vendor-files", ids)
+        self.assertNotIn("AGT-08:CLAUDE.md>AGENTS.md", ids)
+        self.assertIn(
+            "files that import @AGENTS.md, so shadow nothing: CLAUDE.md", check_of(report, "AGT-08")["summary"]
+        )
+
+    def test_a_pointer_with_no_root_agents_md_is_still_a_vendor_file(self):
+        report = audit({"CLAUDE.md": "@AGENTS.md\n"})
+        self.assertIn("AGT-08:vendor-files", [f["id"] for f in findings_of(report, "AGT-08")])
+
+    def test_a_pointer_is_short_and_names_agents_md_on_every_line(self):
+        from audit.rules.checks.agt import imports_agents_md, is_agents_md_pointer
+
+        self.assertTrue(is_agents_md_pointer("@AGENTS.md"))
+        self.assertTrue(is_agents_md_pointer("Read ../AGENTS.md first.\n"))
+        self.assertFalse(is_agents_md_pointer(""))
+        self.assertFalse(is_agents_md_pointer("See AGENTS.md.\nAlways run the tests.\n"))
+        self.assertFalse(is_agents_md_pointer("AGENTS.md\n" * 6))
+        self.assertTrue(imports_agents_md("Rules: see @AGENTS.md and more."))
+        self.assertFalse(imports_agents_md("mail me@AGENTS.md"))
+        self.assertFalse(imports_agents_md("`@AGENTS.md` is the import syntax"))
 
     def test_a_verdict_is_pass_with_no_finding_fail_with_a_fail_and_partial_otherwise(self):
         self.assertEqual(check_of(audit({"README.md": "x\n"}), "AGT-08")["verdict"], "PASS")

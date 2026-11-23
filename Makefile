@@ -12,17 +12,25 @@
 #   make lint           read-only lint
 #   make typecheck      mypy, strict, on the typed scope below
 #   make test           the five unittest suites: the engine's, the audit tools' (the catalogue checks), the
-#                       implement tools', the greenfield scaffolder's and the dev checks'; at once on Linux
-#                       (TEST_JOBS), else one by one
+#                       implement tools', the greenfield scaffolder's and the dev checks'; on Linux at once,
+#                       the slow three in LOCAL_SHARDS shards each (TEST_JOBS), else one by one and whole
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
 #                       cross-check, the recipe linter, the master-list freshness check,
 #                       the workflow lint and the spell check
 #   make security       secrets scan against the committed baseline, then the dependency audit (osv-scanner) of
 #                       the dev tools' lockfiles; needs Go and the network
 #   make coverage       (extra) the engine's, the tools' and the scaffolder's suites under coverage.py; fails
-#                       below the floor in .coveragerc. CI runs it in parts: coverage-<suite> per job, then
-#                       coverage-combine
+#                       below the floor in .coveragerc. On Linux the suites run at once, the engine's and the
+#                       audit tools' in LOCAL_SHARDS shards each (TEST_JOBS), else one by one and whole. CI
+#                       runs it in parts: coverage-<suite> per job, then coverage-combine
+#   make gate           (extra) every gate CI needs in one command: check, security, docs-lint, commit-lint,
+#                       self-audit and coverage. On Linux the first five run at once, then coverage alone (the
+#                       tests of `check` and `coverage` both build audit/engine/dist/audit.pyz, so they must not
+#                       overlap); else one by one. Each gate's output comes in one piece, and the gates that
+#                       failed are named at the end. Run it before you propose a change: it replaces
+#                       `make check`, `make security`, `make coverage`, `make self-audit` and `make docs-lint`
 #   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
+#                       or exit 1 when the test trees hold more skip markers than .quality-baseline.json allows
 #
 # `format:check` has a colon, which make reads as a rule separator. The target is spelled `format\:check`
 # and `format-check` is the alias; the unescaped form `format:check:` would define a different rule.
@@ -96,12 +104,14 @@ TYPED_SOURCES := $(shell find audit/tools implement/tools implement/playbooks/te
 .DEFAULT_GOAL := help
 
 # The suites of `test`. On Linux with GNU make 4 or newer, `make test` runs them at once, in a sub-make with
-# TEST_JOBS: about 80 s on CI instead of 170 s, and about 200 MB of memory in all (measured 2026-11-09). Elsewhere
-# they run one by one: macOS ships GNU make 3.81, which has no --output-sync. `make test TEST_JOBS=` runs them one by
-# one on Linux too. --output-sync=target prints each suite's output in one piece, when that suite ends.
+# TEST_JOBS, one job per CPU core (nproc). There the slow suites (TEST_SHARDED_SUITES) also run in LOCAL_SHARDS
+# shards each, all at once, so `make test` takes as long as its slowest shard: about 95 s instead of 234 s on 16
+# cores (measured 2026-11-23). Elsewhere the suites run one by one and whole: macOS ships GNU make 3.81, which has no
+# --output-sync. `make test TEST_JOBS=` runs them one by one and whole on Linux too. --output-sync=target prints
+# each suite's or shard's output in one piece, when it ends.
 TEST_SUITES := test-engine test-audit-tools test-implement-tools test-greenfield test-dev
 ifeq ($(shell uname -s 2>/dev/null)-$(filter 3.%,$(MAKE_VERSION)),Linux-)
-TEST_JOBS ?= -j4 --output-sync=target
+TEST_JOBS ?= -j$(shell nproc 2>/dev/null || echo 4) --output-sync=target
 endif
 
 # Everything else runs one target at a time, even under `make -j`: spec/command-surface.md fixes the order of
@@ -110,13 +120,13 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint adr-lint masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part gate coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint recipe-paths adr-lint consistency-map catalogue-check update-catalogue new-check masters-check eval-expected-check update-masters golden check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline update-skip-baseline validate-skills ruleset-renumber docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-combine"
+	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  test-<suite>-local-<i> (LOCAL_SHARDS=4)  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-<suite>-local-<i>  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  adr-lint  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
+	@echo "extra: gate (check, security, docs-lint, commit-lint, self-audit, then coverage: the one command before a change)  setup (checks prerequisites, installs nothing)  coverage self-audit  update-audit-baseline  update-skip-baseline  verify-rules  crosscheck  recipe-lint  recipe-paths  adr-lint  consistency-map [CMAP_ARGS=...]  golden GOLDEN_ARGS=...  catalogue-check  update-catalogue  new-check ID=... TITLE=...  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills  ruleset-renumber [RULESET_ARGS=check]"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -147,7 +157,7 @@ typecheck:
 	$(QUALITY_BASELINE) mypy -- $(MYPY) --config-file mypy.ini $(TYPED_SOURCES)
 
 test:
-	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_TARGETS)
 
 test-engine:
 	cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests
@@ -166,10 +176,10 @@ test-dev:
 
 # CI splits the slow suites (SHARDED_SUITES) into TEST_SHARDS parts that run in separate jobs; SHARD=<i> picks one
 # (1 to TEST_SHARDS). dev/test_shard.py finds the modules at run time and balances them by
-# dev/test_shard_weights.json; every module is in exactly one shard, and a shard that selects no test fails. `test`
-# and `coverage` never shard. TEST_SHARDED_SUITES are the suites that test-part shards: SHARDED_SUITES, plus the dev
-# checks, which coverage.py does not measure. The dev checks are sharded only in the Python 3.14 parts, where the whole
-# suite set the length of the run (76-97 s, against 60 s or less for every other job; measured 2026-11-10).
+# dev/test_shard_weights.json; every module is in exactly one shard, and a shard that selects no test fails.
+# `test` and `coverage` shard on their own count, LOCAL_SHARDS (below). TEST_SHARDED_SUITES are the suites that test-part shards: SHARDED_SUITES, plus the dev
+# checks, which coverage.py does not measure. The dev checks run in shards on both Pythons: in the Python 3.14 parts,
+# and through test-dev-shard in CI's test-dev job on Python 3.11, where the whole suite set the length of the run.
 TEST_SHARDS := 2
 SHARDED_SUITES := engine audit-tools
 TEST_SHARDED_SUITES := engine audit-tools dev
@@ -188,15 +198,63 @@ test-dev-shard:
 	$(require_shard)
 	$(PYTHON) $(call test_shard,dev)
 
+# The targets `make test` runs when TEST_JOBS is set: LOCAL_SHARDS shards of each suite in TEST_SHARDED_SUITES
+# (test-<suite>-local-<i>), plus the other suites whole. LOCAL_SHARDS is separate from CI's TEST_SHARDS. Four keeps
+# each shard of the engine's and the audit tools' suites short; the dev checks' slowest shard is
+# test_implement_eval alone (about 80 s), which a module cannot split. With TEST_JOBS empty, `test` runs the suites
+# whole, one by one. The engine modules test_smoke and test_framework_default both build audit/engine/dist/audit.pyz
+# in place, so they must share a shard. dev/test_shard.py keeps them together at every count, from the groups in
+# dev/test_shard_groups.json, and a dev check fails when a module that builds the archive is not in a group.
+LOCAL_SHARDS ?= 4
+LOCAL_SHARD_TARGETS := $(foreach suite,$(TEST_SHARDED_SUITES),$(foreach i,$(shell seq 1 $(LOCAL_SHARDS)),test-$(suite)-local-$(i)))
+TEST_TARGETS = $(if $(strip $(TEST_JOBS)),$(LOCAL_SHARD_TARGETS) $(filter-out $(TEST_SHARDED_SUITES:%=test-%),$(TEST_SUITES)),$(TEST_SUITES))
+local_index = $(lastword $(subst -, ,$*))
+local_suite = $(patsubst %-local-$(local_index),%,$*)
+.PHONY: $(LOCAL_SHARD_TARGETS)
+$(LOCAL_SHARD_TARGETS): test-%:
+	$(PYTHON) $(CURDIR)/dev/test_shard.py --suite $(local_suite) --shard $(local_index)/$(LOCAL_SHARDS)
+
 # Every suite of `test` in TEST_SHARDS parts, for CI's Python 3.14 jobs: part <i> is shard <i> of each suite in
-# TEST_SHARDED_SUITES plus the targets in TEST_PART_<i>, run at once as `test` runs its suites. The dev checks' first
-# shard is test_implement_eval alone (about 40 s), so the small whole targets go with the second.
+# TEST_SHARDED_SUITES plus the targets in TEST_PART_<i>, run at once as `test` runs its suites. The dev checks' two
+# shards weigh the same (about 118 s each, measured 2026-11-23); the small whole targets go with the second.
 # dev/tests/test_ci_parity.py fails when the parts leave out a suite of `test`.
 TEST_PART_1 :=
 TEST_PART_2 := test-implement-tools test-greenfield verify-rules
 test-part:
 	$(require_shard)
 	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SHARDED_SUITES:%=test-%-shard) $(TEST_PART_$(SHARD))
+
+# One command for every gate that CI's `ci-gate` job needs (dev/tests/test_gate_parity.py reads that list and fails when
+# a job has no gate here). The gates run in two waves. GATE_FIRST runs at once, one job each, on Linux with GNU make 4
+# (TEST_JOBS set); GATE_THEN runs after it. `coverage` waits because the engine suite builds audit/engine/dist/audit.pyz
+# in place (test_smoke and test_framework_default: build.py deletes the archive and writes it again), and `check`'s
+# tests and `coverage` both run that suite, so the two would race on one file. With TEST_JOBS empty (`make gate
+# TEST_JOBS=`, and macOS) the gates run one by one, in the same order. Each gate is its own `make` with its own internal
+# order (`check` keeps format:check, typecheck, test), so `TEST_SUITES_SUBMAKE=` is cleared for it: the sub-make that runs
+# the gates is parallel, the gates are not. `test` and `coverage` start their own -j sub-makes, so make prints
+# "-jN forced in submake: resetting jobserver mode" for them: each gate gets its own pool of jobs, which is meant
+# (check's tests, the only heavy step of wave one, use the cores; the other gates are light). A gate's output comes in one piece, when it ends (--output-sync=target).
+# A failed gate does not stop the others: it leaves GATE_DIR/<gate>.failed, and the last step names every failed gate
+# and exits 1. Python 3.11 is not run here: CI runs it, and `uv` can supply it offline only after an earlier download.
+# `make test PYTHON=$(uv python find 3.11)` runs the suites under it.
+GATE_FIRST := check security docs-lint commit-lint self-audit
+GATE_THEN := coverage
+GATE_NAMES := $(GATE_FIRST) $(GATE_THEN)
+GATE_TARGETS := $(GATE_NAMES:%=gate-%)
+GATE_DIR := $(CURDIR)/dev/dist/gate
+.PHONY: $(GATE_TARGETS)
+$(GATE_TARGETS): gate-%:
+	@start=$$(date +%s); \
+	if $(MAKE) --no-print-directory TEST_SUITES_SUBMAKE= $*; then result=passed; else result=FAILED; touch $(GATE_DIR)/$*.failed; fi; \
+	echo "gate: $* $$result in $$(( $$(date +%s) - start )) s"
+gate:
+	mkdir -p $(GATE_DIR)
+	rm -f $(GATE_DIR)/*.failed
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(GATE_FIRST:%=gate-%)
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(GATE_THEN:%=gate-%)
+	@failed=""; for gate in $(GATE_NAMES); do test ! -e $(GATE_DIR)/$$gate.failed || failed="$$failed $$gate"; done; \
+	if test -n "$$failed"; then echo "gate: FAILED:$$failed" >&2; exit 1; fi; \
+	echo "gate: every gate passed ($(GATE_NAMES))"
 
 # Runs the engine's suite and the tools' suites under coverage.py and fails when the total drops below the floor in
 # .coveragerc (`fail_under`). Not part of `check`; needs uv. Each coverage-<suite> writes its own data file
@@ -211,7 +269,11 @@ COVERAGE_HOME := $(CURDIR)/dev/dist/coverage/home
 coverage_env = env -u AUDIT_INDEX_STORE -u XDG_CONFIG_HOME -u XDG_CACHE_HOME HOME=$(COVERAGE_HOME)/$(1) CI=true \
 	UV_CACHE_DIR="$$(uv cache dir)" UV_PYTHON_INSTALL_DIR="$$(uv python dir)" UV_TOOL_DIR="$$(uv tool dir)"
 COVERAGE_SUITES := coverage-engine coverage-audit-tools coverage-implement-tools coverage-greenfield
-coverage: coverage-engine coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine
+# With TEST_JOBS set (Linux, GNU make 4), `coverage` runs LOCAL_SHARDS shards of each sharded suite and the other
+# suites whole, all at once, then combines their data files (coverage-local). With TEST_JOBS empty (`make coverage
+# TEST_JOBS=`, and macOS) it runs the four suites one by one and whole. Both paths give the same total and the same
+# missed lines per file.
+coverage: $(if $(strip $(TEST_JOBS)),coverage-local,coverage-engine coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine)
 
 coverage-engine:
 	mkdir -p $(dir $(COVERAGE_DATA))
@@ -253,6 +315,17 @@ coverage-audit-tools-shard:
 	rm -rf $(COVERAGE_HOME)/audit-tools-$(SHARD) && mkdir -p $(COVERAGE_HOME)/audit-tools-$(SHARD)
 	$(call coverage_env,audit-tools-$(SHARD)) COVERAGE_FILE=$(COVERAGE_DATA).audit-tools-$(SHARD) $(COVERAGE) run --rcfile=.coveragerc $(call test_shard,audit-tools)
 
+# coverage-<suite>-local-<i>: shard <i> of LOCAL_SHARDS of a sharded suite under coverage.py, through
+# coverage-<suite>-shard (its own HOME and data file, .coverage.<suite>-<i>). coverage-local runs them beside the
+# whole suites in one parallel sub-make, then coverage-combine SHARDED=1 TEST_SHARDS=LOCAL_SHARDS merges the files.
+COVERAGE_LOCAL_SHARD_TARGETS := $(foreach suite,$(SHARDED_SUITES),$(foreach i,$(shell seq 1 $(LOCAL_SHARDS)),coverage-$(suite)-local-$(i)))
+.PHONY: coverage-local $(COVERAGE_LOCAL_SHARD_TARGETS)
+$(COVERAGE_LOCAL_SHARD_TARGETS): coverage-%:
+	$(MAKE) --no-print-directory coverage-$(local_suite)-shard SHARD=$(local_index) TEST_SHARDS=$(LOCAL_SHARDS)
+coverage-local:
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(COVERAGE_LOCAL_SHARD_TARGETS) coverage-implement-tools coverage-greenfield
+	$(MAKE) --no-print-directory coverage-combine SHARDED=1 TEST_SHARDS=$(LOCAL_SHARDS)
+
 # The coverage suites in TEST_SHARDS parts, for CI's Python 3.11 jobs: part <i> is shard <i> of each sharded suite
 # plus the targets in COVERAGE_PART_<i>, run at once. Each writes its own data file for coverage-combine SHARDED=1.
 COVERAGE_PART_1 := coverage-implement-tools
@@ -273,15 +346,20 @@ coverage-combine:
 	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) report --rcfile=.coveragerc
 
 # The engine on this repository, read-only. Reports go under dist/self-audit/ (git-ignored); only artefacts/ and dist/
-# are left out. --baseline is the ratchet (ADR-0001): exit 2 when a finding appears that .audit-baseline.json did not
-# have, exit 0 otherwise. --no-user-config keeps the verdict the same on every machine. Publication:
-# docs/reference/self-audit.md.
+# are left out. The walk skips git-ignored folders itself, such as the agent worktrees under .claude/worktrees/ (ADR-0009
+# in audit/engine/docs/architecture/adrs/). --baseline is the ratchet
+# (ADR-0001): exit 2 when a finding appears that .audit-baseline.json did not have, exit 0 otherwise. The skip census
+# then fails (exit 1) when the test trees hold more skip markers than counts.skips in .quality-baseline.json; the
+# engine compares finding ids only, so its own "TST-03 skip / xfail census" count cannot fail. --no-user-config
+# keeps the verdict the same on every machine, and --target-label . keeps the local path out of the committed report.
+# Publication: docs/reference/self-audit.md.
 SELF_AUDIT_OUT := $(CURDIR)/dist/self-audit
-SELF_AUDIT_FLAGS := --out $(SELF_AUDIT_OUT)/ --force --format both --no-user-config --exclude 'artefacts/*' --exclude 'dist/*'
+SELF_AUDIT_FLAGS := --out $(SELF_AUDIT_OUT)/ --force --format both --no-user-config --target-label . --exclude 'artefacts/*' --exclude 'dist/*'
 
 self-audit:
 	mkdir -p $(SELF_AUDIT_OUT)
 	cd $(ENGINE) && $(PYTHON) -m audit $(CURDIR) $(SELF_AUDIT_FLAGS) --baseline $(CURDIR)/.audit-baseline.json
+	$(PYTHON) dev/skip_census.py check
 
 # Accepts today's findings as the new baseline: a deliberate act, never run to get green. Review the diff; the
 # baseline only shrinks.
@@ -289,6 +367,11 @@ update-audit-baseline:
 	mkdir -p $(SELF_AUDIT_OUT)
 	cd $(ENGINE) && $(PYTHON) -m audit $(CURDIR) $(SELF_AUDIT_FLAGS)
 	cp $(SELF_AUDIT_OUT)/audit-report.json .audit-baseline.json
+
+# Writes today's skip-marker count (dev/skip_census.py) into .quality-baseline.json. It only lowers the count: a rise
+# is refused, and raising it needs the owner.
+update-skip-baseline:
+	$(PYTHON) dev/skip_census.py record
 
 # Every framework anchor the engine cites must still resolve in this repository.
 verify-rules:
@@ -303,13 +386,44 @@ crosscheck:
 recipe-lint:
 	$(PYTHON) dev/recipe_lint.py .
 
+# Every repository path that a recipe page or an AGENTS.md names in backticks must exist (or be git-ignored output).
+recipe-paths:
+	$(PYTHON) dev/recipe_paths.py .
+
 # Every ADR follows docs/ADR_POLICY.md: no lifecycle fields or tombstones, the four sections, a row in the root index.
 adr-lint:
 	$(PYTHON) dev/adr_lint.py .
 
+# Reports the consistency map's gate (ADR 0012): touched reads with no keeping sentence, stale quotes, and rows,
+# checks or templates the map does not cover. Report-only: it exits 0 whatever it finds, and is not part of `check`
+# yet. CMAP_ARGS=--strict makes it fail on a problem; CMAP_ARGS=--verbose also lists the unreviewed pairs.
+consistency-map:
+	$(PYTHON) dev/consistency_map.py $(CMAP_ARGS)
+
+# Byte identity: `make golden GOLDEN_ARGS="record --out DIR"` records a digest of every shipped output (engine reports of
+# the fixtures, --list-checks, the tools' --describe, the catalogue, the skill archives); `make golden
+# GOLDEN_ARGS="compare DIR"` exits 2 and names each entry that differs. Not part of `check`. About 8 seconds.
+golden:
+	$(PYTHON) dev/golden.py $(GOLDEN_ARGS)
+
+# The check catalogue (audit/catalogue.json) is generated from the engine registry, audit/catalogue-overlay.json and
+# the family headings of audit/checks/. catalogue-check fails when it is stale; update-catalogue rewrites it.
+catalogue-check:
+	$(PYTHON) dev/build_catalogue.py --check
+
+update-catalogue:
+	$(PYTHON) dev/build_catalogue.py --write
+
+# Writes the stubs of a new engine check (module, fixture, matrix row, rubric section, overlay entry, ruleset
+# changelog row) and prints what is left to write: `make new-check ID=SEC-04 TITLE="..."`. The gate's tests name
+# each stub until it is finished. It refuses a family that is still one module (none is today).
+new-check:
+	$(PYTHON) dev/new_check.py --id "$(ID)" --title "$(TITLE)"
+
 # The audit and implement master lists (docs/reference/*-master.md) are generated from the catalogue, the check files
-# and the playbooks. masters-check fails when either page is stale; update-masters rewrites them.
-masters-check:
+# and the playbooks. masters-check checks the catalogue first, since the pages are built from it, then fails when
+# either page is stale; update-masters rewrites them.
+masters-check: catalogue-check
 	$(PYTHON) dev/build_masters.py --check
 
 update-masters:
@@ -341,10 +455,11 @@ RANGE ?= origin/dev..HEAD
 commit-lint:
 	$(PYTHON) dev/commit_lint.py --range $(RANGE)
 
-check: format-check typecheck test verify-rules crosscheck recipe-lint adr-lint masters-check eval-expected-check workflow-lint spell
+check: format-check typecheck test verify-rules crosscheck recipe-lint recipe-paths adr-lint masters-check eval-expected-check workflow-lint spell
 
-# No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
-# lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.
+# The gate has two parts. The secrets scan: the baseline lists the deliberate key-shaped strings in the fixtures
+# and tests; a new hit fails the scan. It stays in `security` here, and root AGENTS.md ("Commands") says why; the
+# configure-quality-tools playbook keeps a target's `security` to the dependency audit.
 # The dependency audit: osv-scanner, pinned in dev/tools/osv/go.mod (a Go `tool` directive, so Dependabot sees it),
 # reads the dev tools' lockfiles and fails on a known vulnerability that no osv-scanner.toml accepts. Without
 # --config, osv-scanner reads the osv-scanner.toml next to each lockfile, the same file OpenSSF Scorecard reads.
@@ -402,6 +517,12 @@ endif
 changelog-fix:
 	$(PYTHON) dev/wrap_changelog.py CHANGELOG.md
 	$(MARKDOWNLINT) --fix CHANGELOG.md
+
+# Renumbers the ruleset revisions this branch adds after the newest one on origin/dev (dev/ruleset_renumber.py).
+# RULESET_ARGS=check lists them and changes nothing; the default is apply. It never stages a file.
+RULESET_ARGS ?= apply
+ruleset-renumber:
+	$(PYTHON) dev/ruleset_renumber.py $(RULESET_ARGS)
 
 # Renders every Mermaid block in FILES with the pinned mermaid-cli; fails on a block that does not render.
 docs-mermaid:

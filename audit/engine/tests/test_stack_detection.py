@@ -86,24 +86,40 @@ class PythonFromSourceTests(unittest.TestCase):
         self.assertEqual(stack_of({"src/app.py": "print(1)\n"}).describe(), "ecosystems: python")
 
 
-class VerbRunnerTests(unittest.TestCase):
-    """The runner manifests a stack lists, each once, in the order of the ecosystems that hint at them."""
-
-    def test_a_makefile_at_any_depth_is_listed_once_though_five_ecosystems_hint_at_it(self):
-        self.assertEqual(stack_of({"Makefile": "all:\n"}).verb_runners, ["Makefile"])
-        self.assertEqual(stack_of({"tools/Makefile": "all:\n"}).verb_runners, ["Makefile"])
-
-    def test_the_runners_follow_the_order_of_the_ecosystem_table(self):
-        files = {"Makefile": "all:\n", "package.json": "{}\n"}
-        self.assertEqual(stack_of(files).verb_runners, ["package.json", "Makefile"])
-
-    def test_a_manifest_that_is_not_a_verb_runner_is_not_listed(self):
-        self.assertEqual(stack_of({"Rakefile": "task :x\n", "Gemfile": "\n"}).verb_runners, [])
+class ManifestTests(unittest.TestCase):
+    """A manifest names its ecosystem by its base name, or by a glob, at any depth."""
 
     def test_a_manifest_names_its_ecosystem_at_any_depth_and_by_its_basename(self):
         self.assertEqual(stack_of({"deep/er/package.json": "{}\n"}).ecosystems, {"node"})
         self.assertEqual(stack_of({"my-package.json": "{}\n"}).ecosystems, set())
         self.assertEqual(stack_of({"deep/requirements-prod.txt": "x\n"}).ecosystems, {"python"})
+
+
+class PackageManagerTests(unittest.TestCase):
+    """A package manager is named by its own file, at any depth."""
+
+    def test_a_text_bun_lock_names_bun(self):
+        stack = stack_of({"package.json": "{}\n", "bun.lock": "{}\n"})
+        self.assertEqual(stack.package_managers, {"bun"})
+
+    def test_an_npm_shrinkwrap_names_npm(self):
+        stack = stack_of({"package.json": "{}\n", "app/npm-shrinkwrap.json": "{}\n"})
+        self.assertEqual(stack.package_managers, {"npm"})
+
+    def test_a_pdm_lock_names_pdm(self):
+        stack = stack_of({"pyproject.toml": "\n", "pdm.lock": "\n"})
+        self.assertEqual(stack.package_managers, {"pdm"})
+
+    def test_a_requirements_file_that_names_python_also_names_pip(self):
+        for rel in ("requirements-dev.txt", "requirements.txt", "deep/requirements-prod.txt"):
+            with self.subTest(file=rel):
+                stack = stack_of({rel: "x\n"})
+                self.assertEqual((stack.ecosystems, stack.package_managers), ({"python"}, {"pip"}))
+
+    def test_a_name_that_only_contains_a_signal_names_no_manager(self):
+        for rel in ("my-bun.lock", "pdm.lock.bak", "dev-requirements.txt", "requirements.txt.orig"):
+            with self.subTest(file=rel):
+                self.assertEqual(stack_of({rel: "x\n"}).package_managers, set())
 
 
 if __name__ == "__main__":

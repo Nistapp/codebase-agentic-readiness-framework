@@ -18,6 +18,8 @@ It exists only to answer questions more than one pack asks. The ones that motiva
   (``prohibitions_section``), so heading detection cannot drift between them;
 * **"what does a Makefile verb run, through variables and prerequisites?"** — TOOL-04 looks for a dependency
   audit and EXEC-07 for the type checker the ``typecheck`` verb runs (``follow_makefile``);
+* **"which tracked files does an ignore rule also match?"** — SEC-01 reads them for env-like names and SEC-03
+  for key material (``tracked_and_ignored``), so both read one list from the scoped matcher;
 * **"which branches do the declared rules protect?"** — HYG-11 reads the branch rules declared as code, and the
   local guard and the instruction file are compared with the same list (``declared_branch_rules``).
 
@@ -61,9 +63,9 @@ class VerbBinding:
     argv: tuple[str, ...]
 
 
-#: Runner precedence among manifests at the same depth when more than one defines the same verb. A shallower
-#: manifest outranks a deeper one first (:func:`runner_rank`, ADR-0008). Fixed and documented so a target
-#: with both a Makefile and package.json resolves deterministically.
+#: Runner precedence among the root manifests when more than one defines the same verb (:func:`runner_rank`,
+#: ADR-0008). Every runner is a root manifest (:func:`_at_root`), so this order alone decides among them. Fixed
+#: and documented so a target with both a Makefile and package.json resolves deterministically.
 RUNNER_PRECEDENCE: tuple[str, ...] = (
     "package.json",
     "Makefile",
@@ -76,6 +78,37 @@ RUNNER_PRECEDENCE: tuple[str, ...] = (
     "gradlew",
     "mvnw",
 )
+
+
+#: The name a check lists for "the root README", whatever the file is called (:func:`entry_documents`).
+README = "README.md"
+
+
+def root_readme(inventory: Inventory) -> str | None:
+    """The repository's root README, or ``None``: a root file whose name starts with ``readme``, in any case.
+
+    ``README.md`` (any case) comes first, then the others by lower-cased name, so ``README`` is found before
+    ``README.rst``. HYG-01 and every check that reads "the README" ask here, so they agree on whether it exists.
+    """
+    found = [entry.rel for entry in inventory.files if "/" not in entry.rel and entry.rel.lower().startswith("readme")]
+    if not found:
+        return None
+    return min(found, key=lambda rel: (0 if rel.lower() == "readme.md" else 1, rel.lower()))
+
+
+def entry_documents(inventory: Inventory, names: tuple[str, ...]) -> list[str]:
+    """``names`` in the order given, with :data:`README` replaced by the root README's own name.
+
+    A ``README`` with no extension or a ``README.rst`` is then read and cited by its own name. With no root README,
+    :data:`README` stays. Every name is kept, present or not: the caller reads each and skips what is missing.
+    """
+    readme = root_readme(inventory) or README
+    return [readme if name == README else name for name in names]
+
+
+def at_root(inventory: Inventory, rel: str) -> bool:
+    """Whether the inventory holds ``rel`` itself; ``Inventory.has`` also accepts a copy below the root."""
+    return any(entry.rel == rel for entry in inventory.files)
 
 
 def tracked_in_scope(target, inventory: Inventory) -> set[str] | None:
@@ -109,6 +142,25 @@ def scoped_rules(target, inventory: Inventory) -> list[IgnoreRule]:
         if "/" in rel and rel.endswith(".gitignore") and not inventory.is_set_aside(rel):
             nested.add(rel)
     return load_scoped_rules(target.path, nested)
+
+
+def tracked_and_ignored(target, inventory: Inventory, rules: list[IgnoreRule] | None = None) -> list[str] | None:
+    """The in-scope paths git tracks that an ignore rule also matches, sorted; ``None`` when git cannot answer.
+
+    One answer for every check that asks "was a file committed past an ignore rule?" (`SEC-01`, `SEC-03`; issue
+    #12). The tracked set is :func:`tracked_in_scope`, so an excluded or set-aside path is out, and the ignore
+    answer is the scoped matcher (:func:`scoped_rules`, ADR-0009), never ``git ls-files -ci``: the result does not
+    depend on the host's global excludes file or ``.git/info/exclude``. A file under an ignored directory counts.
+    ``rules`` lets a caller that already holds :func:`scoped_rules` pass it in.
+    """
+    tracked = tracked_in_scope(target, inventory)
+    if tracked is None:
+        return None
+    if rules is None:
+        rules = scoped_rules(target, inventory)
+    if not rules:
+        return []
+    return sorted(rel for rel in tracked if decide(rel, rules).ignored)
 
 
 def directory_decision(root: str, rules: list[IgnoreRule]) -> IgnoreDecision:
@@ -165,7 +217,7 @@ def resolve_verbs(inventory: Inventory, stack: Stack) -> dict[str, VerbBinding]:
 
 def runner_commands(inventory: Inventory) -> tuple[tuple[str, dict[str, str]], ...]:
     """Every present verb runner and its declared ``{verb: command}`` map, in precedence order
-    (:func:`runner_rank`: shallowest first, then by kind).
+    (:func:`runner_rank`). Every runner is a root manifest, so the order is :data:`RUNNER_PRECEDENCE`.
 
     A runner is present when its manifest is present, whether or not it declares any framework verb;
     callers that care about verb coverage read the map, callers that care about runners read the name.
@@ -180,7 +232,7 @@ def runner_commands(inventory: Inventory) -> tuple[tuple[str, dict[str, str]], .
 
 def makefile_errors(inventory: Inventory) -> tuple[MakeError, ...]:
     """What GNU Make refuses in the root ``Makefile``; empty when it parses or there is none."""
-    return parse_makefile(inventory).errors if inventory.has("Makefile") else ()
+    return parse_makefile(inventory).errors if _at_root(inventory, "Makefile") else ()
 
 
 #: Fenced-code languages treated as shell for command extraction.
@@ -258,6 +310,33 @@ def extract_fenced_commands(text: str) -> list[tuple[str, int, str]]:
     return commands
 
 
+#: One inline code span: a run of one or two backticks, the text, and the same run again.
+_INLINE_SPAN_RE = re.compile(r"(?<!`)(`{1,2})(?!`)(.+?)(?<!`)\1(?!`)")
+
+
+def extract_documented_commands(text: str) -> list[tuple[str, int, str]]:
+    """The commands a document shows: :func:`extract_fenced_commands`, then each inline code span outside a fence.
+
+    An inline span is returned as ``("inline", line_no, command)``, with a leading shell prompt stripped and a
+    trailing comment cut off as in a fenced block. A document "shows" a command written either way (issue #8): a
+    bullet such as ``- Run one test: `pytest -k name` `` documents the command as plainly as a fenced block does.
+    Every span is returned; the caller's own pattern decides which spans are commands.
+    """
+    commands = extract_fenced_commands(text)
+    in_fence = False
+    for line_no, raw in enumerate(text.splitlines(), start=1):
+        if _FENCE_RE.match(raw):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        for match in _INLINE_SPAN_RE.finditer(raw):
+            command = strip_shell_comment(_PROMPT_RE.sub("", match.group(2).strip()).strip())
+            if command:
+                commands.append(("inline", line_no, command))
+    return commands
+
+
 # ---------------------------------------------------------------------------
 # the instruction file and its prohibitions section
 # ---------------------------------------------------------------------------
@@ -300,23 +379,64 @@ _FENCE_LINE_RE = re.compile(r"^\s*(?:```|~~~)")
 _CODE_SPAN_RE = re.compile(r"(?<!`)(`{1,3})(?!`)(.+?)(?<!`)\1(?!`)")
 
 
+#: A line that opens a list item: a bullet or a number. Its indented continuation lines belong to it.
+_LIST_ITEM_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s")
+
+
 @dataclass(frozen=True)
 class Prohibitions:
-    """The prohibitions section of an instruction file: where it is and every line in it."""
+    """The prohibitions section of an instruction file: where it is and every line in it.
+
+    ``sections`` holds the line and the title of each heading that opens a part of it. ``quiet`` holds the lines of a
+    section opened by its body alone (no prohibition word in its heading) that stand in no prohibition: a list item
+    or a paragraph with no prohibition line. Such a heading is often a conventions or architecture section that also
+    says "never" three times, and the paths it names beside the prohibitions are not a deny list (issue #9).
+    """
 
     headings: tuple[str, ...]
     first_line: int
     lines: tuple[tuple[int, str], ...]
+    sections: tuple[tuple[int, str], ...] = ()
+    quiet: frozenset[int] = frozenset()
 
     def code_spans(self) -> tuple[tuple[int, str], ...]:
-        """``(line number, text)`` of every code span in the section, in order. A path or a pattern is *named*
-        when it stands in a code span."""
+        """``(line number, text)`` of every code span in the section that a prohibition holds, in order. A path or a
+        pattern is *named* when it stands in such a code span."""
         return tuple(
             (number, match.group(2).strip())
             for number, line in self.lines
+            if number not in self.quiet
             for match in _CODE_SPAN_RE.finditer(line)
             if match.group(2).strip()
         )
+
+
+def _quiet_lines(lines: list[tuple[int, str]]) -> set[int]:
+    """The lines of a body-opened section that belong to no prohibition block.
+
+    A block is a list item with its continuation lines, or a paragraph; a heading or a blank line ends one. A block
+    with a line that matches ``PROHIBITION_LINE_RE`` is a prohibition; the lines of every other block are quiet.
+    """
+    quiet: set[int] = set()
+    block: list[tuple[int, str]] = []
+
+    def close() -> None:
+        if block and not any(PROHIBITION_LINE_RE.search(text) for _n, text in block):
+            quiet.update(number for number, _text in block)
+        block.clear()
+
+    for number, line in lines:
+        if not line.strip() or _HEADING_RE.match(line):
+            close()
+            if line.strip():
+                block.append((number, line))
+                close()
+            continue
+        if _LIST_ITEM_RE.match(line):
+            close()
+        block.append((number, line))
+    close()
+    return quiet
 
 
 def _heading_qualifies(lines: list[str], raw_headings: list[tuple[int, int, str]], idx: int) -> bool:
@@ -365,9 +485,13 @@ def prohibitions_section(text: str) -> Prohibitions | None:
     }
 
     headings: list[str] = []
+    sections: list[tuple[int, str]] = []
     first_line = 0
     kept: list[tuple[int, str]] = []
+    by_body: list[tuple[int, str]] = []
+    quiet: set[int] = set()
     open_level: int | None = None
+    open_by_body = False
     in_fence = False
     for number, line in enumerate(lines, start=1):
         if _FENCE_LINE_RE.match(line):
@@ -377,15 +501,28 @@ def prohibitions_section(text: str) -> Prohibitions | None:
             level = len(heading.group(1))
             if open_level is not None and level <= open_level:
                 open_level = None
+                quiet |= _quiet_lines(by_body)
+                by_body = []
             if open_level is None and qualifies.get(number, False):
                 open_level = level
+                open_by_body = not PROHIBITION_HEADING_RE.search(heading.group(2))
                 headings.append(heading.group(2))
+                sections.append((number, heading.group(2)))
                 first_line = first_line or number
         if open_level is not None:
             kept.append((number, line))
+            if open_by_body:
+                by_body.append((number, line))
+    quiet |= _quiet_lines(by_body)
     if not headings:
         return None
-    return Prohibitions(headings=tuple(headings), first_line=first_line, lines=tuple(kept))
+    return Prohibitions(
+        headings=tuple(headings),
+        first_line=first_line,
+        lines=tuple(kept),
+        sections=tuple(sections),
+        quiet=frozenset(quiet),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -393,57 +530,47 @@ def prohibitions_section(text: str) -> Prohibitions | None:
 # ---------------------------------------------------------------------------
 
 
-def _manifest_path(inventory: Inventory, name: str) -> str:
-    """The real, actually-matched path of manifest ``name`` — the shallowest when more than one exists.
+def _at_root(inventory: Inventory, name: str) -> bool:
+    """Whether manifest ``name`` is at the repository root, by its exact path.
 
-    ``Inventory.has(name)`` matches at any depth (``rel == name or rel.endswith("/" + name)``), so a
-    caller that already confirmed ``inventory.has(name)`` and then uses the literal ``name`` as the
-    manifest's path is citing a path that may not exist at all, on a target whose only manifest of
-    that kind is nested (mirrors :func:`audit.rules.checks.execution._lockfile_paths`, which picks
-    the shallowest lockfile first for the analogous problem).
+    A runner is the root file only: ``make``, ``npm``, ``task``, the pyproject task runners, ``./gradlew`` and
+    ``./mvnw`` in the root folder read the file there, so a nested ``tools/Makefile`` is not a runner and no verb
+    finding cites it.
+    ``Inventory.has`` would match it at any depth.
     """
-    matches = sorted(
-        (rel for rel in inventory.paths() if rel == name or rel.endswith("/" + name)),
-        key=lambda rel: (rel.count("/"), rel),
-    )
-    return matches[0] if matches else name
+    return any(entry.rel == name for entry in inventory.files)
 
 
 def _runner_commands(inventory: Inventory):
     """Yield ``(runner, {verb: command})`` for every manifest present, in :func:`runner_rank` order.
 
-    ``runner`` is the manifest's real, actually-matched relative path (:func:`_manifest_path`), not a
-    hardcoded literal basename — on a target whose only manifest of a kind is nested, the literal name
-    is a path that does not exist anywhere in the repository.
+    Every runner kind (the ``Makefile``, ``package.json``, the Taskfile, ``pyproject.toml``, the Gradle and the
+    Maven build) counts only at the root (:func:`_at_root`), where its tool reads it, so ``runner`` is the root
+    manifest's name, a path that exists.
     """
     found: list[tuple[str, dict[str, str]]] = []
-    if inventory.has("package.json"):
-        path = _manifest_path(inventory, "package.json")
-        found.append((path, extract_npm_scripts(inventory, manifest=path)))
-    if inventory.has("Makefile") and not makefile_errors(inventory):
-        found.append((_manifest_path(inventory, "Makefile"), parse_makefile_targets(inventory)))
+    if _at_root(inventory, "package.json"):
+        found.append(("package.json", extract_npm_scripts(inventory)))
+    if _at_root(inventory, "Makefile") and not makefile_errors(inventory):
+        found.append(("Makefile", parse_makefile_targets(inventory)))
     for name in ("Taskfile.yml", "Taskfile.yaml"):
-        if inventory.has(name):
-            path = _manifest_path(inventory, name)
-            text = inventory.read(path)
+        if _at_root(inventory, name):
+            text = inventory.read(name)
             if text:
-                found.append((path, _parse_taskfile(text)))
-    if inventory.has("pyproject.toml"):
-        path = _manifest_path(inventory, "pyproject.toml")
-        text = inventory.read(path)
+                found.append((name, _parse_taskfile(text)))
+    if _at_root(inventory, "pyproject.toml"):
+        text = inventory.read("pyproject.toml")
         if text:
-            found.append((path, _parse_pyproject_tasks(text)))
+            found.append(("pyproject.toml", _parse_pyproject_tasks(text)))
     for name in ("build.gradle", "build.gradle.kts"):
-        if inventory.has(name):
-            path = _manifest_path(inventory, name)
-            text = inventory.read(path)
+        if _at_root(inventory, name):
+            text = inventory.read(name)
             if text:
-                found.append((path, _parse_gradle_tasks(text, inventory)))
-    if inventory.has("pom.xml"):
-        path = _manifest_path(inventory, "pom.xml")
-        text = inventory.read(path)
+                found.append((name, _parse_gradle_tasks(text, inventory)))
+    if _at_root(inventory, "pom.xml"):
+        text = inventory.read("pom.xml")
         if text:
-            found.append((path, _parse_maven_plugins(text, inventory)))
+            found.append(("pom.xml", _parse_maven_plugins(text, inventory)))
     yield from sorted(found, key=lambda item: runner_rank(item[0]))
 
 
@@ -475,20 +602,19 @@ def _lifecycle_commands(runner: str, inventory: Inventory) -> dict[str, str]:
 def runner_kind(runner: str) -> str:
     """The manifest name a runner path was matched on, e.g. ``"packages/app/package.json"`` -> ``"package.json"``.
 
-    ``_runner_commands`` yields the real, actually-matched path (:func:`_manifest_path`) so evidence
-    cites a path that exists, but the literal manifest name is still what every precedence table,
-    alias table and delegation pattern in this module and in ``cmd.py`` is keyed on — a root-level
-    runner's kind and path are the same string, which is why those tables were never wrong for a
-    root manifest.
+    The literal manifest name is what every precedence table, alias table and delegation pattern in this
+    module and in the ``cmd`` package is keyed on. ``_runner_commands`` yields root manifests only, whose kind and path
+    are the same string; a caller may still pass a path.
     """
     return runner.rsplit("/", 1)[-1]
 
 
 def runner_rank(runner: str) -> tuple[int, int, str]:
-    """The sort key that orders runners: shallowest manifest first, then :data:`RUNNER_PRECEDENCE`, then path.
+    """The sort key that orders runners: :data:`RUNNER_PRECEDENCE`, then path, after a depth term.
 
-    A root manifest of any kind outranks a nested one (ADR-0008), so a nested ``package.json`` cannot take
-    the verbs from the root ``Makefile``. Every reader that asks "which runner first" uses this key.
+    Every runner ``_runner_commands`` yields is a root manifest (:func:`_at_root`), so its depth is 0 and the kind
+    decides. The depth term keeps a root path ahead of a nested one for a caller that passes a path (ADR-0008).
+    Every reader that asks "which runner first" uses this key.
     """
     try:
         kind = RUNNER_PRECEDENCE.index(runner_kind(runner))
@@ -607,7 +733,7 @@ _GRADLE_PLUGINS_BLOCK_RE = re.compile(r"\bplugins\s*\{([^}]*)\}")
 _GRADLE_BARE_PLUGIN_RE = re.compile(r"^\s*`?([\w\-]+)`?\s*$")
 
 #: Plugins that register ``test`` and ``check`` on a build (Quarkus applies the ``java`` plugin itself).
-_GRADLE_LIFECYCLE_PLUGINS = frozenset(
+GRADLE_LIFECYCLE_PLUGINS = frozenset(
     {"java", "java-library", "application", "groovy", "scala", "war", "org.jetbrains.kotlin.jvm", "io.quarkus"}
 )
 
@@ -628,7 +754,8 @@ def _parse_gradle_tasks(text: str, inventory: Inventory) -> dict[str, str]:
     return {name: f"{launcher} {name}" for name in sorted(names)}
 
 
-def _gradle_plugins(text: str) -> set[str]:
+def gradle_plugins(text: str) -> set[str]:
+    """The plugin ids a Gradle build file applies, by id, by ``apply plugin``, or bare in its ``plugins`` block."""
     plugins = {match for pattern in _GRADLE_PLUGIN_ID_RES for match in pattern.findall(text)}
     if _GRADLE_KOTLIN_JVM_RE.search(text):
         plugins.add("org.jetbrains.kotlin.jvm")
@@ -642,7 +769,7 @@ def _gradle_plugins(text: str) -> set[str]:
 
 def _gradle_lifecycle(text: str, inventory: Inventory) -> dict[str, str]:
     """``test`` and ``check`` for a build that applies a plugin which registers them."""
-    if not _gradle_plugins(text) & _GRADLE_LIFECYCLE_PLUGINS:
+    if not gradle_plugins(text) & GRADLE_LIFECYCLE_PLUGINS:
         return {}
     launcher = _launcher(inventory, "gradlew", "gradle")
     return {"test": f"{launcher} test", "check": f"{launcher} check"}
@@ -659,7 +786,11 @@ _MAVEN_LIFECYCLE_PHASES = (("test", "test"), ("typecheck", "compile test-compile
 
 
 def _launcher(inventory: Inventory, wrapper: str, fallback: str) -> str:
-    return f"./{wrapper}" if inventory.has(wrapper) else fallback
+    """``./<wrapper>`` when the build's wrapper is committed, else the installed ``fallback``.
+
+    ``./gradlew`` and ``./mvnw`` run from the root folder, so only a root wrapper launches the root build.
+    """
+    return f"./{wrapper}" if _at_root(inventory, wrapper) else fallback
 
 
 def _parse_maven_plugins(text: str, inventory: Inventory) -> dict[str, str]:
@@ -758,7 +889,7 @@ def follow_makefile(inventory: Inventory, command: str, matches: Callable[[str],
 # ---------------------------------------------------------------------------
 
 #: GitHub's repository-ruleset export format, one JSON file per ruleset (the form ``gh api .../rulesets`` takes).
-RULESET_GLOBS = (".github/rulesets/*.json",)
+RULESET_GLOBS = (".github/rulesets/**/*.json",)
 
 #: The Probot Settings app's file; its ``branches:`` list declares classic branch protection.
 SETTINGS_FILE = ".github/settings.yml"

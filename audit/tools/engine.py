@@ -14,9 +14,9 @@ Two modes::
 
 The launcher decides everything the engine would otherwise leave to chance: it asks for JSON only, names the report
 ``<label>.engine-report.<stamp>.json`` in a directory outside the target, and never passes the engine's ``--force``,
-``--baseline`` or ``--fail-on``. The one engine flag it does forward is ``--emit-baseline`` (D51): with it, the
-engine also writes ``do-not-do.draft.md`` beside the report, and this tool reports that path as
-``data.baseline_draft``. The engine refuses to replace an existing JSON report or draft, so a name taken by another
+``--baseline`` or ``--fail-on``. The one engine flag it does forward is ``--emit-baseline`` (why: the Pitfalls of
+``CON-04`` in ``audit/checks/08-constraints.md``): with it, the engine also writes ``do-not-do.draft.md`` beside
+the report, and this tool reports that path as ``data.baseline_draft``. The engine refuses to replace an existing JSON report or draft, so a name taken by another
 run in the same second is a loud failure, never an overwrite. See the tools README for the contract and
 ``schema/SCHEMA.md``, "Output files", for the names.
 

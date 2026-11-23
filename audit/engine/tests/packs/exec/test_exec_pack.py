@@ -40,12 +40,16 @@ FIXTURES: dict[str, tuple[str, str, bool]] = {
     "exec-03-no-setup": ("EXEC-03", "FAIL", False),
     "exec-04-missing-env": ("EXEC-04", "FAIL", False),
     "exec-05-generated": ("EXEC-05", "FAIL", True),
+    "exec-05-committed-dist": ("EXEC-05", "FAIL", True),
     "exec-06-broken-command": ("EXEC-06", "FAIL", False),
     "exec-07-dual-lint": ("EXEC-07", "FAIL", False),
     "exec-07-dual-python-types": ("EXEC-07", "FAIL", False),
 }
 
 EXEC_CHECKS = tuple(f"EXEC-0{i}" for i in range(1, 8))
+
+#: Fixtures where the fixture's own ignore rule hides the tracked defect; it is force-added after `add -A`.
+FORCE_ADD: dict[str, str] = {"exec-05-committed-dist": "build/x.class"}
 
 
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess:
@@ -61,6 +65,8 @@ class ExecFixtureTests(unittest.TestCase):
         if git:
             self.assertEqual(_git(target, "init").returncode, 0)
             self.assertEqual(_git(target, "add", "-A").returncode, 0)
+            if name in FORCE_ADD:
+                self.assertEqual(_git(target, "add", "-f", FORCE_ADD[name]).returncode, 0)
         return target
 
     def test_each_fixture_fails_exactly_its_check(self):
@@ -74,13 +80,39 @@ class ExecFixtureTests(unittest.TestCase):
                 self.assertEqual(failing, [check], f"{name}: unexpected EXEC FAILs {failing}")
 
     def test_tracked_state_unavailable_degrades_to_unknown_not_pass(self):
-        for name, _check in (("exec-02-no-lockfile", "EXEC-02"), ("exec-05-generated", "EXEC-05")):
+        for name, _check in (
+            ("exec-02-no-lockfile", "EXEC-02"),
+            ("exec-05-generated", "EXEC-05"),
+            ("exec-05-committed-dist", "EXEC-05"),
+        ):
             with self.subTest(fixture=name):
                 report = support.run_audit(self._prepare(name, git=False))
                 verdicts = support.verdicts(report)
                 self.assertEqual(
                     verdicts[_check], "UNKNOWN", f"{name}: without git the check must not infer a tracked set"
                 )
+
+    def test_a_lockfile_with_no_manifest_beside_it_is_partial_with_one_finding(self):
+        # Issue #21: a PARTIAL on this BLOCKER check named no finding, so the report gave nothing to act on.
+        report = support.run_audit(self._prepare("exec-02-lockfile-no-manifest", git=True))
+        check = next(c for c in report["checks"] if c["id"] == "EXEC-02")
+        findings = [f for f in report["findings"] if f["check"] == "EXEC-02"]
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertEqual(
+            [(f["id"], f["verdict"], [e["path"] for e in f["evidence"]]) for f in findings],
+            [("EXEC-02:apps/web/package-lock.json", "PARTIAL", ["apps/web/package-lock.json"])],
+        )
+
+    def test_committed_build_output_is_named_path_by_path(self):
+        report = support.run_audit(self._prepare("exec-05-committed-dist", git=True))
+        findings = [f for f in report["findings"] if f["check"] == "EXEC-05"]
+        self.assertEqual([e["path"] for f in findings for e in f["evidence"]], ["build/x.class", "dist/app.min.js"])
+
+    def test_a_hand_written_script_tracked_in_build_passes(self):
+        report = support.run_audit(self._prepare("exec-05-build-script", git=True))
+        verdicts = support.verdicts(report)
+        self.assertEqual(verdicts["EXEC-05"], "PASS")
+        self.assertEqual([cid for cid in EXEC_CHECKS if verdicts[cid] == "FAIL"], [])
 
     def test_a_broken_command_lists_its_evidence(self):
         report = support.run_audit(self._prepare("exec-06-broken-command", git=False))
@@ -336,12 +368,29 @@ class Exec02LockfilePathTests(unittest.TestCase):
         check = next(c for c in report["checks"] if c["id"] == "EXEC-02")
         return check, [f for f in report["findings"] if f["check"] == "EXEC-02"]
 
-    def test_a_tracked_lockfile_in_a_subdirectory_is_tracked(self):
+    def test_a_tracked_lockfile_in_a_subdirectory_is_compared_with_the_manifest_beside_it(self):
         check, findings = self.audit({"app/package.json": self.NODE, "app/package-lock.json": self.LOCK})
+        self.assertEqual((check["verdict"], check["summary"]), ("PASS", "tracked: app/package-lock.json"))
+        self.assertEqual(findings, [])
+        check, findings = self.audit({"app/package-lock.json": self.LOCK, "web/package.json": self.NODE})
         self.assertEqual(
             (check["verdict"], check["summary"]), ("PARTIAL", "consistency unverified: app/package-lock.json")
         )
-        self.assertEqual(findings, [])
+        # A PARTIAL names the lockfile it could not compare in a finding of its own (issue #21).
+        self.assertEqual(
+            [(f["id"], f["verdict"], f["severity"], f["statement"], f["evidence"]) for f in findings],
+            [
+                (
+                    "EXEC-02:app/package-lock.json",
+                    "PARTIAL",
+                    "BLOCKER",
+                    "An agent cannot confirm that every run installs identical dependencies because "
+                    "app/package-lock.json is tracked, but the engine found no node manifest it can read in the "
+                    "lockfile's own folder, so its consistency with the manifest is unverified.",
+                    [{"path": "app/package-lock.json", "line": None, "note": "consistency unverified"}],
+                )
+            ],
+        )
 
     def test_a_lockfile_in_a_subdirectory_that_git_does_not_track_is_still_untracked(self):
         check, findings = self.audit(
@@ -366,7 +415,7 @@ class Exec02LockfilePathTests(unittest.TestCase):
         self.assertEqual(check["verdict"], "FAIL")
         self.assertIn("the node project has no lockfile", findings[0]["statement"])
 
-    def test_the_shallowest_tracked_lockfile_is_the_one_read(self):
+    def test_every_tracked_lockfile_is_read_shallowest_first(self):
         check, _ = self.audit(
             {
                 "package.json": self.NODE,
@@ -375,11 +424,55 @@ class Exec02LockfilePathTests(unittest.TestCase):
                 "app/package-lock.json": self.LOCK,
             }
         )
-        self.assertEqual((check["verdict"], check["summary"]), ("PASS", "tracked: package-lock.json"))
+        self.assertEqual(
+            (check["verdict"], check["summary"]), ("PASS", "tracked: package-lock.json, app/package-lock.json")
+        )
         check, _ = self.audit(
             {"a/b/package.json": self.NODE, "a/b/package-lock.json": self.LOCK, "z/package-lock.json": self.LOCK}
         )
-        self.assertEqual(check["summary"], "consistency unverified: z/package-lock.json")
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PARTIAL", "tracked: a/b/package-lock.json; consistency unverified: z/package-lock.json"),
+        )
+
+    def test_a_second_app_out_of_step_with_its_own_manifest_fails(self):
+        manifest = '{"name": "x", "version": "0.1.0", "dependencies": {"left-pad": "1.3.0"}}\n'
+        check, findings = self.audit(
+            {
+                "web/package.json": self.NODE,
+                "web/package-lock.json": self.LOCK,
+                "api/package.json": manifest,
+                "api/package-lock.json": self.OTHER_LOCK,
+            }
+        )
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertEqual(
+            check["summary"],
+            "out of step with the manifest: api/package-lock.json; tracked: web/package-lock.json",
+        )
+        self.assertEqual(
+            [f["statement"] for f in findings],
+            [
+                "An agent cannot install identical dependencies on every run because api/package-lock.json is "
+                "tracked but omits manifest dependencies: left-pad."
+            ],
+        )
+
+    def test_a_second_app_whose_lockfile_is_not_tracked_fails(self):
+        check, findings = self.audit(
+            {
+                "web/package.json": self.NODE,
+                "web/package-lock.json": self.LOCK,
+                "api/package.json": self.NODE,
+                "api/package-lock.json": self.LOCK,
+            },
+            track=("web/package.json", "web/package-lock.json", "api/package.json"),
+        )
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("FAIL", "not tracked: api/package-lock.json; tracked: web/package-lock.json"),
+        )
+        self.assertEqual([f["evidence"][0]["path"] for f in findings], ["api/package-lock.json"])
 
     def test_a_root_lockfile_is_still_compared_with_the_root_manifest(self):
         manifest = '{"name": "x", "version": "0.1.0", "dependencies": {"left-pad": "1.3.0"}}\n'
@@ -390,6 +483,39 @@ class Exec02LockfilePathTests(unittest.TestCase):
             "An agent cannot install identical dependencies on every run because package-lock.json is tracked "
             "but omits manifest dependencies: left-pad.",
         )
+
+    def test_a_tracked_text_bun_lock_is_the_node_lockfile_and_is_not_compared(self):
+        check, findings = self.audit({"package.json": self.NODE, "bun.lock": "{}\n"})
+        self.assertEqual((check["verdict"], check["summary"]), ("PARTIAL", "consistency unverified: bun.lock"))
+        self.assertEqual(
+            [(f["id"], f["verdict"], f["statement"]) for f in findings],
+            [
+                (
+                    "EXEC-02:bun.lock",
+                    "PARTIAL",
+                    "An agent cannot confirm that every run installs identical dependencies because bun.lock is "
+                    "tracked, but the engine cannot read the dependency names in the lockfile, so its consistency "
+                    "with the manifest is unverified.",
+                )
+            ],
+        )
+
+    def test_a_tracked_npm_shrinkwrap_is_the_node_lockfile_and_is_compared(self):
+        check, findings = self.audit({"package.json": self.NODE, "npm-shrinkwrap.json": self.LOCK})
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertEqual(findings, [])
+
+    PYPROJECT = '[project]\nname = "x"\nversion = "0.1.0"\ndependencies = ["requests>=2"]\n'
+
+    def test_a_tracked_pdm_lock_is_the_python_lockfile_and_is_compared(self):
+        check, findings = self.audit({"pyproject.toml": self.PYPROJECT, "pdm.lock": '[[package]]\nname = "requests"\n'})
+        self.assertEqual((check["verdict"], check["summary"]), ("PASS", "tracked: pdm.lock"))
+        self.assertEqual(findings, [])
+
+    def test_a_pdm_lock_that_omits_a_manifest_dependency_is_out_of_step(self):
+        check, findings = self.audit({"pyproject.toml": self.PYPROJECT, "pdm.lock": '[[package]]\nname = "idna"\n'})
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertIn("pdm.lock is tracked but omits manifest dependencies: requests", findings[0]["statement"])
 
     def test_the_lockfiles_of_an_ecosystem_are_listed_shallowest_first_then_by_name(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -408,15 +534,21 @@ class Exec02LockfilePathTests(unittest.TestCase):
             ["package-lock.json", "a/yarn.lock", "z/package-lock.json", "a/b/package-lock.json"],
         )
 
-    def test_only_a_root_lockfile_is_compared_with_the_manifest(self):
+    def test_a_lockfile_is_compared_only_with_the_manifest_in_its_own_folder(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             support.write(root, "package.json", '{"dependencies": {"left-pad": "1"}}\n')
             support.write(root, "package-lock.json", self.OTHER_LOCK)
             support.write(root, "app/package-lock.json", self.OTHER_LOCK)
+            support.write(root, "web/package.json", '{"dependencies": {"up-pad": "1"}}\n')
+            support.write(root, "web/package-lock.json", self.OTHER_LOCK)
+            support.write(root, "ok/package.json", '{"dependencies": {"right-pad": "1"}}\n')
+            support.write(root, "ok/package-lock.json", self.OTHER_LOCK)
             inventory = build_inventory(root)
             self.assertEqual(_lock_consistency(inventory, "node", "package-lock.json"), ("mismatch", {"left-pad"}))
             self.assertEqual(_lock_consistency(inventory, "node", "app/package-lock.json"), ("unverified", set()))
+            self.assertEqual(_lock_consistency(inventory, "node", "web/package-lock.json"), ("mismatch", {"up-pad"}))
+            self.assertEqual(_lock_consistency(inventory, "node", "ok/package-lock.json"), ("ok", set()))
 
 
 class Exec02MessageTests(unittest.TestCase):
@@ -480,10 +612,70 @@ class Exec02MessageTests(unittest.TestCase):
             "lockfile is expected",
         )
 
+    def test_an_ecosystem_with_no_lockfile_convention_is_named(self):
+        from audit.rules.checks.execution import check_exec02
+        from audit.rules.registry import REGISTRY_BY_ID
+        from audit.scan import build_inventory
+        from audit.stack import Stack
+
+        with tempfile.TemporaryDirectory() as tmp:
+            outcome = check_exec02(
+                spec=REGISTRY_BY_ID["EXEC-02"],
+                target=None,
+                inventory=build_inventory(Path(tmp)),
+                stack=Stack(ecosystems={"elixir", "python"}, source_only={"python"}),
+                components=None,
+                session=None,
+            )
+        self.assertEqual(
+            (outcome.verdict.value, outcome.summary),
+            ("UNKNOWN", "elixir has no lockfile convention the engine reads, so no lockfile is expected"),
+        )
+
+    def test_a_fail_summary_names_each_lockfile_that_is_missing_untracked_or_out_of_step(self):
+        check, _ = self.audit({"package.json": self.NODE})
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            (
+                "FAIL",
+                "no lockfile: node (package-lock.json, npm-shrinkwrap.json, pnpm-lock.yaml, yarn.lock, bun.lock, "
+                "bun.lockb)",
+            ),
+        )
+        locks = {"a/package-lock.json": "{}\n", "z/package-lock.json": "{}\n"}
+        check, _ = self.audit({"package.json": self.NODE, **locks}, track=("package.json",))
+        self.assertEqual(
+            (check["verdict"], check["summary"]), ("FAIL", "not tracked: a/package-lock.json, z/package-lock.json")
+        )
+        manifest = '{"dependencies": {"left-pad": "1"}}\n'
+        check, _ = self.audit({"package.json": manifest, "package-lock.json": self.OTHER_LOCK})
+        self.assertEqual(
+            (check["verdict"], check["summary"]), ("FAIL", "out of step with the manifest: package-lock.json")
+        )
+        check, _ = self.audit(
+            {"package.json": self.NODE, "Cargo.toml": "[dependencies]\n", "Cargo.lock": self.CARGO_LOCK, "go.mod": "x"}
+        )
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            (
+                "FAIL",
+                "no lockfile: go (go.sum), node (package-lock.json, npm-shrinkwrap.json, pnpm-lock.yaml, yarn.lock, "
+                "bun.lock, bun.lockb); "
+                "tracked: Cargo.lock",
+            ),
+        )
+
     def test_a_manifest_in_a_project_that_also_has_source_still_expects_its_lockfile(self):
         check, findings = self.audit({"pyproject.toml": "[project]\nname = 'x'\n", "src/app.py": "print(1)\n"})
         self.assertEqual(check["verdict"], "FAIL")
         self.assertIn("the python project has no lockfile", findings[0]["statement"])
+
+    def test_a_python_project_with_no_lockfile_names_the_pdm_lock_too(self):
+        check, _ = self.audit({"pyproject.toml": "[project]\nname = 'x'\n"})
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("FAIL", "no lockfile: python (poetry.lock, uv.lock, Pipfile.lock, pdm.lock)"),
+        )
 
     def test_without_git_the_tracked_state_is_unknown(self):
         check, _ = self.audit({"package.json": self.NODE}, git=False)
@@ -499,13 +691,47 @@ class Exec02MessageTests(unittest.TestCase):
             [(f["statement"], f["evidence"], f["remediation"], f["severity"]) for f in findings],
             [
                 (
-                    f"{self.ACTION} the node project has no lockfile (package-lock.json, pnpm-lock.yaml, yarn.lock, "
-                    "bun.lockb), so a fresh install resolves whatever versions are current.",
+                    f"{self.ACTION} the node project has no lockfile (package-lock.json, npm-shrinkwrap.json, "
+                    "pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb), so a fresh install resolves whatever versions "
+                    "are current.",
                     [],
                     "Generate the lockfile with the project's package manager and commit it.",
                     "BLOCKER",
                 )
             ],
+        )
+
+    def test_a_dotnet_project_with_no_nuget_lock_is_told_how_to_write_one(self):
+        check, findings = self.audit({"App.csproj": "<Project />\n"})
+        self.assertEqual((check["verdict"], check["summary"]), ("FAIL", "no lockfile: dotnet (packages.lock.json)"))
+        self.assertEqual(
+            [(f["id"], f["statement"], f["remediation"]) for f in findings],
+            [
+                (
+                    "EXEC-02:dotnet",
+                    f"{self.ACTION} the dotnet project has no lockfile (packages.lock.json), so a fresh restore is "
+                    "free to resolve other versions of floating and transitive dependencies.",
+                    "Set RestorePackagesWithLockFile to true in each project (or once in Directory.Build.props), "
+                    "run dotnet restore, commit every packages.lock.json, and restore with dotnet restore "
+                    "--locked-mode in CI.",
+                )
+            ],
+        )
+
+    def test_a_nuget_lock_beside_each_project_is_compared_with_that_project(self):
+        lock = '{"version": 1, "dependencies": {"net8.0": {}}}\n'
+        check, _ = self.audit(
+            {
+                "App.sln": "\n",
+                "src/App/App.csproj": "<Project />\n",
+                "src/App/packages.lock.json": lock,
+                "tests/App.Tests/App.Tests.csproj": "<Project />\n",
+                "tests/App.Tests/packages.lock.json": lock,
+            }
+        )
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PASS", "tracked: src/App/packages.lock.json, tests/App.Tests/packages.lock.json"),
         )
 
     def test_untracked_lockfiles_are_listed_in_path_order_with_their_paths_as_evidence(self):
@@ -525,6 +751,33 @@ class Exec02MessageTests(unittest.TestCase):
                     "dependencies.",
                 )
             ],
+        )
+
+    def test_a_lockfile_of_an_ecosystem_the_engine_does_not_compare_is_a_partial_finding(self):
+        check, findings = self.audit({"composer.json": '{"require": {"php": ">=8.2"}}\n', "composer.lock": "{}\n"})
+        self.assertEqual((check["verdict"], check["summary"]), ("PARTIAL", "consistency unverified: composer.lock"))
+        self.assertEqual(
+            [(f["id"], f["statement"], f["remediation"]) for f in findings],
+            [
+                (
+                    "EXEC-02:composer.lock",
+                    "An agent cannot confirm that every run installs identical dependencies because composer.lock "
+                    "is tracked, but the engine does not compare php lockfiles, so its consistency with the "
+                    "manifest is unverified.",
+                    "Confirm by hand that the lockfile names every dependency of the manifest beside it.",
+                )
+            ],
+        )
+
+    def test_a_fail_keeps_the_partial_finding_of_another_lockfile(self):
+        manifest = '{"dependencies": {"left-pad": "1"}}\n'
+        check, findings = self.audit(
+            {"package.json": manifest, "package-lock.json": self.OTHER_LOCK, "app/package-lock.json": "{}\n"}
+        )
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertEqual(
+            [(f["id"], f["verdict"]) for f in findings],
+            [("EXEC-02:app/package-lock.json", "PARTIAL"), ("EXEC-02:package-lock.json", "FAIL")],
         )
 
     def test_each_kind_of_finding_has_an_id_of_its_own(self):
@@ -568,7 +821,9 @@ class Exec02MessageTests(unittest.TestCase):
             ("PARTIAL", "tracked: package-lock.json; consistency unverified: crate/Cargo.lock"),
         )
         check, _ = self.audit({**files, "crate/Cargo.lock": self.CARGO_LOCK, "other/Cargo.lock": self.CARGO_LOCK})
-        self.assertEqual(check["summary"], "tracked: package-lock.json; consistency unverified: crate/Cargo.lock")
+        self.assertEqual(
+            check["summary"], "tracked: package-lock.json; consistency unverified: crate/Cargo.lock, other/Cargo.lock"
+        )
         two = {"package.json": self.NODE, "app/package-lock.json": self.OTHER_LOCK, "Cargo.toml": "[dependencies]\n"}
         check, _ = self.audit({**two, "crate/Cargo.lock": self.CARGO_LOCK})
         self.assertEqual(check["summary"], "consistency unverified: app/package-lock.json, crate/Cargo.lock")
@@ -616,12 +871,69 @@ class LockConsistencyTests(unittest.TestCase):
         )
         self.assertEqual(self.state({"package.json": manifest}, "node", "package-lock.json"), ("unverified", set()))
 
+    def test_an_npm_shrinkwrap_is_read_as_a_package_lock(self):
+        manifest = '{"dependencies": {"left-pad": "1", "up-pad": "1"}}\n'
+        files = {"package.json": manifest, "npm-shrinkwrap.json": self.LOCK}
+        self.assertEqual(self.state(files, "node", "npm-shrinkwrap.json"), ("mismatch", {"up-pad"}))
+
     def test_a_dependency_the_lock_omits_is_named(self):
         manifest = '{"dependencies": {"left-pad": "1", "up-pad": "1"}}\n'
         self.assertEqual(
             self.state({"package.json": manifest, "package-lock.json": self.LOCK}, "node", "package-lock.json"),
             ("mismatch", {"up-pad"}),
         )
+
+    CSPROJ = (
+        '<Project Sdk="Microsoft.NET.Sdk">\n  <ItemGroup>\n'
+        '    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />\n'
+        "    <PackageReference Include='Serilog' Version='4.0.0' />\n"
+        "  </ItemGroup>\n</Project>\n"
+    )
+    NUGET_LOCK = (
+        '{"version": 1, "dependencies": {"net8.0": {"newtonsoft.json": {"type": "Direct"}}, '
+        '"net9.0": {"Serilog": {"type": "Direct"}}}}\n'
+    )
+
+    def test_a_nuget_lock_is_compared_casefolded_over_every_target_framework(self):
+        files = {"App.csproj": self.CSPROJ, "packages.lock.json": self.NUGET_LOCK}
+        self.assertEqual(self.state(files, "dotnet", "packages.lock.json"), ("ok", set()))
+
+    def test_a_package_reference_the_nuget_lock_omits_is_named_as_written(self):
+        lock = '{"version": 1, "dependencies": {"net8.0": {"Newtonsoft.Json": {}}}}\n'
+        files = {"App.csproj": self.CSPROJ, "packages.lock.json": lock}
+        self.assertEqual(self.state(files, "dotnet", "packages.lock.json"), ("mismatch", {"Serilog"}))
+
+    def test_a_nuget_lock_cannot_be_compared_when_references_live_elsewhere(self):
+        lock = '{"version": 1, "dependencies": {"net8.0": {}}}\n'
+        cases = {
+            "no root project": {"src/App/App.csproj": self.CSPROJ},
+            "an imported MSBuild file": {
+                "App.fsproj": '<Project>\n  <Import Project="deps.props" />\n</Project>\n',
+            },
+            "a Directory.Build.props reference": {
+                "App.vbproj": "<Project />\n",
+                "Directory.Build.props": '<Project><ItemGroup><PackageReference Include="X" /></ItemGroup></Project>\n',
+            },
+            "a central global reference": {
+                "App.csproj": "<Project />\n",
+                "Directory.Packages.props": '<Project><ItemGroup><GlobalPackageReference Include="X" />'
+                "</ItemGroup></Project>\n",
+            },
+        }
+        for label, files in cases.items():
+            with self.subTest(label):
+                self.assertEqual(
+                    self.state({**files, "packages.lock.json": lock}, "dotnet", "packages.lock.json"),
+                    ("unverified", set()),
+                )
+        for label, text in {"not json": "not json", "no dependencies": "[]", "a list": '{"dependencies": []}'}.items():
+            with self.subTest(label):
+                files = {"App.csproj": self.CSPROJ, "packages.lock.json": text + "\n"}
+                self.assertEqual(self.state(files, "dotnet", "packages.lock.json"), ("unverified", set()))
+
+    def test_a_project_with_no_package_reference_is_consistent_with_any_nuget_lock(self):
+        files = {"App.csproj": "<Project />\n", "packages.lock.json": '{"dependencies": {"net8.0": []}}\n'}
+        self.assertEqual(self.state(files, "dotnet", "packages.lock.json"), ("ok", set()))
 
     def test_a_lock_below_the_root_is_not_compared_with_the_root_manifest(self):
         manifest = '[dependencies]\nserde = "1"\n'

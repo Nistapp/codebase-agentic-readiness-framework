@@ -18,7 +18,7 @@
 > `CONTRIBUTING.md` that only exists under `greenfield/templates/` is a template the repository
 > ships, not the repository's own, and reads `FAIL` on `HYG-05` and `UNKNOWN` on `HYG-13`.
 >
-> **Verdict contract, shared by every check in this file (from the engine's own `hyg.py` docstring):
+> **Verdict contract, shared by every check in this file (from the engine's own `hyg/__init__.py` docstring):
 > an absent artifact is `FAIL`.** Because every check here is unscored, a `FAIL` is a reported fact that
 > never moves the readiness number — write it up like any other finding, just without a score
 > consequence. `UNKNOWN` is reserved for "the artifact is present but its quality cannot be settled" (an
@@ -27,7 +27,7 @@
 > the file whose presence `HYG-05` reports, so with no such file it is `UNKNOWN` and `HYG-05` owns the
 > finding. None of these checks writes to the target or runs a
 > command in the target's own toolchain; `HYG-07` reads git history read-only for a commit date, never
-> wall-clock time (`audit/engine/AGENTS.md` §5).
+> wall-clock time ([`audit/engine/AGENTS.md` §5](../engine/AGENTS.md#5-coding-standards)).
 >
 > **A described cross-check this pack does not implement.** The framework overview names one exception
 > that "bridges" hygiene and scored checks: where `CODEOWNERS` names paths the audit would also place on
@@ -47,21 +47,28 @@ Engine           `HYG-01`. A root file whose name starts with `readme` (case-ins
                  evidence; with more than one, `README.md` is preferred. Present, at least 200 characters
                  of trimmed body, free of a placeholder marker (`todo`, `tbd`, `placeholder`,
                  `lorem ipsum`, `coming soon`, `fill this in`, `<describe`, case-insensitive), and not a
-                 bare heading with no body text, is `PASS`. Present but under the bar, carrying a
-                 placeholder marker, or a bare title, is `FAIL` with the reason stated. Present but
-                 unreadable (binary or oversized) is `UNKNOWN`. Absent is `FAIL`.
+                 bare heading with no body text, is `PASS`. Where a marker counts depends on the
+                 README's length. Under 400 trimmed characters, a marker anywhere counts. `lorem ipsum`
+                 and `<describe` count anywhere at any length. In a longer README, a word marker counts
+                 only when it opens a line (after any heading, list or quote markup). The line's end or
+                 punctuation must follow it. So `## TODO` and `TBD: install steps` count. A table row
+                 that says "returns a placeholder answer" does not. Present but under the bar, carrying a
+                 placeholder marker, or a bare title, is `FAIL` with the reason stated; a marker
+                 reason names the line and quotes it. Present but unreadable (binary or oversized) is
+                 `UNKNOWN`. Absent is `FAIL`.
 Method           automated
 Look for         A root `README*` file; its trimmed character count, a placeholder marker, and whether
                  any non-heading line of body text exists.
 Rubric           PASS: a root README exists, reads as text, has at least 200 characters of body, carries
-                 no placeholder marker, and is not a bare title.
+                 no placeholder marker where one counts (see Engine), and is not a bare title.
                  PARTIAL: not used by this check — the engine's own outcome is binary.
                  FAIL: no root README exists, or one exists but is a placeholder (too short, a
                  placeholder marker, or a bare title with no body).
                  NOT_APPLICABLE: never.
                  UNKNOWN when: a root README exists but cannot be read as text (binary or oversized).
 Evidence to cite A `file` evidence item citing the README path and the specific reason (character count,
-                 marker text, or "a title with no body") for a placeholder FAIL.
+                 the marker and the line that carries it, or "a title with no body") for a placeholder
+                 FAIL.
 Absence proof    A FAIL for "no README" states that no file at the repository root starts with `readme`;
                  a FAIL for a placeholder cites the exact reason the content check failed.
 Remediation      `add-repo-hygiene`
@@ -75,7 +82,7 @@ Why it matters   Review routing should be machine-readable, not tribal knowledge
 Severity         COSMETIC
 Engine           `HYG-02`. A `CODEOWNERS` file at the root, under `.github/`, `.gitlab/` or `docs/` is
                  `PASS`; none at any of those locations is `FAIL`. This check reads presence only — see the
-                 header note above on the cross-check this pack does not implement.
+                 [header note](#hygiene-hyg--informational-never-scored) above on the cross-check this pack does not implement.
 Method           automated
 Look for         A file named exactly `CODEOWNERS` at the root, under `.github/`, `.gitlab/` or `docs/`.
 Rubric           PASS: a `CODEOWNERS` file exists at one of the recognised locations.
@@ -195,8 +202,9 @@ Engine           `HYG-07`. Any repository-level file whose basename starts with 
                  (the first match, by sort order, is read). None found is `FAIL` outright. Found: the
                  engine compares, via read-only git queries, the candidate's own last-commit date against
                  `HEAD`'s commit date — **recency is always relative to the repository's own history,
-                 never wall-clock time** (`audit/engine/AGENTS.md` §5: no `date.today()`). Within
-                 365 days (`RECENT_WINDOW`) of `HEAD` is `PASS`; older is `FAIL`, with the age stated.
+                 never wall-clock time** ([`audit/engine/AGENTS.md` §5](../engine/AGENTS.md#5-coding-standards): no
+                 `date.today()`). Within 365 days (`RECENT_WINDOW`) of `HEAD` is `PASS`; older is `FAIL`, with
+                 the age stated.
                  Git unable to supply either date (no repository, git absent, or the file untracked) is
                  `UNKNOWN` — never `FAIL`, and never today's date substituted for the missing one.
 Method           automated

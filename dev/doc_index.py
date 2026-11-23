@@ -4,7 +4,8 @@
 """The project entry point of the document index: ``python3 dev/doc_index.py <command> ...``.
 
 It puts ``dev/`` on ``sys.path``, loads this repository's config, ``dev/docindex.config.json``, and calls
-:func:`docindex.cli.main`. The ``docindex`` package is the generic core and imports no other ``dev/`` module; this
+:func:`docindex.cli.main`. A config with a key that no rule reads (:func:`docindex.config.check_keys`) is refused
+with exit 1, before any subcommand runs. The ``docindex`` package is the generic core and imports no other ``dev/`` module; this
 file is the one place that may (ADR 0011 in ``docs/architecture/adrs/``). The subcommands are in
 :mod:`docindex.cli`, except ``query``: :func:`main` routes it to :func:`query`, which runs
 :func:`docindex.ids.query_main` on the index of the full config.
@@ -27,11 +28,19 @@ For ``manifest``, :func:`build_bundles` loads the same module and calls its ``bu
 ``dev/dist/skills/``. A build failure (the module's ``ToolError``) becomes :class:`docindex.manifest.BuildError`.
 
 For ``evidence run``, :func:`evidence_project` names the engine folder, ``audit/engine/``, and :func:`evidence_targets`
-gives the targets: this repository with the excludes of ``make self-audit`` (:data:`SELF_AUDIT_EXCLUDES`), or every
-engine fixture that ``dev/eval/generate_fixture_expected.py`` generates an expected file for, materialised into the
-run's temporary folder by that module's ``materialise`` (a one-commit git repository with a fixed identity and date),
-with an isolated ``HOME`` for a fixture in ``NEEDS_ISOLATED_ENV``, as that module prepares it. Loading the engine's
-fixture matrix writes no bytecode into ``audit/``.
+gives the targets of each kind:
+
+- ``repo``: this repository with the excludes of ``make self-audit`` (:data:`SELF_AUDIT_EXCLUDES`);
+- ``fixtures``: every engine fixture that ``dev/eval/generate_fixture_expected.py`` generates an expected file for,
+  materialised into the run's temporary folder by that module's ``materialise`` (a one-commit git repository with a
+  fixed identity and date), with an isolated ``HOME`` for a fixture in ``NEEDS_ISOLATED_ENV``, as that module
+  prepares it. Loading the engine's fixture matrix writes no bytecode into ``audit/``;
+- ``scaffold``: :func:`scaffold_targets` runs the greenfield scaffolder, ``greenfield/bootstrap/bootstrap.py``, in
+  process on ``greenfield/templates/`` into the run's temporary folder, as the engine's positive-fixture test does
+  (ADR 0010). Every input is fixed, so two runs of the same tree give the same scaffold: the arguments
+  (:data:`SCAFFOLD_ARGS`), the date the scaffolder writes into ``docs/architecture/`` (:data:`SCAFFOLD_DATE`), and
+  the one commit on ``dev``, made with the fixed identity and date of ``generate_fixture_expected.py``. The engine
+  audits it with an isolated ``HOME``, so the operator's index store does not reach the report.
 
 :func:`query` takes ``<address> [--at REF]`` and prints a node and its edges, or ``--report [--at REF]`` and prints
 the reports of plan 9.4 (a report only, never a gate).
@@ -39,11 +48,16 @@ the reports of plan 9.4 (a report only, never a gate).
 
 from __future__ import annotations
 
+import contextlib
+import datetime
 import importlib.util
+import io
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from typing import Any, Iterable, Mapping, Sequence
 
 DEV = Path(__file__).resolve().parent
@@ -54,20 +68,54 @@ ENGINE_DIR = REPO / "audit" / "engine"
 FIXTURE_GENERATOR = DEV / "eval" / "generate_fixture_expected.py"
 #: The ``--exclude`` globs of ``SELF_AUDIT_FLAGS`` in the Makefile.
 SELF_AUDIT_EXCLUDES: tuple[str, ...] = ("artefacts/*", "dist/*")
+SCAFFOLDER = REPO / "greenfield" / "bootstrap" / "bootstrap.py"
+TEMPLATES = REPO / "greenfield" / "templates"
+#: The report name and folder name of the ``scaffold`` target.
+SCAFFOLD = "scaffold"
+#: The scaffolder's arguments after the target: every value it would read from git config is given, and it makes no
+#: commit of its own (:func:`scaffold_targets` makes one with a fixed identity and date).
+SCAFFOLD_ARGS: tuple[str, ...] = (
+    "--name",
+    SCAFFOLD,
+    "--author",
+    "agentic-readiness-eval",
+    "--email",
+    "eval@agentic-readiness.invalid",
+    "--github-owner",
+    "agentic-readiness-eval",
+    "--no-git",
+)
+#: The date the scaffolder writes for ``YYYY-MM-DD`` in ``docs/architecture/``, in place of today.
+SCAFFOLD_DATE = datetime.date(2026, 1, 1)
+#: The branch of the scaffold's one commit, as the scaffolder's own ``git init -b dev``.
+SCAFFOLD_BRANCH = "dev"
+SCAFFOLD_COMMIT_MESSAGE = "chore: scaffold project"
 
 if str(DEV) not in sys.path:
     sys.path.insert(0, str(DEV))
 
 from docindex import cli, evidence, extract, ids, manifest  # noqa: E402
+from docindex.config import ConfigError, check_keys  # noqa: E402
 from docindex.gitread import RefTree, Tree, WorkTree  # noqa: E402
 from docindex.model import Index  # noqa: E402
 
 
-def load_config(path: Path = CONFIG) -> dict[str, Any]:
-    """The project config: a JSON object."""
-    data = json.loads(path.read_text(encoding="utf-8"))
+def load_config(path: Path | None = None) -> dict[str, Any]:
+    """The project config (:data:`CONFIG` by default): a JSON object whose every key a rule of the index reads.
+
+    Raise :class:`docindex.config.ConfigError` for a file that is not such an object (an unknown key, a typo).
+    """
+    path = CONFIG if path is None else path
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ConfigError(f"{path.name}: cannot read it: {exc}") from exc
     if not isinstance(data, dict):
-        raise ValueError(f"{path.name} is not a JSON object")
+        raise ConfigError(f"{path.name} is not a JSON object")
+    try:
+        check_keys(data)
+    except ConfigError as exc:
+        raise ConfigError(f"{path.name}: {exc}") from exc
     return data
 
 
@@ -159,15 +207,14 @@ def build_bundles(config: Mapping[str, Any], out_dir: Path) -> None:
         raise manifest.BuildError(f"the bundle build failed: {exc}") from exc
 
 
-def _fixture_generator() -> ModuleType:
-    """``dev/eval/generate_fixture_expected.py``, loaded once, with no bytecode written while it loads the engine."""
-    name = "_doc_index_generate_fixture_expected"
+def _load_once(name: str, path: Path) -> ModuleType:
+    """The module at ``path``, loaded once under ``name``, with no bytecode written while it loads."""
     module = sys.modules.get(name)
     if module is not None:
         return module
-    spec = importlib.util.spec_from_file_location(name, FIXTURE_GENERATOR)
+    spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
-        raise ImportError(f"cannot load {FIXTURE_GENERATOR.relative_to(REPO)}")
+        raise ImportError(f"cannot load {path.relative_to(REPO)}")
     module = importlib.util.module_from_spec(spec)
     previous = sys.dont_write_bytecode
     sys.dont_write_bytecode = True
@@ -180,6 +227,11 @@ def _fixture_generator() -> ModuleType:
     finally:
         sys.dont_write_bytecode = previous
     return module
+
+
+def _fixture_generator() -> ModuleType:
+    """``dev/eval/generate_fixture_expected.py``, loaded once, with no bytecode written while it loads the engine."""
+    return _load_once("_doc_index_generate_fixture_expected", FIXTURE_GENERATOR)
 
 
 def fixture_targets(work: Path) -> list[evidence.Target]:
@@ -209,10 +261,64 @@ def fixture_targets(work: Path) -> list[evidence.Target]:
     return targets
 
 
+class _FixedDate(datetime.date):
+    """A date whose ``today`` is :data:`SCAFFOLD_DATE`."""
+
+    @classmethod
+    def today(cls) -> _FixedDate:
+        return cls(SCAFFOLD_DATE.year, SCAFFOLD_DATE.month, SCAFFOLD_DATE.day)
+
+
+def _scaffold(target: Path, templates: Path) -> None:
+    """Run the scaffolder's ``main`` in process into ``target``, with :data:`SCAFFOLD_DATE` as today."""
+    scaffolder = _load_once("_doc_index_bootstrap", SCAFFOLDER)
+    argv = [str(target), "--templates", str(templates), *SCAFFOLD_ARGS]
+    out = io.StringIO()
+    previous = scaffolder.dt
+    setattr(scaffolder, "dt", SimpleNamespace(date=_FixedDate))
+    try:
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+            code = scaffolder.main(argv)
+    except SystemExit as exc:
+        code = exc.code if isinstance(exc.code, int) else 1
+    finally:
+        setattr(scaffolder, "dt", previous)
+    if code != 0:
+        raise evidence.EvidenceError(f"the scaffolder failed (exit {code}): {out.getvalue().strip()}")
+
+
+def _commit(target: Path, identity: Mapping[str, str]) -> None:
+    """Make ``target`` a git repository on :data:`SCAFFOLD_BRANCH` with one commit by ``identity``, no hook run."""
+    env = {**os.environ, **identity}
+    for args in (
+        ("init", "--quiet", "-b", SCAFFOLD_BRANCH),
+        ("add", "-A"),
+        ("commit", "--quiet", "--no-gpg-sign", "--no-verify", "-m", SCAFFOLD_COMMIT_MESSAGE),
+    ):
+        proc = subprocess.run(["git", "-C", str(target), *args], capture_output=True, text=True, env=env, check=False)
+        if proc.returncode != 0:
+            raise evidence.EvidenceError(f"git {args[0]} failed in the scaffold: {proc.stderr.strip()}")
+
+
+def scaffold_targets(work: Path, templates: Path = TEMPLATES) -> list[evidence.Target]:
+    """A fresh scaffold of ``templates`` under ``work``, committed, with an isolated ``HOME`` for the engine."""
+    target = work / "targets" / SCAFFOLD
+    target.mkdir(parents=True)
+    _scaffold(target, templates)
+    _commit(target, _fixture_generator().GIT_COMMIT_ENV)
+    home = work / "homes" / SCAFFOLD
+    home.mkdir(parents=True)
+    env = {"HOME": str(home), "AUDIT_INDEX_STORE": str(home / "absent-store")}
+    return [evidence.Target(name=SCAFFOLD, path=target, env=env)]
+
+
 def evidence_targets(kind: str, work: Path) -> list[evidence.Target]:
-    """The targets of ``evidence run``: this repository (``repo``) or the engine fixtures (``fixtures``)."""
+    """The targets of ``evidence run``: this repository (``repo``), the engine fixtures (``fixtures``) or a fresh
+    scaffold of the greenfield templates (``scaffold``)."""
     if kind == "repo":
         return [evidence.Target(name="repo", path=REPO, excludes=SELF_AUDIT_EXCLUDES)]
+    if kind == SCAFFOLD:
+        return scaffold_targets(work)
     return fixture_targets(work)
 
 
@@ -245,7 +351,11 @@ def query(argv: Sequence[str], config: Mapping[str, Any] | None = None) -> int:
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run one subcommand: ``query`` with :func:`query`, every other one with :func:`docindex.cli.main`."""
-    config = full_config()
+    try:
+        config = full_config()
+    except ConfigError as exc:
+        print(f"doc_index.py: {exc}", file=sys.stderr)
+        return 1
     arguments = list(sys.argv[1:] if argv is None else argv)
     if arguments[:1] == [QUERY]:
         return query(arguments[1:], config)

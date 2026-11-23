@@ -23,6 +23,9 @@ Each command answers one question:
 | Which files do the skill bundles ship differently? | `manifest`, then `manifest-diff` | [Step 5](#step-5-compare-the-bundles-the-manifest-diff) |
 | Which engine checks changed verdict or evidence? | `evidence run`, then `evidence compare` | [Step 6](#step-6-compare-the-engine-evidence) |
 | Does each quote in a report exist where it says? | `verify-quotes <folder>` | [Step 7](#step-7-check-the-quotes-of-a-report) |
+| Does a playbook change still keep what each check reads? | `make consistency-map` | [Step 8](#step-8-run-the-consistency-maps-gate) |
+| What did my branch change in the text the checks read? | `make consistency-map CMAP_ARGS=--base` | [Step 8](#step-8-run-the-consistency-maps-gate) |
+| Did a change that should alter no output alter one? | `make golden GOLDEN_ARGS="record --out <dir>"`, then `compare` | [Step 9](#step-9-prove-that-no-output-changed-the-golden-digest) |
 
 The flow below shows the order. The manifest and the evidence run read only the working tree, so record their
 before side first.
@@ -88,7 +91,8 @@ The sweep lists every normative item of the in-scope files. An item is a paragra
 fenced command block. An item is normative when it holds a trigger word ("must", "never"), a limit, an exit code or a
 write to a path. A command block and a row of a tool table are normative too.
 
-The scope is the files the skill bundles carry, as `dev/build_skills.py` names them. It adds `greenfield/templates/`
+The scope is the files the skill bundles carry, as `dev/skill-bundles.json` names them (`dev/build_skills.py`
+reads it). It adds `greenfield/templates/`
 and every `AGENTS.md`. The scope and the trigger words are in
 [`dev/docindex.config.json`](../../dev/docindex.config.json).
 
@@ -156,23 +160,30 @@ tools.
 ```bash
 python3 dev/doc_index.py diff <base>
 python3 dev/doc_index.py diff 7545276~1 --at 7545276
+python3 dev/doc_index.py diff 96efb49~1 --at 96efb49 --detail
 ```
 
-The text output has one group per kind of change, each with its count:
+The text output has one group per kind of change, each with its count. This is the output for pull request #173,
+abridged:
 
 ```text
-# Index diff from 7545276~1 to 7545276: 36 changes
+# Index diff from 96efb49^1 to 96efb49: 64 changes
 
-# Sections added: 6
-# Sections removed: 17
+# Sections added: 0
+# Sections removed: 0
 # Sections moved: 0
 # Sections renamed: 0
-# Sections edited: 9
-# Edges lost: 2
-  links: implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic -> greenfield/templates/AGENTS.md#agentsmd/8-documentation-standards-diátaxis/81-how-to-write-for-people (anchor #81-how-to-write-for-people)
-# Edges gained: 2
+# Sections edited: 0
+# Edges lost: 0
+# Edges gained: 7
+  mentions: audit/engine/tests/test_stack_fixtures.py -> EXEC-01
 # IDs that lost their definition: 0
 # IDs that lost every mention: 0
+# Edges whose confidence changed: 0
+# Name-match links that changed resolution: 56 (40 build.gradle, 10 uv.lock, 4 global.json, 1 __main__.py, 1 composer.json)
+  build.gradle: 1 -> 2 files; 40 lost, 0 gained
+# Files regenerated: 1
+  CHANGELOG.md (by release-please): 0 sections edited, 0 added, 0 removed, 0 moved or renamed; 1 edges lost, 0 gained
 ```
 
 How to read each group:
@@ -186,6 +197,14 @@ How to read each group:
 | Edges lost | A link, mention, run or bundle edge that is gone | A lost anchor is a broken reference |
 | IDs that lost their definition | A check or requirement no longer defined | Restore it, or remove every use |
 | IDs that lost every mention | Defined, but no file names it any more | Check that no recipe step still needs it |
+| Edges whose confidence changed | The same edge, now `exact` or `name-match` | Usually nothing: an ID is now defined in more places, or fewer |
+| Name-match links that changed resolution | A bare file name in unchanged text now selects another file, or none, because a file of that name was added, removed or moved | Usually nothing. Run with `--detail` to list the links |
+| Files regenerated | A file that a command writes (the `generated` key of `dev/docindex.config.json`) changed | Run its command instead of reading its sections. A link *into* it that lost its anchor still shows under Edges lost |
+
+An edge whose target does not resolve carries a flag, such as `[broken: missing]`. The other values are `anchor`
+(no heading has that anchor) and `outside` (the path leaves the repository). The index's JSON keeps the same value
+in the edge's `broken` key. `--format json` writes the report as JSON, format 2. It always lists every edge of a
+name-resolution change.
 
 To see who depends on a section or an ID, query it. For example, `python3 dev/doc_index.py query AGT-04` lists the 57
 places that mention "`AGT-04` Definition of done stated". `diff` exits 0 whatever it finds.
@@ -207,8 +226,9 @@ bundle <name>: 1 added, 0 removed, 2 changed
   changed <path in the bundle>
 ```
 
-A removed file that a recipe still names is a break in the installed skill. The archive `audit.pyz` is compared by
-its members, so two builds of the same source compare equal.
+A removed file that a recipe still names is a break in the installed skill. An archive in a bundle, such as the
+`audit.pyz` that older audit bundles carried, is compared by its members. So two builds of the same source compare
+equal.
 
 ### Step 6: Compare the engine evidence
 
@@ -233,8 +253,21 @@ Otherwise it prints one line per changed check, then the counts. Read both kinds
 - `same verdict PASS, evidence changed`: the verdict held, but its summary, data or findings changed. A
   verdict-only comparison misses this break.
 
-`(dirty)` means the tree had changes or untracked files when the run started. `--target fixtures` runs the engine on
-every engine fixture instead, 114 reports today. Two runs with different targets do not compare (exit 1).
+`(dirty)` means the tree had changes or untracked files when the run started. Two other targets exist. Two runs with
+different targets do not compare (exit 1).
+
+- `--target fixtures` runs the engine on every engine fixture, 114 reports today.
+- `--target scaffold` runs the greenfield scaffolder on `greenfield/templates/`, then runs the engine on the new
+  project. It writes one report, `scaffold`, in about a second. Use it when you change a template.
+
+The scaffold target fixes every input of the scaffold: the names, the date and the commit. So two runs of the same
+tree compare equal. The engine's positive-fixture test fails only on `FAIL`, so it misses a fall to `PARTIAL`. The
+comparison shows it. For example, moving "never restate" to the next line of the `AGENTS.md` template prints this:
+
+```text
+report scaffold:
+  AGT-06: verdict PASS -> PARTIAL: finding AGT-06 added, summary
+```
 
 ### Step 7: Check the quotes of a report
 
@@ -253,6 +286,103 @@ reason.
 
 ---
 
+### Step 8: Run the consistency map's gate
+
+The consistency map, the folder [`dev/consistency-map/`](../../dev/consistency-map/), says what each check reads.
+Its `names` part, the file names the engine gives a meaning to, is in
+[`dev/consistency-map/names/`](../../dev/consistency-map/names/). The map also says what each playbook
+Commits row and template does to that text, and which sentence keeps each read true.
+[ADR 0012](../architecture/adrs/0012-keep-the-consistency-map-as-json-in-dev.md) records its design. The folder
+holds small files: the moves and keeps of a playbook are in `moves/<playbook>.json` and `keeps/<playbook>.json`.
+When you add a file, list it in `index.json`, in the order the lists join. Do not edit
+the map's `reads` part by hand: the engine declares each check's reads in `audit/engine/audit/rules/reads.py`. After
+you change a declaration, run `python3 dev/consistency_map_reads.py --write` to rewrite the part.
+
+```bash
+make consistency-map
+make consistency-map CMAP_ARGS=--verbose
+```
+
+The gate prints a count for each kind of problem, then the problems. Read these first:
+
+- `unkept`: a move names a check in `touches`, and no keeps entry covers the pair.
+- `quote`: a kept quote is no longer in its section. Your change moved or reworded the sentence.
+- `coverage`: a new Commits row or check has no entry. Add one to the map in the same change.
+- `boundary`: a hard rule of the implement run lost its home sentence, or the tool, test or eval function that
+  enforces it is gone. Restore the sentence, or update the boundary's home or enforcer in the map.
+
+`unreviewed` is advice. The gate guesses touches from paths and content kinds, and the guess is coarse.
+Five rules keep the noise down:
+
+- A folder touches a place only when the place is that folder or sits under it.
+- A wildcard base name, such as `*.yml`, never touches a literal file name.
+- Six checks read `**` only for some file kinds. For these checks, a path of another kind does not touch `**`.
+  Three are hook checks: "`TOOL-05` Local hook chain active", "`TOOL-06` Commit convention enforced" and
+  "`TOOL-07` Local guard against commits to a protected branch". The others are "`CI-05` Workflow files are
+  linted", "`EXEC-04` Env-var inventory complete" and "`NAV-02` Obvious entry points".
+  - An untracked path counts for every kind its files can have. `**/dist/**` can hold a `package.json`, so it
+    still counts as a manifest.
+  - A folder that a move sends text into has the kinds of the text's sources. A move from `AGENTS.md` into
+    `docs/` stays a doc.
+  - Any other folder counts for every kind.
+- "`CON-04` Draft allow/deny emitted" is never touched. Its verdict does not depend on what the target holds.
+- For "`SEC-02` No key-shaped strings", only a move that untracks a file touches its scan of every tracked text
+  file. No playbook or greenfield template holds a key-shaped line, and a test checks that. A write to the
+  check's allowlist files still counts.
+
+`--verbose` lists the pairs. The gate exits 0 whatever it finds; `CMAP_ARGS=--strict` makes it exit 1.
+
+On a work branch, add change mode. It compares your branch with a base ref, `origin/dev` by default:
+
+```bash
+make consistency-map CMAP_ARGS=--base
+make consistency-map CMAP_ARGS="--base <ref> --at HEAD"
+```
+
+It prints the static report, then four groups:
+
+- `review`: the sections your change moved, renamed, edited or removed in a file a check reads, with the checks.
+  A template counts at the path the scaffolder writes it to. Read each one; it is not a problem.
+- `lost-mention`: a kept section named the check ID before your change and does not now. This is a problem, even
+  when the kept sentence still exists somewhere else.
+- `left-scope`: you renamed a file a check reads to a path the check does not read. This is a problem.
+- `evidence`: the checks whose verdict or evidence changed, when their reads overlap your change. It is reported,
+  never a problem.
+
+Some checks read every file of a kind, for example `**` or `docs/**/*.md`. The gate calls such a place broad: a
+wildcard place whose files carry at least 5% of the tree's distinct file names. In the `review` group, each line
+names only the checks that read the place through a place of their own. The group lists the broad checks once, in
+a `broad checks` line. A line that only broad checks read is counted in an `and N more` line. `--verbose` lists
+those lines, and names the broad checks on each line. The JSON keeps every check of each entry under `checks`, and
+the broad ones under `broad`. The evidence part still compares all of them.
+
+The evidence part copies each side into a temporary repository and runs the engine on both. It takes about
+15 seconds on this repository. `--no-evidence` skips it.
+
+### Step 9: Prove that no output changed (the golden digest)
+
+Use this step for a change that should alter no output, such as moving code between files. The digest holds one
+SHA-256 for each shipped output: the engine's report of every fixture, `--list-checks`, each tool's `--describe`,
+`audit/catalogue.json` and the two skill archives. It also holds the ruleset hash and revision.
+
+Record it on the base before you change anything, for example in a clean checkout of `origin/dev`. Then compare it
+from your branch:
+
+```bash
+make golden GOLDEN_ARGS="record --out <scratch>/golden"
+make golden GOLDEN_ARGS="compare <scratch>/golden"
+```
+
+Each takes about 10 seconds. `compare` prints each entry that differs, one per line, and exits 2. Without a
+difference it prints `all <n> entries match`. A usage error, such as a digest that is missing, exits 1.
+
+The digest is the same on every run and every machine. It drops the keys that name the clock or the checkout
+(`scanned_at`, `git_sha`, `git_branch`, `git_dirty`, `framework_revision`) and fixes the report's target to `.`.
+It runs every fixture with an empty `HOME` and an absent index store. A change that is meant to alter an output
+shows as a difference here; this step only tells you that it did. It is not part of `make check`.
+
+---
+
 ## What the tools cannot see
 
 The tools find a loss in text and structure. They do not prove that the recipes still mean the same thing.
@@ -266,25 +396,36 @@ The tools find a loss in text and structure. They do not prove that the recipes 
 | `diff` | A link or ID form that the config does not describe |
 | `manifest-diff` | Whether a changed bundle file still says the same thing |
 | `evidence compare` | A check whose input changed but whose verdict and evidence stayed the same |
-| All | An engine contract bound to one line of a file |
+| `consistency-map` | A touch that no reviewer declared. It shows only as an unreviewed guess |
+| `golden` | Why an output changed, and any output outside its list: the Markdown renderings of a report and the tools' results other than `--describe` |
+| `consistency-map --base` | The evidence of a fresh greenfield scaffold. A template change shows under `review`, but the engine audits only this repository |
+| All but `consistency-map` and `evidence compare` | An engine contract bound to one line of a file |
 
 The last row needs a note. Some engine checks need two things on one physical line, for example
 "`AGT-06` Architectural boundaries declared" and "`AGT-08` No competing instruction files". Re-wrapping such a line
-can change the verdict, and no tool here maps a check to the lines it reads. That map, the consistency map, is
-Planned: a design proposal exists, and no code is built.
+can change the verdict. The consistency map records each such binding in its reads, and its gate checks that a
+sentence keeps it. It checks that the rule is stated, not that an agent follows it.
+`evidence compare` sees a broken binding when the verdict or the evidence changes. For a template, run it with
+`--target scaffold` ([Step 6](#step-6-compare-the-engine-evidence)).
 
 ---
 
 ## Exit codes
 
+Every `doc_index.py` command exits 1 on a usage error, such as an unknown option. `--help` exits 0.
+A key in `dev/docindex.config.json` that no rule reads, such as a misspelt one, also exits 1.
+A config path that matches no tracked file is only a warning in the `build` summary.
+
 | Command | 0 | 1 | 2 |
 | --- | --- | --- | --- |
-| `sweep`, `diff` | A report, whatever it finds | A git failure, such as a ref that names no commit | A usage error, such as `--paths` without `--diff` |
-| `manifest` | The manifest is written | The bundle build failed, or the file cannot be written | A usage error |
-| `manifest-diff` | A report, whatever it finds | A manifest cannot be read | A usage error |
-| `evidence run` | Every report is written | A command failed | The run is refused: folder not fresh or inside the repository, or a report missing or stale; or a usage error |
-| `evidence compare` | A report, whatever it finds | A run folder cannot be read, or the targets differ | A usage error |
+| `sweep`, `diff` | A report, whatever it finds | A git failure, such as a ref that names no commit; or a usage error, such as `--paths` without `--diff` | Not used |
+| `manifest` | The manifest is written | The bundle build failed, or the file cannot be written; or a usage error | Not used |
+| `manifest-diff` | A report, whatever it finds | A manifest cannot be read; or a usage error | Not used |
+| `evidence run` | Every report is written | A command failed; or a usage error | The run is refused: folder not fresh or inside the repository, or a report missing or stale |
+| `evidence compare` | A report, whatever it finds | A run folder cannot be read, or the targets differ; or a usage error | Not used |
 | `verify-quotes` | Every quote and citation passes | A usage error, or a folder with no `quotes.json` | A quote or citation fails |
+| `golden.py` | `record` wrote the digest; `compare` found no difference | A usage error, such as a digest that is missing or a folder that already holds one | `compare` found a difference |
+| `consistency_map.py` | A report, whatever it finds | With `--strict`: a problem found; with `--base`: an engine run failed | A usage error, such as a base ref that names no commit |
 
 ---
 
@@ -296,4 +437,8 @@ You checked the change when all of this holds:
 - [ ] `diff <base>` shows no lost anchor and no ID that lost its definition, or you explained each one.
 - [ ] `manifest-diff` lists only the bundle files you meant to change.
 - [ ] `evidence compare` shows no verdict and no evidence change, or you explained each one.
+- [ ] `make consistency-map` shows no new `unkept`, `quote` or `coverage` problem.
+- [ ] `make consistency-map CMAP_ARGS=--base` shows no `lost-mention` or `left-scope` problem, and you read each
+  `review` and `evidence` line.
+- [ ] For a change that should alter no output, `make golden` `compare` shows no difference.
 - [ ] `make check` passes, as [`AGENTS.md`](../../AGENTS.md#definition-of-done) asks.

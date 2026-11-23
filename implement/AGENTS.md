@@ -16,13 +16,15 @@ folder.
 | `playbooks/templates/` | Code a playbook copies into a target, with tests in `tools/tests/`. A copy carries `MIT`, `Apache-2.0` or `BSD-3-Clause`, never this repository's licence |
 | `state.md` | The state contract: the per-repository state that `progress.py` keeps |
 | `tool-choice.md` | What a step does when a tool it needs is missing, or older than the repository's pin |
-| `tools/` | `progress.py`, `check_drift.py`, `compare_reports.py`, and their tests in `tools/tests/` |
-| `docs/architecture/adrs/` | Decisions for this folder (ADR 0003 and ADR 0004) |
+| `theme-checks.md` | The integration-branch check, the history check, the lost-pass check and the gates check that Stages 3 and 4 run, and when to stack a theme on an unmerged one |
+| `tools/` | `progress.py`, `check_drift.py`, `compare_reports.py`, `check_regressions.py`, `check_gates.py`, and their tests in `tools/tests/` |
+| `docs/architecture/adrs/` | Decisions for this folder (ADR 0003, ADR 0004, ADR 0005, ADR 0006 and ADR 0007) |
 
 ## Rules
 
 - Use the standard library only in `tools/`. Never add a third-party import.
 - Text a playbook copies into a target comes from `greenfield/templates/` (MIT-0), never from `docs/` (GFDL 1.3).
+  The rule, with its full wording, is in the [rules for every playbook](playbooks/README.md#anatomy).
 - Code in `playbooks/templates/` is relicensed when a playbook copies it into a target. Only its copyright holder
   changes it, or a contributor who agrees in writing to that relicensing. Say so in the pull request.
 - Every tool follows the tool contract in [`audit/tools/README.md`](../audit/tools/README.md).

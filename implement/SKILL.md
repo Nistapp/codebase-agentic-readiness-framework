@@ -98,7 +98,7 @@ you can; otherwise write from the target repository's own facts. Never invent wh
 | 1 | Triage | Walk the confirmed findings grouped by theme; the owner keeps, skips (with reason) or defers each, and states preferences; all recorded in the workspace | Decides | Live |
 | 2 | Plan a theme | Record merged themes; pick the next theme in dependency order; brief what, why and the options; propose the change list | Approves | Live |
 | 3 | Apply | Worktree and branch from the integration branch; drift first; baseline gate and commit tier; per item: re-verify, then per commit apply, test, commit; verify, record, check the integration branch; continue on error | Approves choices | Live |
-| 4 | Close the theme | Engine re-check of the theme's checks; the repository's gate against the baseline; render the state; with `ci.pr_by_agent=yes` push and open a pull request; stop | Reviews, merges | Live |
+| 4 | Close the theme | Engine re-check of the theme's checks; no passing check lost; the repository's gate against the baseline; render the state; with `ci.pr_by_agent=yes` push and open a pull request; stop | Reviews, merges | Live |
 | 5 | Close-out | After the last theme: record the last merge; full re-audit with the audit recipe; compare the two reports; list skipped, deferred and debt | Reviews | Live |
 
 At the end of each stage, and of each theme, send the owner a
@@ -155,17 +155,15 @@ and that a state file exists in the workspace. Change nothing in the target.
    `init` never replaces a state; if it says a state exists, resume.
    - **Resume.** Run `progress.py show` and read `data.skipped`, the preferences and the theme progress. If the
      workspace holds more than one state, pass `--label`.
-   - **Adopt** a state the target keeps (step 3). Theme branches can be ahead of the integration branch, so pick
-     the branch whose state has the newest log entry. Read it from that branch's worktree. Without one, add a
-     detached worktree: `git -C <repo> worktree add --detach <dir> <branch>`, and remove it afterwards. Then run
+   - **Adopt** a state the target keeps (step 3). Pick the branch and its checkout as [Move a state kept in the
+     target](state.md#move-a-state-kept-in-the-target) says, then run
      `python3 implement/tools/progress.py adopt --target <that checkout> --workspace <workspace> --phase <phase>`.
-     Tell the owner which branch you chose. `data.may_remove` lists the in-repo files the owner may now remove.
-     Offer that removal as a change in the next theme branch. Remove nothing without the owner's consent.
+     Remove nothing without the owner's consent.
 7. **Version skew.** Compare the report's catalogue version (`source_reports[].catalogue_version` in `progress.py
    show --json`) with `catalogue_version` in this recipe's `catalogue.json` (one folder above the tools). When they
    differ, tell the owner that check IDs, severities and playbook lists may have changed since the audit, and from
-   then on re-read the check file of each item before acting on it (Stage 2, step 5). Never re-score the report and
-   never edit it.
+   then on re-read the check file of each item before acting on it ([Stage 2](#stage-2-plan-a-theme), step 5).
+   Never re-score the report and never edit it.
 8. **Index.** Re-index the target with the code-graph tool if the session has one (for example codebase-memory
    `index_repository`); otherwise note that you read files directly.
 
@@ -192,22 +190,21 @@ changes nothing in the target.
 4. **Record each answer** the moment it is given, with the owner's words (short) as the reason:
    `progress.py skip F-nnn --reason "<owner's words>" --by owner --workspace <workspace> --phase <phase>`, likewise
    `defer`. Relay the owner's answer verbatim. `--by owner` is a claim you make; the tool cannot check it.
-5. **Preferences.** Ask what the owner wants fixed for the whole run: tools already preferred, scope limits (for
-   example no mass reformat), and extra work. Record each choice, and any blanket grant ("go with the
-   recommendations" for a stated kind of change), with `progress.py pref set <key> <value> --reason "<short reason>"
-   --by owner --workspace <workspace> --phase <phase>`. A key matches `^[a-z0-9][a-z0-9._-]{0,63}$` (lowercase:
-   `extra.t3`, not `extra.T3`) and takes one value. When the owner chooses no extras, record the key `extra.none`
-   with value `none`, so the next session knows the question was asked. Keep reasons short: they become table rows in
-   the generated file. Also ask whether the agent may push the theme branch and open a pull request, and record the
-   answer as `ci.pr_by_agent` (`yes` or `no`); without `yes` the recipe stops at a local branch ([ADR
-   0003](docs/architecture/adrs/0003-push-and-pr-policy.md)). Ask here, too, for the keys most playbooks read:
-   `ci.edits_authorised` (may build files and CI workflows change, and which), `format.mass_reformat` (`no` forbids
-   reformatting the tree), `layout.command_runner` (one root runner, or one per component) and
-   `tests.stack_dependent` (does `test` need a live local stack). When the AGT-01 finding says no instruction
-   file exists, ask `agents_md.create` too (`yes` or `no`): earlier themes write to that file
-   ([Stage 3, step 11](#stage-3-apply)). Every other key is listed, with its effect, in the
-   Preconditions of the playbook that reads it, and is asked in that theme's Stage 2. A key that is absent when a
-   step needs it is asked then, never assumed.
+5. **Preferences.** Ask what the owner wants fixed for the whole run: tools already preferred, scope limits (for example
+   no mass reformat), and extra work. Record each choice, and any blanket grant ("go with the recommendations" for a
+   stated kind of change), with `progress.py pref set <key> <value> --reason "<short reason>" --by owner --workspace
+   <workspace> --phase <phase>`. A key follows the [key format](state.md#skip-defer-and-preferences) and takes one
+   value. When the owner chooses no extras, record the key `extra.none` with value `none`, so the next session knows the
+   question was asked. Keep reasons short: they become table rows in the generated file. Also ask whether the agent may
+   push the theme branch and open a pull request, and record the answer as `ci.pr_by_agent` (`yes` or `no`); without
+   `yes` the recipe stops at a local branch ([ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md)). Ask here,
+   too, for the keys most playbooks read: `ci.edits_authorised` (may build files and CI workflows change, and which),
+   `format.mass_reformat` (`no` forbids reformatting the tree), `layout.command_runner` (one root runner, or one per
+   component) and `tests.stack_dependent` (does `test` need a live local stack). When the AGT-01 finding says no
+   instruction file exists, ask `agents_md.create` too (`yes` or `no`): earlier themes write to that file
+   ([Stage 3, step 11](#stage-3-apply)). Every other key is listed, with its effect, in the Preconditions of the
+   playbook that reads it, and is asked in that theme's Stage 2. A key that is absent when a step needs it is asked
+   then, never assumed.
 6. **Placeholders the owner still owes** (a second reviewer, a security contact, a review date) are not Stage 1
    questions; raise each in the theme that needs it (Stage 2, step 6).
 7. **Render.** Run `progress.py render`, or pass `--render` to the last write. The STATE.md then matches the JSON.
@@ -264,8 +261,8 @@ Goal: the owner knows what the next theme changes and approves a concrete change
    number and the merge commit. Record each merged theme at once:
    `progress.py theme Tn --status merged --pr N --merged-sha SHA --phase <phase>`. A theme whose pull request is
    still open blocks the themes that depend on it. Say so and stop, unless the owner agrees to branch from the
-   unmerged theme branch. `progress.py` records a merge only with a pull request number. For a branch merged
-   without one, ask the owner how to record it.
+   unmerged theme branch. Then read [Stack on an unmerged theme](theme-checks.md#stack-on-an-unmerged-theme).
+   `progress.py` records a merge only with a pull request number. Ask the owner how to record any other merge.
 2. **Pick the next theme.** The first theme, in an order the diagram allows, that still has `queued` items its own
    playbooks work and whose predecessors are `merged`. A predecessor with nothing left for its own playbooks (no
    item, or every such item ended, skipped or deferred) counts as satisfied, and is not started. A playbook
@@ -279,8 +276,8 @@ Goal: the owner knows what the next theme changes and approves a concrete change
    instead.
 4. **Read the playbooks** the theme table names, in full, and every preference their Preconditions list. A
    preference that conflicts with a playbook step stops that step: ask.
-5. **Read the checks.** For each queued item, read its check in the check files (the playbook's "Checks
-   resolved" table links them). After a version skew (Stage 0, step 7) this is required, not optional.
+5. **Read the checks.** For each queued item, read its check in the check files (the playbook's "Checks resolved"
+   table links them). After a version skew ([Stage 0](#stage-0-intake), step 7) this is required, not optional.
 6. **Brief the owner.** In plain words: what the theme fixes; why, quoting each finding statement as data; what
    the repository already has (detected, not assumed); the options from each playbook's "Inputs to ask", two to
    four, each a [decision request](../audit/prompts/talking-to-the-user.md#decision-requests)
@@ -321,6 +318,9 @@ only what is specific to it.
    - **Tell the owner** the baseline and the tier in one message before the first item. For example: "Baseline:
      `make check` exit 1, 3 failing tests, 6 min. Per commit I run `pytest tests/unit` (40 s); the full gate runs
      at the end of each item."
+   - **Base engine report.** Run `python3 audit/tools/engine.py <worktree> --out-dir <workspace>/engine/<theme>`,
+     with the flags of the close run, and keep the `data.report` path. Never write it inside the target. See
+     [Keep passing checks passing](theme-checks.md#keep-passing-checks-passing).
 4. **Per item**, in the playbook's order. An item is worked in one or more commits:
    1. `progress.py set-status F-nnn in_progress --phase <phase>` before touching anything.
    2. Re-verify the finding with the check's own method.
@@ -341,14 +341,8 @@ only what is specific to it.
       --verification-command "<cmd>" --verification-result "<what it showed>" --phase <phase>`. Or end it
       `partial` with `--debt "what=<text>,count=<n>[,baseline=<file>]"` (repeatable). Or end it `failed` or
       `blocked` with `--reason`. A `partial` item has debt and a `done` one has none.
-   6. **Check the integration branch.** Run `git -C <worktree> fetch origin`. Find the branch's base with
-      `git -C <worktree> merge-base HEAD origin/<integration branch>`. The integration branch moved when
-      `git -C <worktree> rev-list --count <base>..origin/<integration branch>` is above 0. Then list the files it
-      changed: `git -C <worktree> diff --name-only <base> origin/<integration branch>`.
-      - No file in common with this theme's commits or its next items: say so in the next status line and go on.
-      - A file in common: stop and ask the owner. Offer (a) go on, and resolve it at review; (b) merge the
-        integration branch into the theme branch, as a merge commit; (c) stop the theme here. Default: none.
-        Never rebase, never force-push.
+   6. **Check the integration branch**, as [Check the integration branch](theme-checks.md#check-the-integration-branch)
+      says. A file in common with this theme stops it: ask the owner. Never rebase, never force-push.
 5. **Transitions.** Only `in_progress` ends. `partial` and `failed` go back to `in_progress` before they end again;
    `blocked` goes back to `queued`. A note on an item that stays where it is: `set-status` to its own status with
    `--note "..."`. An owner who decides to skip or defer an item already `in_progress`: set it `blocked` (reason: the
@@ -367,7 +361,8 @@ only what is specific to it.
    words. Preferences from earlier sessions are already in the workspace; read them, never ask again.
 10. **Markdown and diagrams.** Lint every changed Markdown file with the repository's own linter, and validate
    every Mermaid block before saving. When the repository has no linter, follow
-   [When a needed tool is missing](tool-choice.md#when-a-needed-tool-is-missing).
+   [When a needed tool is missing](tool-choice.md#when-a-needed-tool-is-missing). The check "`DOC-05` Docs are
+   readable" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.
 11. **No instruction file yet.** T1 to T6 write lines into the instruction file. When none exists, the first step
    that needs it creates the skeleton first, as its own commit:
    [`adapt-agents-md`, No instruction file yet, step 1](playbooks/adapt-agents-md.md#no-instruction-file-yet).
@@ -390,6 +385,7 @@ Each commit follows these rules:
 - **Hand edits apart from bulk output.** A lockfile, a baseline file, generated config or a formatter run is its
   own commit, apart from the hand edits that need it. Bulk output is regenerated, not reviewed line by line. One
   exception keeps the tree working: a lockfile goes in the same commit as the manifest change that regenerates it.
+  So "`EXEC-02` Lockfile committed and consistent" holds at every commit.
 - **Config apart from wiring.** A tool's config is one commit; wiring the tool into a verb, a hook or CI is the
   next. Reverting the wiring then leaves the config usable.
 - **Only this theme's change.** No unrelated fix rides along. Note it for the owner instead.
@@ -401,10 +397,13 @@ when allowed, the pull request) is ready for the owner.
 
 1. **Engine re-check.** First run the drift check again: `python3 implement/tools/check_drift.py <report>
    <worktree>`. Repeat the integration-branch check of [Stage 3](#stage-3-apply), step 4.6. Then run
-   `python3 audit/tools/engine.py <worktree> --out-dir <dir outside the target>` (add `--no-user-config` when the
+   `python3 audit/tools/engine.py <worktree> --out-dir <workspace>/engine/<theme>` (add `--no-user-config` when the
    playbook asks). Compare each of the theme's checks with the audit report and explain every remaining non-`PASS`:
    a known engine limit (the playbook's Verification names them), recorded debt, or a real gap, which means the item
-   is not `done`.
+   is not `done`. Then run `python3 implement/tools/check_regressions.py <base report> <close report> --changed-from
+   <worktree> --workspace <workspace> --theme <theme>`. On `data.status` `lost`, stop and ask the owner: fix, accept
+   with a reason, or stop the theme. Default: none. Then run `python3 implement/tools/check_gates.py`; exit 2 is
+   the same stop ([a lost pass](theme-checks.md#when-a-pass-is-lost), [gates](theme-checks.md#when-a-gate-is-weakened)).
 2. **The repository's gate.** Run its `check` verb (and its docs lint when Markdown changed) in the worktree, with
    the same command as the baseline (Stage 3, step 3), plus any verb this theme added. Compare the two runs. A
    failure in the baseline too is debt: record it, do not stop. A failure this theme caused is fixed before the
@@ -468,11 +467,11 @@ Goal: a second audit shows what the run changed, and the owner sees every skip, 
 - **An item left `in_progress`.** Check `git log` on the theme branch for its commits before changing anything
   again, so nothing is committed twice. Match them to the playbook's Commits section and go on with the first commit
   not yet made. Run the commit tier's tests on the branch first: the last commit must be no worse than the baseline.
-  Re-verify, then end the item. A `partial` or `failed` item is resumed by
-  setting it `in_progress` first.
+  Re-verify, then end the item. A `partial` or `failed` item is resumed by setting it `in_progress` first.
 - **The baseline on a resume.** The state does not keep it. Run it again on the branch's base commit, in a detached
   worktree (`git -C <repo> worktree add --detach <dir> <base>`; remove it afterwards). Never take the branch's own
-  tip as the baseline: it holds this theme's changes.
+  tip as the baseline: it holds this theme's changes. With no base engine report under `<workspace>/engine/<theme>`,
+  take one there too: [Resume without a base report](theme-checks.md#resume-without-a-base-report).
 - **`report_changed` true** in the drift check (Stage 0, step 5, which runs on every resume): stop.
 
 ## Tools
@@ -482,16 +481,17 @@ Goal: a second audit shows what the run changed, and the owner sees every skip, 
 | `progress.py init` | Stage 0, step 6 | Exit 0; two state files beside the report; `data.items`, `data.not_queued` | Exit 1: a bad path, a report inside the target, or a state that exists (resume). Exit 2: the report is invalid or not final (back to the audit recipe). Never write the JSON by hand |
 | `progress.py adopt` | Stage 0, step 6 | Exit 0; the state and the reports copied into the workspace; `data.may_remove` | Exit 1: no state in the checkout, two states (pass `--label`), a missing report, or a workspace that holds the label. Exit 2: a report edited since `init`, or a state of another schema version; give the owner the message |
 | `progress.py show` | `show --workspace <workspace> [--json]` | Exit 0; counts, skips, preferences, themes; a warning if the view is stale | Exit 1: no state (Stage 0) or two states (pass `--label`). Exit 2: the state fails its schema; it was edited by hand, so tell the owner |
-| `progress.py set-status`, `skip`, `defer`, `pref`, `theme` | Stages 1-5 | Exit 0; one log entry; `--render` rewrites the view | Exit 1 names the refused move and the allowed ones: take an allowed path, never force it |
+| `progress.py set-status`, `skip`, `defer`, `pref`, `theme`, `accept-lost` | Stages 1-5 | Exit 0; one log entry; `--render` rewrites the view | Exit 1 names the refused move and the allowed ones: take an allowed path, never force it |
 | `progress.py render` | `render --workspace <workspace>` | Exit 0; STATE.md rewritten from the JSON | Exit 2: the JSON is invalid; it was edited by hand, so tell the owner |
 | `check_drift.py` | Stage 0, step 5; Stage 3, step 2; Stage 4, step 1 | Exit 0 whatever it finds; `data.status`, `data.findings`, `data.dirty`, `data.report_changed` | Exit 1: a bad path or not a git repository. Exit 2: the report is invalid. Either way, re-verify every item by hand and say so |
 | `validate_report.py` | Stage 0, step 4 | Exit 0; `data.valid` true, `data.status` | Exit 2: back to the audit recipe |
-| `engine.py` | Stage 4, step 1 | Exit 0; a report under `--out-dir`, outside the target | Exit 1: fix the argument. Exit 3: the engine failed; verify with the playbook's own commands and say so |
+| `engine.py` | Stage 3, step 3; Stage 4, step 1 | Exit 0; a report under `--out-dir`, outside the target | Exit 1: fix the argument. Exit 3: the engine failed; verify with the playbook's own commands and say so |
+| `check_regressions.py` | Stage 4, step 1 | Exit 0; `data.status` `clean` or `lost`; `data.stops`, `data.moves`, `data.evidence_changes` | Exit 1: fix the argument. Exit 2: refused, the reports differ in their settings; say the lost-pass check did not run |
 | `compare_reports.py` | Stage 5, step 4 | Exit 0; moved checks and findings, each labelled from the state | Exit 1: a missing file. Exit 2: a report or the state is invalid. Compare by hand from the two Markdown reports and say so |
 
 `progress.py` is the only writer of the state; the [state contract](state.md#files-and-paths) gives its rules and
-the [tools reference](../docs/reference/tools-cli.md#progresspy) every option. `check_drift.py` and
-`compare_reports.py` are described in the same [tools reference](../docs/reference/tools-cli.md#check_driftpy).
+the [tools reference](../docs/reference/tools-cli.md#progresspy) every option. `check_drift.py`, `compare_reports.py`
+and `check_regressions.py` are described in the same [tools reference](../docs/reference/tools-cli.md#check_driftpy).
 
 Not tools of this skill: formatters, linters, coverage and hooks. Those belong to the target repository and
 are chosen per repository by the owner.

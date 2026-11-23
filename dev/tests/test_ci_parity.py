@@ -9,8 +9,8 @@ added to ``check`` cannot silently drop out of the gate that decides a pull requ
 
 CI also splits the slow suites into shards (``SHARDED_SUITES``, ``TEST_SHARDED_SUITES``, ``TEST_SHARDS``,
 ``dev/test_shard.py``). These tests fail when a
-matrix misses a shard, when a shard leaves the coverage environment, or when a verb (``test``, ``coverage``) starts
-to shard. The nightly workflow runs the verbs whole.
+matrix misses a shard, when a shard leaves the coverage environment, or when a verb starts to shard on CI's count
+(``test`` and ``coverage`` shard on their own count, ``LOCAL_SHARDS``, and run whole with ``TEST_JOBS`` empty). The nightly workflow runs the verbs as a person does.
 """
 
 from __future__ import annotations
@@ -141,8 +141,8 @@ class CheckRunsInCI(unittest.TestCase):
         self.assertIn("setup-go", jobs["security-deps"])
 
     def test_every_test_suite_has_a_ci_job(self) -> None:
-        # A suite counts when CI runs it plainly (test-dev), under coverage (coverage-engine runs test-engine's
-        # suite) or in shards (coverage-engine-shard, through coverage-part).
+        # A suite counts when CI runs it plainly in shards (test-dev-shard), under coverage (coverage-engine runs
+        # test-engine's suite) or under coverage in shards (coverage-engine-shard, through coverage-part).
         ci = self.expand(self.ci)
         missing = [
             suite
@@ -150,6 +150,20 @@ class CheckRunsInCI(unittest.TestCase):
             if not self.runs(suite, ci) and not self.runs(suite.replace("test-", "coverage-", 1), ci)
         ]
         self.assertEqual(missing, [], "test suites that CI never runs")
+        # The same holds for the Python 3.11 jobs alone (.python-version): the coverage parts and the dev checks'
+        # shards. test_every_suite_runs_on_python_3_14 checks the other Python.
+        jobs = ci_jobs(CI.read_text(encoding="utf-8"))
+        py311: set[str] = set()
+        for job in ("test-coverage", "test-dev"):
+            with self.subTest(job=job):
+                self.assertRegex(jobs[job], r"(?m)^          python-version-file: \.python-version$")
+            py311 |= self.job_targets(job)
+        missing = [
+            suite
+            for suite in self.suites
+            if not self.runs(suite, py311) and not self.runs(suite.replace("test-", "coverage-", 1), py311)
+        ]
+        self.assertEqual(missing, [], "test suites Python 3.11 never runs")
 
     def test_every_suite_runs_on_python_3_14(self) -> None:
         # The Python 3.14 job runs `make test-part` once per shard: every suite of `make test`, split over the parts.
@@ -174,7 +188,12 @@ class CheckRunsInCI(unittest.TestCase):
         self.assertNotIn("SHARD", nightly)
 
     def test_coverage_combines_every_suite_ci_measures(self) -> None:
-        self.assertEqual(make_rule(self.makefile, "coverage"), [*self.coverage_suites, "coverage-combine"])
+        # With TEST_JOBS empty, `coverage` runs the suites one by one and whole; with it set, it runs coverage-local.
+        serial_suites = " ".join([*self.coverage_suites, "coverage-combine"])
+        self.assertEqual(
+            " ".join(make_rule(self.makefile, "coverage")),
+            f"$(if $(strip $(TEST_JOBS)),coverage-local,{serial_suites})",
+        )
         for target in self.coverage_suites:
             with self.subTest(target=target):
                 self.assertIn(target.replace("coverage-", "test-", 1), self.suites)
@@ -214,7 +233,11 @@ class CheckRunsInCI(unittest.TestCase):
             with self.subTest(job=job):
                 self.assertEqual(job_shards(block), list(range(1, self.count + 1)), "list shards 1 to TEST_SHARDS")
                 self.assertRegex(block, r"(?m)^      SHARD: \$\{\{ matrix\.shard \}\}$")
-        self.assertEqual(sorted(sharded), ["test-coverage", "test-py314"], "both Pythons run the suites in shards")
+        self.assertEqual(
+            sorted(sharded), ["test-coverage", "test-dev", "test-py314"], "both Pythons run the suites in shards"
+        )
+        # The dev checks' Python 3.11 job runs its shard alone: test-dev-shard, once per shard of the matrix.
+        self.assertEqual(ci_targets(ci_jobs(CI.read_text(encoding="utf-8"))["test-dev"]), {"test-dev-shard"})
 
     def test_the_makefile_and_the_runner_shard_the_same_suites(self) -> None:
         # test-part shards every suite the runner knows; coverage-part shards a subset (coverage.py skips dev/).
@@ -235,7 +258,7 @@ class CheckRunsInCI(unittest.TestCase):
                 self.assertIn(f"COVERAGE_FILE=$(COVERAGE_DATA).{suite}-$(SHARD)", recipe)
                 self.assertIn(f"$(call test_shard,{suite})", recipe)
 
-    def test_the_verbs_never_shard(self) -> None:
+    def test_the_verbs_never_shard_on_cis_count(self) -> None:
         rules = [
             "test",
             "coverage",
@@ -246,6 +269,36 @@ class CheckRunsInCI(unittest.TestCase):
                 recipe = make_recipe(self.makefile, rule) + " ".join(make_rule(self.makefile, rule))
                 self.assertNotIn("SHARD", recipe)
                 self.assertNotIn("test_shard", recipe)
+
+        # `make test` with TEST_JOBS set runs LOCAL_SHARDS shards of each sharded suite, never CI's SHARD/TEST_SHARDS;
+        # with TEST_JOBS empty (the serial path, as on macOS) it runs every suite whole.
+        def commands(*args: str, verb: str = "test") -> str:
+            return subprocess.run(
+                ["make", "-s", "-n", "-C", str(REPO), verb, *args], capture_output=True, text=True, check=True
+            ).stdout
+
+        serial = commands("TEST_JOBS=")
+        self.assertNotIn("test_shard", serial)
+        sharded = commands("TEST_JOBS=-j2 --output-sync=target", "LOCAL_SHARDS=3")
+        for suite in self.test_sharded:
+            with self.subTest(suite=suite):
+                found = re.findall(rf"test_shard\.py --suite {re.escape(suite)} --shard (\d+)/(\d+)", sharded)
+                self.assertEqual(sorted(found), [(str(i), "3") for i in range(1, 4)])
+        for suite in self.suites:
+            if suite.removeprefix("test-") not in self.test_sharded:
+                with self.subTest(suite=suite):
+                    self.assertIn(suite, sharded.splitlines()[0])
+
+        # `make coverage` does the same: LOCAL_SHARDS shards of each sharded suite, then a combine that expects them.
+        serial_coverage = commands("TEST_JOBS=", verb="coverage")
+        self.assertNotIn("test_shard", serial_coverage)
+        self.assertNotIn("-shard", serial_coverage)
+        local = commands("TEST_JOBS=-j2 --output-sync=target", "LOCAL_SHARDS=3", verb="coverage")
+        for suite in self.sharded_by("coverage")[1]:
+            with self.subTest(suite=suite):
+                found = re.findall(rf"coverage-{re.escape(suite)}-shard SHARD=(\d+) TEST_SHARDS=(\d+)", local)
+                self.assertEqual(sorted(found), [(str(i), "3") for i in range(1, 4)])
+        self.assertIn("coverage-combine SHARDED=1 TEST_SHARDS=3", local)
 
     def test_ci_gate_needs_every_other_job(self) -> None:
         # A job that CI Gate does not need can fail, or never finish, while the gate passes.

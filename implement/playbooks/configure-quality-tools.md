@@ -29,7 +29,7 @@ The verb names, `check`'s composition and the split of write verbs belong to
 - Preferences this playbook reads, when present: `format.mass_reformat` (`no` forbids reformatting the tree:
   check-only or ratchet), any `format.*`, `lint.*` or `scanner.*` choice already made, `ci.edits_authorised`
   (build-file and CI edits), and any rule that dependency versions stay locked. A step that conflicts stops
-  and asks.
+  and asks ([state contract](../state.md#skip-defer-and-preferences)).
 - **`security` needs what its scanner reads.** A lockfile-based scanner (OSV-Scanner, `npm audit`) needs a
   tracked lockfile. When it is missing and T2 (`pin-execution-environment`) adds it, the TOOL-04 item is
   `blocked` with reason "needs T2 lockfile", and the `security` verb lands in T2's pull request together with
@@ -58,7 +58,8 @@ The verb names, `check`'s composition and the split of write verbs belong to
 ### Tool currency
 
 Checked 2026-10-30 against GitHub releases, the Gradle plugin portal and the npm registry. Re-check before
-offering a tool; drop one with no release in the last 12 months.
+offering a tool; drop one with no stable release in the last 12 months
+([tool currency](../tool-choice.md#tool-currency)).
 
 | Tool | Latest | Released | Notes |
 |---|---|---|---|
@@ -84,13 +85,23 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
 
 1. Same worktree and branch as `define-command-surface`: T1 is one branch.
 2. Per tool, in this order: formatter, linter, type checker, scan. For each one:
-   1. Add the config file (or reuse the existing one) and the dependency, pinned to an exact version.
-   2. Point the verb at it (`define-command-surface`).
+   1. Add the config file (or reuse the existing one) and the dependency, pinned to an exact version. Keep one
+      config per concern, for "`EXEC-07` No competing configs for one concern". The pin lives in the manifest.
+   2. Point the verb at it (`define-command-surface`). The verb runs the tool by name, never as `name@version`.
+      "`EXEC-08` Tool versions visible to dependency automation" reads the verb. A read-only verb never writes:
+      no `--fix`, `--write` or `audit fix`, no `tsc` without `--noEmit`, no install. "`CMD-04` Write verbs
+      separated from read-only verbs" fails on such a form.
    3. Run the full read-only form once, on the untouched tree, and count the violations. That count is the debt.
    4. If the count is 0, wire the full run into the verb and `check`. If not, wire the ratchet form into the
-      verb used by `check`, add a report-only full run to CI (marked report-only in the step name), and record
-      the debt.
-3. **Formatter (TOOL-01).** `format` writes, `format:check` reads. With debt, `format:check` checks changed
+      verb `check` uses. Record the debt: its count and a review date. Then add the full run to CI as a
+      report-only step. It runs a local verb or the tool by name, never a runner target that no local runner
+      defines. "`CI-02` Local↔CI parity" and "`CI-03` CI-only steps flagged" read its command. Its job is outside
+      the merge gate's `needs`, and its name says report-only. Commit the
+      count and the review date in a comment beside the step, in the CI file's own syntax. A later audit reads
+      that comment; it cannot see the state file. "`CI-04` CI enforces the same gate as the local check" accepts
+      that step.
+3. **Formatter (TOOL-01).** `format` writes, `format:check` reads. "`CMD-04` Write verbs separated from read-only
+   verbs" reads that split, and the `lint` split of step 4. With debt, `format:check` checks changed
    files only (ratchet against the integration branch). Never run `format` on the whole tree.
 4. **Linter (TOOL-02).** `lint` is read-only; the auto-fix form is a separate write verb. Start with a small,
    bug-oriented ruleset rather than every rule; widening it is a later owner choice.
@@ -101,10 +112,12 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
 6. **Scan (TOOL-04).** `security` runs a dependency-vulnerability scan with a fixed severity threshold. It is the
    dependency gate only: secrets scanning (gitleaks and the like) stays in T3 and T4 hooks, not in `security`.
    Reuse a scan command the repository already runs in CI rather than adding a second scanner.
-   Then run the verb in CI as its own job, beside the `check` job. TOOL-04 reads `PARTIAL` when only one of the
+   Then run the verb in CI as its own job, beside the `check` job. "`CI-02` Local↔CI parity" maps that job to the
+   verb. TOOL-04 reads `PARTIAL` when only one of the
    two runs the scan. Use the stack profile's CI idiom line. The job may need the network; keep it out of `check`.
-   A scan that is red on day one gets a report-only job, named so. On GitHub Actions use `continue-on-error: true`;
-   on GitLab CI use `allow_failure: true`. Dependabot and Renovate never count as the scan.
+   A scan that is red on day one gets a report-only job outside the merge gate's `needs`, named report-only. A
+   comment beside the step holds its count and review date, as CI-04 accepts. On GitHub Actions use
+   `continue-on-error: true`; on GitLab CI use `allow_failure: true`. Dependabot and Renovate never count as the scan.
 
 ### Java (Gradle)
 
@@ -187,7 +200,7 @@ has skips its dependency row, and its config row when the config stays as it is.
 | 5 | Report-only full `format:check` in CI (only with debt) | `TOOL-01` | wiring |
 | 6 | Linter dependency, pinned exact, with its lockfile change | `TOOL-02` | bulk |
 | 7 | Linter config: the ruleset, with the PMD exclude list when there is debt | `TOOL-02` | config |
-| 8 | ESLint suppressions file (only when the owner chose it as the baseline) | `TOOL-02` | bulk |
+| 8 | ESLint suppressions file (only when the owner chose it as the baseline) | - | bulk |
 | 9 | `lint` runs the linter read-only, in ratchet form with debt | `TOOL-02` | wiring |
 | 10 | Report-only full lint in CI (only with debt) | `TOOL-02` | wiring |
 | 11 | Type-check config in its strictest passing mode (not on the JVM) | `TOOL-03` | config |
@@ -212,8 +225,8 @@ On Gradle a plugin is one line in `build.gradle`, with no lockfile. So the plugi
 | Type errors under strict | Errors of the strict run | Strict on for clean folders or files; the rest listed, the list only shrinks |
 | Known vulnerabilities | Findings at or above the threshold | `security` fails on new ones; existing ones listed with an owner review date, not suppressed silently |
 
-Record each count on its item (`--debt what=...,count=N[,baseline=FILE]`) and set the item `partial`. T5
-(`add-baselines-and-ratchet`) hardens the ratchets and tracks the counts down.
+Record each count on its item (`--debt what=...,count=N[,baseline=FILE]`), with the review date in `--note`, and
+set the item `partial`. T5 (`add-baselines-and-ratchet`) hardens the ratchets and tracks the counts down.
 
 ## Verification
 

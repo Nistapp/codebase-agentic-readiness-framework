@@ -5,30 +5,20 @@
 
 Scope contract
 --------------
-This is a read-only helper layer for checks that need to know *which files matter*: which paths git
-tracks (SEC-01/03, EXEC-05) and whether an ignore rule covers a path (DOC-03, CON-03). It never
-writes to the target, never mutates a git repository, never installs anything, and makes no network
-request.
+This is a read-only helper layer for the walk and the checks that need to know *which files matter*: which
+paths git tracks (SEC-01/03, EXEC-05, the walk) and whether an ignore rule covers a path (the walk, DOC-03,
+CON-03, SEC-01, SEC-03). It never writes to the target, never mutates a git repository, never installs anything,
+and makes no network request.
 
 Documented subset
 -----------------
-Ignore matching implements the same **documented subset** of gitignore semantics that
-``audit.scan`` has always used, and deliberately does not overclaim:
-
-* a rule is matched with :func:`fnmatch.fnmatch` against both the repository-relative path and the
-  basename;
-* **anchored** patterns (``/dist``) are not interpreted as anchored and may therefore fail to match
-  the path they were written for;
-* **negation** lines (``!keep``) are dropped entirely, so a later ``!`` cannot re-include a path;
-* ``**`` is treated as a plain glob, not the gitignore "any depth" operator.
-
-That is the **walk** matcher (:func:`load_ignore_rules`, :func:`is_ignored`), kept exactly as it was so the
-traversal does not shift (ADR-0006). The checks that ask "is this path ignored?" (DOC-03, CON-03, SEC-01,
-SEC-03) use the **scoped** matcher instead (ADR-0009): :func:`load_scoped_rules` reads every ``.gitignore``
-the scan saw, scopes each file's rules to its directory, and :func:`decide` applies them in git's order
-(the deepest file and the last line win; an ignored parent directory cannot be re-included) with anchoring,
-directory-only rules, ``*``, ``?``, ``[...]`` and ``**`` interpreted. Both matchers are parsers: neither runs
-``git check-ignore``, so a negative answer is still a parser answer.
+The **scoped** matcher (ADR-0009) is the one answer to "is this path ignored?": :func:`load_scoped_rules` reads the
+root ignore files and the nested ``.gitignore`` files it is given, :func:`load_ignore_file` reads one more as the
+walk enters its directory, and :func:`decide` applies them in git's order (the deepest file and the last line win;
+an ignored parent directory cannot be re-included) with anchoring, directory-only rules, ``*``, ``?``, ``[...]``
+and ``**`` interpreted. :func:`decide_path` answers for one path whose parents are already decided. The matcher is
+a parser: it never runs ``git check-ignore`` and reads neither ``.git/info/exclude`` nor a global excludes file, so a
+negative answer is still a parser answer.
 
 Callers that need certainty must treat a negative or ambiguous answer as ``UNKNOWN`` — never as
 ``PASS``. When git is unavailable, the target is not a repository, or the command fails,
@@ -37,9 +27,7 @@ Callers that need certainty must treat a negative or ambiguous answer as ``UNKNO
 
 from __future__ import annotations
 
-import fnmatch
 import functools
-import os
 import re
 import subprocess
 from collections.abc import Iterable
@@ -60,9 +48,8 @@ IGNORE_FILE_NAMES: tuple[str, ...] = (
 class IgnoreRule:
     """One ignore line and the file it came from.
 
-    The walk loader only yields non-negated root rules, so ``base`` is ``""`` and ``negated`` is false there.
-    The scoped loader also yields ``!`` lines (``negated``), trailing-slash rules (``dir_only``) and the
-    directory the ignore file sits in (``base``, repository-relative, no trailing slash).
+    ``negated`` marks a ``!`` line, ``dir_only`` a trailing-slash rule, and ``base`` is the directory the ignore
+    file sits in (repository-relative, no trailing slash; ``""`` for a root file).
     """
 
     pattern: str
@@ -100,48 +87,6 @@ def tracked_files(target: Path) -> set[str] | None:
     if proc.returncode != 0:
         return None
     return {entry for entry in proc.stdout.split("\0") if entry}
-
-
-def load_ignore_rules(root: Path) -> list[IgnoreRule]:
-    """Load the documented-subset rules from every ignore file present in ``root``.
-
-    Behaviour is preserved from ``audit.scan``: blank lines and comments are skipped, and a leading
-    ``!`` drops the line rather than being interpreted as negation.
-    """
-    rules: list[IgnoreRule] = []
-    for name in IGNORE_FILE_NAMES:
-        path = root / name
-        if not path.is_file():
-            continue
-        try:
-            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-        except OSError:
-            continue
-        for raw in lines:
-            line = raw.strip()
-            if line and not line.startswith("#") and not line.startswith("!"):
-                rules.append(IgnoreRule(pattern=line.rstrip("/"), source=name))
-    return rules
-
-
-def ignore_patterns(root: Path) -> list[str]:
-    """The bare patterns, for callers that only need the historical list shape."""
-    return [rule.pattern for rule in load_ignore_rules(root)]
-
-
-def matching_rules(rel: str, rules: list[IgnoreRule]) -> list[IgnoreRule]:
-    """Every rule that covers ``rel``, carrying the ignore file each one came from.
-
-    This is the "does any ignore file cover this path?" answer DOC-03 and CON-03 need.
-    """
-    base = os.path.basename(rel)
-    return [rule for rule in rules if fnmatch.fnmatch(rel, rule.pattern) or fnmatch.fnmatch(base, rule.pattern)]
-
-
-def is_ignored(rel: str, patterns: list[str]) -> bool:
-    """Historical pattern matcher, unchanged, so ``audit.scan`` keeps walking exactly what it did."""
-    base = os.path.basename(rel)
-    return any(fnmatch.fnmatch(rel, p) or fnmatch.fnmatch(base, p) for p in patterns)
 
 
 # ---------------------------------------------------------------------------
@@ -220,18 +165,28 @@ def load_scoped_rules(root: Path, nested: Iterable[str] = ()) -> list[IgnoreRule
     files.sort(key=lambda item: (item[1].count("/") + 1 if item[1] else 0, item[0]))
     rules: list[IgnoreRule] = []
     for rel, base in files:
-        path = root / rel
-        if not path.is_file():
-            continue
-        try:
-            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-        except OSError:
-            continue
-        for raw in lines:
-            rule = _parse_line(raw, base, rel)
-            if rule is not None:
-                rules.append(rule)
+        rules.extend(_read_rules(root, rel, base))
     return rules
+
+
+def load_ignore_file(root: Path, rel: str) -> list[IgnoreRule]:
+    """The rules of the one nested ``.gitignore`` at ``rel``, scoped to its directory, in file order.
+
+    The walk calls it as it enters a directory, after the root files of :func:`load_scoped_rules`; a parent
+    directory is always entered before its children, so the rules stay in git's order.
+    """
+    return _read_rules(root, rel, rel.rsplit("/", 1)[0] if "/" in rel else "")
+
+
+def _read_rules(root: Path, rel: str, base: str) -> list[IgnoreRule]:
+    path = root / rel
+    if not path.is_file():
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    return [rule for rule in (_parse_line(raw, base, rel) for raw in lines) if rule is not None]
 
 
 def _rule_matches(rule: IgnoreRule, rel: str, is_dir: bool) -> bool:
@@ -248,6 +203,15 @@ def _rule_matches(rule: IgnoreRule, rel: str, is_dir: bool) -> bool:
     if anchored:
         return regex.fullmatch(rel) is not None
     return regex.fullmatch(rel.rsplit("/", 1)[-1]) is not None
+
+
+def decide_path(rel: str, rules: list[IgnoreRule], *, is_dir: bool = False) -> IgnoreDecision:
+    """Whether the rules ignore ``rel`` itself, without looking at its parent directories.
+
+    The walk asks this: it never enters an ignored directory unless git tracks a file in it, so the parents of a
+    path it meets are already decided.
+    """
+    return _decide_one(rel, is_dir, rules)
 
 
 def _decide_one(rel: str, is_dir: bool, rules: list[IgnoreRule]) -> IgnoreDecision:

@@ -176,8 +176,10 @@ Why it matters   Enforcement must exist where an agent actually works, not only 
                   ([greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)).
 Severity         DEGRADER
 Engine           `TOOL-05`. The presence of `.pre-commit-config.yaml`, `lefthook.yml`/`.yaml`, or a
-                 declared `core.hooksPath` counts as wired directly. `.githooks/*` or `.husky/*` present
-                 without being referenced is configured but not wired; `.husky/*` is wired only when a
+                 declared `core.hooksPath` counts as wired directly. A hook file straight in `.githooks/` or
+                 `.husky/` present without being referenced is configured but not wired. A file in a
+                 subfolder, such as husky's own `.husky/_/husky.sh`, is no hook, because git runs only the
+                 files straight in the hooks folder. `.husky/*` is wired only when a
                  `prepare`/install script in `package.json` actually invokes `husky`
                  (`audit.stack.extract_npm_scripts`). Wired is `PASS`; configured-but-unwired is `PARTIAL`;
                  neither, with a detected ecosystem, is `FAIL`. Distrust a `FAIL` when the project wires

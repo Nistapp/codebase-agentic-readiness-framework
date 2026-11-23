@@ -1,0 +1,625 @@
+[
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/.editorconfig",
+    "origin": {
+      "path": "greenfield/templates/.editorconfig"
+    },
+    "to": [
+      ".editorconfig"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/.env.example",
+    "intent": "The env template that EXEC-04 compares with the code's variables and SEC-01 expects beside an ignored .env.",
+    "origin": {
+      "path": "greenfield/templates/.env.example"
+    },
+    "to": [
+      ".env.example"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/.gitignore",
+    "intent": "The ignore file that SEC-01, SEC-03, DOC-03 and CON-03 read for .env, secret shapes and artefacts/.",
+    "origin": {
+      "path": "greenfield/templates/.gitignore"
+    },
+    "to": [
+      ".gitignore"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/.nvmrc",
+    "intent": "Pins the Node version for EXEC-01.",
+    "origin": {
+      "path": "greenfield/templates/.nvmrc"
+    },
+    "to": [
+      ".nvmrc"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/AGENTS.md",
+    "intent": "The canonical instruction file every AGT check and the other entry-file readers read.",
+    "origin": {
+      "path": "greenfield/templates/AGENTS.md"
+    },
+    "to": [
+      "AGENTS.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/CHANGELOG.md",
+    "intent": "The changelog HYG-07 looks for.",
+    "origin": {
+      "path": "greenfield/templates/CHANGELOG.md"
+    },
+    "to": [
+      "CHANGELOG.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/CONTRIBUTING.md",
+    "intent": "The contributing guide HYG-05 and HYG-13 read; TST-04, EXEC-03 and BASE-03 also read its commands.",
+    "origin": {
+      "path": "greenfield/templates/CONTRIBUTING.md"
+    },
+    "to": [
+      "CONTRIBUTING.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/CONVENTIONS.md",
+    "intent": "The conventions file AGT-13 reads. It is not an Aider instruction file for AGT-01 and AGT-08, because no .aider.conf.yml is beside it.",
+    "origin": {
+      "path": "greenfield/templates/CONVENTIONS.md"
+    },
+    "to": [
+      "CONVENTIONS.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/README.md",
+    "intent": "The landing page HYG-01 reads; it keeps the setup and single-test commands for EXEC-03, EXEC-06 and TST-04.",
+    "origin": {
+      "path": "greenfield/templates/README.md"
+    },
+    "to": [
+      "README.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/RELEASE_PROCESS.md",
+    "intent": "The release process page HYG-08 looks for.",
+    "origin": {
+      "path": "greenfield/templates/RELEASE_PROCESS.md"
+    },
+    "to": [
+      "RELEASE_PROCESS.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/SECURITY.md",
+    "intent": "The security policy HYG-06 looks for.",
+    "origin": {
+      "path": "greenfield/templates/SECURITY.md"
+    },
+    "to": [
+      "SECURITY.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/biome.json",
+    "intent": "The formatter and linter config for TOOL-01 and TOOL-02, and the counting config BASE-01 to BASE-03 read.",
+    "origin": {
+      "path": "greenfield/templates/biome.json"
+    },
+    "to": [
+      "biome.json"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/cli/index.ts",
+    "origin": {
+      "path": "greenfield/templates/cli/index.ts"
+    },
+    "to": [
+      "src/cli/index.ts"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/commitlint.config.js",
+    "intent": "The commit convention config for TOOL-06.",
+    "origin": {
+      "path": "greenfield/templates/commitlint.config.js"
+    },
+    "to": [
+      "commitlint.config.js"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/core-index.ts",
+    "origin": {
+      "path": "greenfield/templates/core-index.ts"
+    },
+    "to": [
+      "src/core/index.ts"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/docs/ADR_POLICY.md",
+    "intent": "A docs page, read by DOC-01 and DOC-05 as prose.",
+    "origin": {
+      "path": "greenfield/templates/docs/ADR_POLICY.md"
+    },
+    "to": [
+      "docs/ADR_POLICY.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/docs/COMMUNICATION_RULES.md",
+    "intent": "The long-form communication rules; the file name holds communicat so AGT-12 reads it.",
+    "origin": {
+      "path": "greenfield/templates/docs/COMMUNICATION_RULES.md"
+    },
+    "to": [
+      "docs/COMMUNICATION_RULES.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/docs/STYLE_GUIDE.md",
+    "intent": "The style guide at the exact path DOC-02 requires.",
+    "origin": {
+      "path": "greenfield/templates/docs/STYLE_GUIDE.md"
+    },
+    "to": [
+      "docs/STYLE_GUIDE.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/docs/architecture/README.md",
+    "intent": "The architecture overview for NAV-04 and DOC-04, read as prose by DOC-05.",
+    "origin": {
+      "path": "greenfield/templates/docs/architecture/README.md"
+    },
+    "to": [
+      "docs/architecture/README.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/docs/architecture/adrs/0001-initial-architecture.md",
+    "intent": "The first numbered decision record for DOC-04 and NAV-04.",
+    "origin": {
+      "path": "greenfield/templates/docs/architecture/adrs/0001-initial-architecture.md"
+    },
+    "to": [
+      "docs/architecture/adrs/0001-initial-architecture.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/docs/architecture/glossary.md",
+    "intent": "The glossary page for NAV-04, read as prose by DOC-05.",
+    "origin": {
+      "path": "greenfield/templates/docs/architecture/glossary.md"
+    },
+    "to": [
+      "docs/architecture/glossary.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/docs/templates/adr-template.md",
+    "intent": "A page template. The engine sets docs/templates/ aside as carried data, so no check reads it; that is intended for a template.",
+    "origin": {
+      "path": "greenfield/templates/docs/templates/adr-template.md"
+    },
+    "to": [
+      "docs/templates/adr-template.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/docs/templates/architecture-doc-template.md",
+    "intent": "A page template. The engine sets docs/templates/ aside as carried data, so no check reads it; that is intended for a template.",
+    "origin": {
+      "path": "greenfield/templates/docs/templates/architecture-doc-template.md"
+    },
+    "to": [
+      "docs/templates/architecture-doc-template.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/docs/templates/how-to-template.md",
+    "intent": "A page template. The engine sets docs/templates/ aside as carried data, so no check reads it; that is intended for a template.",
+    "origin": {
+      "path": "greenfield/templates/docs/templates/how-to-template.md"
+    },
+    "to": [
+      "docs/templates/how-to-template.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/docs/templates/reference-template.md",
+    "intent": "A page template. The engine sets docs/templates/ aside as carried data, so no check reads it; that is intended for a template.",
+    "origin": {
+      "path": "greenfield/templates/docs/templates/reference-template.md"
+    },
+    "to": [
+      "docs/templates/reference-template.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/github/CODEOWNERS",
+    "intent": "The code owners file HYG-02 looks for.",
+    "origin": {
+      "path": "greenfield/templates/github/CODEOWNERS"
+    },
+    "to": [
+      ".github/CODEOWNERS"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/github/ISSUE_TEMPLATE/bug_report.md",
+    "intent": "An issue template for HYG-04.",
+    "origin": {
+      "path": "greenfield/templates/github/ISSUE_TEMPLATE/bug_report.md"
+    },
+    "to": [
+      ".github/ISSUE_TEMPLATE/bug_report.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/github/ISSUE_TEMPLATE/feature_request.md",
+    "intent": "An issue template for HYG-04.",
+    "origin": {
+      "path": "greenfield/templates/github/ISSUE_TEMPLATE/feature_request.md"
+    },
+    "to": [
+      ".github/ISSUE_TEMPLATE/feature_request.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/github/PULL_REQUEST_TEMPLATE.md",
+    "intent": "The pull request template HYG-03 looks for.",
+    "origin": {
+      "path": "greenfield/templates/github/PULL_REQUEST_TEMPLATE.md"
+    },
+    "to": [
+      ".github/PULL_REQUEST_TEMPLATE.md"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/github/dependabot.yml",
+    "intent": "Dependency update automation for HYG-09; CI-05 lints it with the workflows.",
+    "origin": {
+      "path": "greenfield/templates/github/dependabot.yml"
+    },
+    "to": [
+      ".github/dependabot.yml"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/github/workflows/ci.yml",
+    "intent": "The CI pipeline the CI checks, TOOL-04, TOOL-06, BASE-03 and EXEC-08 read.",
+    "origin": {
+      "path": "greenfield/templates/github/workflows/ci.yml"
+    },
+    "to": [
+      ".github/workflows/ci.yml"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/github/workflows/enforce-dev-base.yml",
+    "intent": "The workflow that guards the pull request base branch, read by HYG-11 and the CI checks.",
+    "origin": {
+      "path": "greenfield/templates/github/workflows/enforce-dev-base.yml"
+    },
+    "to": [
+      ".github/workflows/enforce-dev-base.yml"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/github/workflows/release-and-sync.yml",
+    "intent": "The release workflow HYG-08 reads, also read by the CI checks.",
+    "origin": {
+      "path": "greenfield/templates/github/workflows/release-and-sync.yml"
+    },
+    "to": [
+      ".github/workflows/release-and-sync.yml"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/husky/commit-msg",
+    "intent": "The commit-msg hook for TOOL-05, TOOL-06 and TOOL-07.",
+    "origin": {
+      "path": "greenfield/templates/husky/commit-msg"
+    },
+    "to": [
+      ".husky/commit-msg"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/husky/pre-commit",
+    "intent": "The pre-commit hook for TOOL-05 and TOOL-07.",
+    "origin": {
+      "path": "greenfield/templates/husky/pre-commit"
+    },
+    "to": [
+      ".husky/pre-commit"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/infra/docker-compose.yml",
+    "intent": "The local stack file EXEC-03 reads as a setup path (copied with --with-infra).",
+    "origin": {
+      "path": "greenfield/templates/infra/docker-compose.yml"
+    },
+    "to": [
+      "infra/docker-compose.yml"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/infra/litellm_config.yaml",
+    "origin": {
+      "path": "greenfield/templates/infra/litellm_config.yaml"
+    },
+    "to": [
+      "infra/litellm_config.yaml"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/interfaces.ts",
+    "origin": {
+      "path": "greenfield/templates/interfaces.ts"
+    },
+    "to": [
+      "src/core/interfaces.ts"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/package.json",
+    "intent": "The runner manifest that defines the seven verbs for CMD-01 to CMD-04 and the checks that resolve them.",
+    "origin": {
+      "path": "greenfield/templates/package.json"
+    },
+    "to": [
+      "package.json"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/scripts/docs-prose.mjs",
+    "origin": {
+      "path": "greenfield/templates/scripts/docs-prose.mjs"
+    },
+    "to": [
+      "scripts/docs-prose.mjs"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/scripts/docs-prose.test.mjs",
+    "intent": "A test file on purpose, for TST-01 and TST-03.",
+    "origin": {
+      "path": "greenfield/templates/scripts/docs-prose.test.mjs"
+    },
+    "to": [
+      "scripts/docs-prose.test.mjs"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/scripts/git-branch-janitor.mjs",
+    "origin": {
+      "path": "greenfield/templates/scripts/git-branch-janitor.mjs"
+    },
+    "to": [
+      "scripts/git-branch-janitor.mjs"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/tsconfig.json",
+    "intent": "The TypeScript config TOOL-03 reads for strict mode.",
+    "origin": {
+      "path": "greenfield/templates/tsconfig.json"
+    },
+    "to": [
+      "tsconfig.json"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/tsconfig.test.json",
+    "intent": "Not a test. The engine counts it as a test file because its name holds .test.; accepted, since TST-01 keeps only test suffixes such as .mjs.",
+    "origin": {
+      "path": "greenfield/templates/tsconfig.test.json"
+    },
+    "to": [
+      "tsconfig.test.json"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "greenfield/vitest.config.ts",
+    "intent": "The test runner config for TST-05 and BASE-04.",
+    "origin": {
+      "path": "greenfield/templates/vitest.config.ts"
+    },
+    "to": [
+      "vitest.config.ts"
+    ]
+  }
+]

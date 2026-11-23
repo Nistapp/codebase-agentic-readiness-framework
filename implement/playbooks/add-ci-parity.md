@@ -39,7 +39,7 @@ recorded, and a committed record shows which CI job the platform requires before
 
    | Option | Pros | Cons |
    |---|---|---|
-   | Keep wrappers, make them call the verbs (recommended where wrappers exist) | Keeps the repository's CI convention, the required job names and the docs-only skip; the same command runs locally | The engine reads `run:` text only, so it cannot follow a wrapper (known engine defects); CI-02 may still read UNKNOWN or FAIL after a correct fix |
+   | Keep wrappers, make them call the verbs (recommended where wrappers exist) | Keeps the repository's CI convention, the required job names and the docs-only skip; the same command runs locally | "`CI-02` Local↔CI parity" reads a shell script a step runs, one script deep, so a wrapper's verbs count. "`TOOL-04` Dependency / security scan verb" and "`TOOL-06` Commit convention enforced" read workflow lines only, so they miss a scan or commit check inside a wrapper |
    | Call the verbs directly in `run:` | Visible to the engine | Reverses the wrapper convention and moves logic back into YAML |
 
    Say the engine blind spot to the owner before choosing. Record the answer as a preference.
@@ -49,7 +49,10 @@ recorded, and a committed record shows which CI job the platform requires before
 3. **Scanner.** Use the existing one or the `scanner.choice` preference. For a lockfile scan offer OSV-Scanner
    (v2.7.0, 2026-10-12, binary) or the ecosystem's own audit command. Currency checked 2026-10-31 (GitHub
    releases API); re-check when applied. Not a new third-party `uses:` action without owner approval: call the
-   pinned binary from the wrapper script the way the repository already runs its secret scanner.
+   pinned binary from the wrapper script the way the repository already runs its secret scanner. Keep the
+   pin in a manifest that dependency automation reads, such as a Go tool module or a `package.json`. The check
+   "`EXEC-08` Tool versions visible to dependency automation" does not read wrapper scripts. Use the scanner's
+   existing config, never a second one: "`EXEC-07` No competing configs for one concern" reads both.
 4. **Branch-protection evidence.** The owner or an orchestrator with platform access supplies: protection
    mechanism (classic rule or ruleset), required checks, the up-to-date setting, bypass actors, and whether the
    plan allows protection at all. **A session never guesses these.** If they are not supplied, stop for that part.
@@ -72,7 +75,8 @@ recorded, and a committed record shows which CI job the platform requires before
    | Make, Gradle, lefthook or mixed | a `workflow-lint` target or lefthook command that runs the linter on the workflow folder |
 
    Each developer installs the linter once. Pin its version where the repository pins its other dev tools, never
-   in the workflow alone. Record the choice as the preference `ci.workflow_linter`.
+   in the workflow alone. That place is a manifest, so "`EXEC-08` Tool versions visible to dependency automation"
+   sees the pin. Record the choice as the preference `ci.workflow_linter`.
 
 ## Steps
 
@@ -84,14 +88,26 @@ recorded, and a committed record shows which CI job the platform requires before
 2. **Trigger (CI-01).** Confirm `pull_request` (or the provider's equivalent). Add it only if missing.
 3. **Parity (CI-02, CI-03).** For each local verb the gate needs (`check` composes the read-only ones), make the
    CI step run it. In a wrapper repository: edit the wrapper first so it calls the verb, run the wrapper locally,
-   then change the workflow only where a step is missing or must be renamed. Every CI command must exist
+   then change the workflow only where a step is missing or must be renamed. A wrapper uses only CI's own
+   variables or the names the example env file lists. "`EXEC-04` Env-var inventory complete" reads each
+   `${VAR}` in a shell script. Every CI command must exist
    locally; a CI-only step (an image scan, a deploy) is named so (`CI-only: ...`) and listed in the CI doc.
+   - Call a verb on one `run:` line in the runner's own form (`make security`, `npm run security`). The engine
+     follows such a line to the verb's command. So "`TOOL-04` Dependency / security scan verb" still finds the
+     scan in CI, and "`TOOL-06` Commit convention enforced" the commit check. Neither reads a wrapper script, so
+     a wrapper hides both: with wrappers, tell the owner. "`CI-02` Local↔CI parity" reads a wrapper, one script deep.
+   - When the CI doc is the root README, list the CI-only steps as prose or a table, not in a fenced block.
+     "`EXEC-06` Documented commands resolve" reads every fenced command in the README, and a CI-only one does not
+     resolve locally. Write no stub word such as `TODO` there: "`HYG-01` README present and non-placeholder" reads
+     the whole file.
 4. **Honest scans (CI-04).**
    - A placeholder that prints "skipped" and exits 0 is replaced by the real scan or deleted with the reason
      recorded. Never leave a green no-op.
-   - A step that cannot block yet because of existing debt stays non-blocking **only if** its name says so (for
-     example `Scan (report-only)`), it writes the finding count to the job summary, and the debt and a review
-     date are recorded in the state file.
+   - A step that cannot block yet because of existing debt stays non-blocking **only if** all of these hold.
+     Its job is outside the merge gate's `needs`. Its name says so (for example `Scan (report-only)`). It writes
+     the finding count to the job summary. The count and a review date are committed in the repository. They go
+     in the step's row of the CI doc (step 3), or stay in the comment `configure-quality-tools` wrote beside the
+     step. The state file records them too, but a later audit cannot see it.
    - A blocking scan with debt uses an ignore list with a reason and an expiry per entry, so the gate blocks on
      new findings only.
    - Do not weaken a gate that already blocks.
@@ -101,12 +117,17 @@ recorded, and a committed record shows which CI job the platform requires before
 6. **Branch-protection record (CI-04).** Commit a short page in `docs/` (or the repository's CI doc): mechanism,
    required check name, up-to-date setting, bypass actors, the date the owner confirmed, and the exact read-only
    command that re-checks it. If the platform cannot enforce a required check (plan limitation), the page says
-   so and lists the mitigations; the check is then recorded `partial`, never `done`.
+   so and lists the mitigations; the check is then recorded `partial` (see Continue on error), never `done`.
+   Put `branch-protection` in
+   the page's path, such as `docs/branch-protection.md`, or extend that page if `add-repo-hygiene` wrote it. The
+   check "`HYG-11` Branch protection declared as code" finds the record by that name only.
 7. **Workflow lint (CI-05).** Add the chosen linter to the local surface (the route from Inputs 6). Run the same
    command in CI as a blocking step, beside the gate. Prefer calling the local command over a third-party
    `uses:` action; an action needs the owner's approval. Fix what the linter reports in the workflows you edit.
    Record older findings as debt, as for scans. Lint every workflow you changed before pushing. Edit workflows
-   only in a PR.
+   only in a PR. A fix keeps the line that reads the pull request's source branch (`github.head_ref`) outside a
+   `group:` or `ref:` key. "`HYG-11` Branch protection declared as code" reads that line for the source-branch
+   rule.
 
 ### GitHub Actions and Gradle
 
@@ -160,12 +181,14 @@ Lessons from the multi-app Node application (IR07.3):
 
 ## Continue on error
 
-- Existing scan findings: counted once with the real scan, recorded as debt on the item (`partial`) with count,
-  mechanism (ignore file or report-only step) and review date. The step cannot get worse: a blocking scan fails
-  on new findings; a report-only step prints the count so a rise is visible. Never mass-fix, suppress or raise
-  an ignore list without a reason and expiry per entry.
+- Existing scan findings: counted once with the real scan. They are recorded as debt on the item (`partial`) with
+  count, mechanism (ignore file or report-only step) and review date. A report-only step's count and review date
+  are also committed in the repository (step 4). The step cannot get worse: a blocking scan fails on new findings; a
+  report-only step prints the count so a rise is visible. Never mass-fix, suppress or raise an ignore list without
+  a reason and expiry per entry.
 - Local verbs that are ratchets or report-only (T1) stay so in CI.
-- A plan that cannot enforce required checks: item `partial` with that reason.
+- A plan that cannot enforce required checks: item `partial` with
+  `--debt "what=required checks the plan cannot enforce,count=N"` and that reason in the note.
 
 ## Verification
 
@@ -174,17 +197,19 @@ Lessons from the multi-app Node application (IR07.3):
 | CI-01 | Read the workflow's trigger block | A pull-request trigger |
 | CI-02 | Read each CI step and wrapper; run the wrapper locally | Every verb CI runs is the local verb with the same arguments; local run is green |
 | CI-03 | `grep -n "continue-on-error\|\|\| true" .github/workflows/*.yml scripts/ci/*.sh` plus the step list | Every CI-only step is named so and listed in the CI doc |
-| CI-04 | The same grep; the job summary of a CI run; the branch-protection record | No swallowed gating command; every non-blocking step says report-only and has recorded debt; the record names the required check, or says protection cannot be enforced |
+| CI-04 | The same grep; the job summary of a CI run; the branch-protection record | No swallowed gating command. Every non-blocking step says report-only, and the repository holds its count and review date. The record names the required check, or says protection cannot be enforced |
 | CI-05 | Run the local workflow-lint command; read the CI step | The linter runs locally and in CI and is clean on the edited workflows; the engine reads CI-05 `PASS` |
 
-The engine reads `run:` text only. After a correct wrapper-based fix a re-audit can still read CI-02 or CI-03
-wrongly (known engine defects), and CI-04 needs the platform confirmation: say so in the pull request body; the
-close-out comparison (`SKILL.md` Stage 5) labels the move.
+"`CI-02` Local↔CI parity" reads a wrapper script one script deep. "`CI-03` CI-only steps flagged" reads `run:`
+text only. After a correct wrapper-based fix a re-audit can still read CI-03 wrongly (a known engine defect). It can
+read CI-02 wrongly when a wrapper reaches the verb through a second script. CI-04 needs the platform confirmation.
+Say so in the pull request body; the close-out comparison (`SKILL.md` Stage 5) labels the move.
 
 ## Rollback
 
 `git revert` the commits, newest first: the workflow-lint CI step and local command before the linter pin. The pin
-carries its lockfile. The other commits revert alone. A reverted scan returns to its prior state,
+carries its lockfile, so "`EXEC-02` Lockfile committed and consistent" holds after the revert. The other commits
+revert alone. A reverted scan returns to its prior state,
 but a reverted placeholder is a green no-op again: record that in the PR.
 
 ## Do-not-do

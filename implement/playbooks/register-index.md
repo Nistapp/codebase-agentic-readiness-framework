@@ -87,7 +87,9 @@ No dependency is installed. Ask:
    widely known name and uses the common `mcpServers` format. No single file is read by every harness: Cursor reads
    `.cursor/mcp.json`, VS Code `.vscode/mcp.json`, opencode `opencode.json`, Gemini CLI `.gemini/settings.json`. So
    make `.mcp.json` the one source of truth, and have the instruction file say: "Tools that read another file copy
-   the `codebase-memory-mcp` entry from `.mcp.json`." Add a second file only when the team asks for it. The entry is
+   the `codebase-memory-mcp` entry from `.mcp.json`." That line names `.mcp.json` as a source, not as a file to
+   read first, so "`AGT-10` Instruction indirection resolved" passes it. Add a second file only when the team asks
+   for it. The entry is
    the bare command, so it works on any stack and any system where the binary is on `PATH`:
 
    ```json
@@ -124,7 +126,9 @@ No dependency is installed. Ask:
      Keep the entry minimal (a command, no secrets, no machine-specific absolute path). Do not edit an existing project
      config's other entries.
    - `document-only`: add a short section to the docs page or `AGENTS.md` that says how to register the server for each
-     harness the team uses. Mark IDX-01 `partial` with the reason.
+     harness the team uses. Mark IDX-01 `partial` (see Continue on error). Put a registration command in a fenced
+     block of `AGENTS.md` only when its first word resolves. A harness CLI such as `agy` does not, and "`EXEC-06`
+     Documented commands resolve" reads every fenced command there. Write such a command as inline code in prose.
 3. **Offer the setup to the person running this playbook.** The index server must run in the person's own harness
    before Step 4 can build the index. Ask once, and do nothing without a yes:
    - Name the harness from your own knowledge. If you are not sure, ask. Explain the server in two sentences: what it
@@ -157,8 +161,9 @@ No dependency is installed. Ask:
    the playbook is working in, and say which.
 5. **Freshness (IDX-03).** Add one line to the instruction file: the agent re-indexes at the start of a task and after
    the last commit, and checks freshness with `detect_changes`. Write the sentence in the file's own voice, in the
-   section where the file already keeps tool guidance, and keep it within the 400-line budget. Run `detect_changes` and
-   record the result as the evidence; if it names changed files, re-index and run it again.
+   section where the file already keeps tool guidance, and keep it within the 400-line
+   [budget](../../audit/checks/02-agent-governance.md#the-a14-rubric-r-16-score-content-not-presence).
+   Run `detect_changes` and record the result as the evidence; if it names changed files, re-index and run it again.
 6. **Language server (advisory).** Optional, and never a gate: the target's `typecheck` verb stays the source of
    truth. Never install a language server. How each harness reaches one is in
    [Language Servers Beside the Code Index](../../docs/framework/tool-ecosystem.md#language-servers-beside-the-code-index);
@@ -171,9 +176,12 @@ No dependency is installed. Ask:
    - Java: the Gradle or Maven build with its wrapper; nothing more.
 
    Report a missing input as a note, not a finding. Add it only with the owner's yes, in its own commit. Read
-   EXEC-07's rubric first: a pyright config beside mypy may count as a second type-checker config.
-7. **First-run offer (Inputs 5).** Only with `index.first_run_offer=yes`. Add a short section to the target's docs,
-   in the docs home T6 chose, that holds the offer's steps:
+   EXEC-07's rubric first: a pyright config beside mypy may count as a second type-checker config. A workspace
+   file (`go.work`, a Cargo `[workspace]`) can change the components the engine sees. So run "`AGT-02` Component
+   coverage by instruction files" and "`CMD-01` Seven verbs resolvable on one runner" after the commit. If either
+   verdict falls, revert the commit and tell the owner.
+7. **First-run offer ([Inputs](#inputs-to-ask) 5).** Only with `index.first_run_offer=yes`. Add a short section
+   with the offer's steps to the docs home that T6 Docs and navigation chose:
    1. Name your harness.
    2. If the record file says this harness was asked, stop.
    3. Check that the binary is on `PATH`.
@@ -182,9 +190,12 @@ No dependency is installed. Ask:
    6. Record the answer.
 
    The record is one git-ignored file (`.agentic-readiness/setup.json`, one key per harness). Add its folder to the
-   target's ignore file. Then add one line at the top of the instruction file: "Before your first change, read
-   `<docs page>#<section>` and make the setup offer once." Keep the line within the 400-line budget. The target has
-   no helper script: the agent follows the section by hand.
+   target's ignore file. Then add one line at the top of the instruction file: "Setup offer, once per harness: follow
+   `<docs page>#<section>` before the first change." Keep the line within the 400-line
+   [budget](../../audit/checks/02-agent-governance.md#the-a14-rubric-r-16-score-content-not-presence). The line names a
+   one-time step, not a file to read before every change. "`AGT-10` Instruction indirection resolved" reads a line such
+   as "read X first" or "before you change anything, read X" as a deferral. The target has no helper script: the agent
+   follows the section by hand.
 
 ### Gradle and Quarkus
 
@@ -218,8 +229,9 @@ One commit per concern. Building the index (Step 4) commits nothing: the index i
 - **IDX-01 under `--no-user-config` with the `document-only` form:** `partial`, `--debt "what=no project-level
   registration,count=1"`. This is the owner's choice, not an error; the note says so.
 - **IDX-03 engine verdict `UNKNOWN`:** the store records no revision. The item is `partial` when the freshness rule is
-  written and `detect_changes` is clean; the note quotes the tool result and the engine limitation. It is never `done`
-  on the engine's word alone. This is not a bug of the repository.
+  written and `detect_changes` is clean, with
+  `--debt "what=engine cannot verify freshness (store records no revision),count=1"`. The note quotes the tool result
+  and the engine limitation. It is never `done` on the engine's word alone. This is not a bug of the repository.
 - **An index that cannot be built** (tool error, out of memory): `blocked` with the error quoted; do not work around it.
 - None of this is a count of violations, so no ratchet or baseline file applies: report-only is the wiring.
 
@@ -276,6 +288,6 @@ python3 implement/tools/progress.py pref set index.first_run_offer no \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```
 
-Record a preference only when the owner answers; absent means the default above, and `index.user_config_consent` absent
-means no user-level edit. The theme closes once, after both T8 playbooks
-([Stage 4](../SKILL.md#stage-4-close-the-theme)).
+Record a preference only when the owner answers; absent means the default in [Inputs to ask](#inputs-to-ask), and
+`index.user_config_consent` absent means no user-level edit. The theme closes once, after both playbooks of the
+theme T8 Hygiene and index ([themes](../SKILL.md#themes), [Stage 4](../SKILL.md#stage-4-close-the-theme)).

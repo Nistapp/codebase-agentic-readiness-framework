@@ -43,7 +43,7 @@ KEY_ROOM = 8
 NO_REMEDIATION = "The engine gave no remediation for this finding."
 UNATTESTED_METHOD = "attested"
 # The check that runs each probe verb. The engine's probe records do not name a check, and today only TST-02 runs one
-# (`session.run` in audit/rules/checks/tst.py); a test holds this table to the engine's source.
+# (`session.run` in audit/rules/checks/tst/tst_02.py); a test holds this table to the engine's source.
 PROBE_CHECKS = {"test": "TST-02"}
 # The engine's five fixed unattested items and the requirements they became (spec/traceability.md, D15 item 7).
 UNATTESTED_REQUIREMENTS = {

@@ -1,0 +1,7 @@
+{
+    "name": "example/exec-01-php-version-file",
+    "type": "project",
+    "require": {
+        "monolog/monolog": "^3.0"
+    }
+}

@@ -21,10 +21,11 @@ behaviour depends on them.
 
 from __future__ import annotations
 
-import fnmatch
 import os
 from dataclasses import dataclass
 from typing import Literal
+
+from audit import globs
 
 LAST_VERIFIED = "2026-09-28"
 
@@ -193,7 +194,9 @@ HARNESSES: tuple[Harness, ...] = (
         "JetBrains Junie",
         "native",
         False,
-        paths=(".junie/AGENTS.md", ".junie/guidelines.md", ".junie/rules/*.md", ".junie/playbook.md"),
+        # Junie's docs name the files in .junie/rules/; whether it reads a subfolder is not known. A file in one
+        # counts: the pattern names every depth on purpose.
+        paths=(".junie/AGENTS.md", ".junie/guidelines.md", ".junie/rules/**/*.md", ".junie/playbook.md"),
         doc_url="https://junie.jetbrains.com/docs/guidelines-and-memory.html",
     ),
     Harness(
@@ -246,8 +249,10 @@ HARNESSES: tuple[Harness, ...] = (
         note="AGENTS.md wins; CLAUDE.md is a fallback only when no AGENTS.md exists. "
         "opencode.json `instructions` can add paths, globs and URLs.",
     ),
+    # Named "Amp", not "Sourcegraph Amp": the report's reach matrix lists this name beside the target's full
+    # commit id, and gitleaks reads any 40-hex string as a Sourcegraph token in a file that says "sourcegraph".
     Harness(
-        "Sourcegraph Amp",
+        "Amp",
         "native",
         True,
         paths=("AGENTS.md", "AGENT.md", "CLAUDE.md"),
@@ -462,7 +467,7 @@ SHADOW_PAIRS: tuple[tuple[str, str, str, str], ...] = (
 )
 
 #: Directories and files that look like instructions but are not. Flagging these produces noise on
-#: every repository that uses the harness in question.
+#: every repository that uses the harness in question. Globs from the root, matched folder by folder.
 NON_INSTRUCTION_GLOBS: tuple[tuple[str, str], ...] = (
     (".opencode/**", "opencode tool state (node_modules, logs, agent definitions)"),
     (".agentic-tdd/**", "pipeline run state, logs and per-run config"),
@@ -470,12 +475,12 @@ NON_INSTRUCTION_GLOBS: tuple[tuple[str, str], ...] = (
     (".codex/config.toml", "harness config"),
     (".codex/hooks.json", "harness hooks"),
     (".github/prompts/*.prompt.md", "reusable prompts, not always-on instructions"),
-    (".github/agents/*.md", "Copilot custom agent definitions"),
+    (".github/agents/**/*.md", "Copilot custom agent definitions"),
     (".github/skills/*/SKILL.md", "skill definition, loaded on demand"),
     (".claude/skills/*/SKILL.md", "skill definition, loaded on demand"),
     (".agents/skills/*/SKILL.md", "skill definition, loaded on demand"),
     (".amazonq/cli-agents/*.json", "agent configuration"),
-    (".amazonq/rules/memory-bank/*.md", "generated repository summary, not authored instructions"),
+    (".amazonq/rules/memory-bank/**/*.md", "generated repository summary, not authored instructions"),
 )
 
 #: Ignore-file conventions. These are exclusion semantics, not instructions — they matter to
@@ -515,9 +520,8 @@ def harness_paths(harness: Harness) -> tuple[str, ...]:
 
 
 def _matches(rel: str, patterns: tuple[str, ...]) -> bool:
-    return any(
-        fnmatch.fnmatch(rel, p) or rel == p.strip("*/") or fnmatch.fnmatch(rel, p.replace("**/", "")) for p in patterns
-    )
+    """Whether a path from the root matches one of the patterns, each a glob from the root (``audit/globs.py``)."""
+    return any(globs.glob_match(p, rel, fold_case=True) for p in patterns)
 
 
 def classify_present(present: set[str]) -> dict[str, object]:

@@ -30,8 +30,9 @@ success for all but `cmd-01-make-parse-error`, which it requires Make to refuse 
 fixtures/
   agt-01-missing/            no instruction file at all           -> AGT-01 FAIL
   agt-01-stub/               AGENTS.md present, 80 characters     -> AGT-01 FAIL (stub)
-  agt-01-mis-cased/          agents.md only                       -> AGT-01 FAIL (case)
+  agt-01-mis-cased/          agents.md only                       -> AGT-01 PARTIAL (case)
   agt-01-shadowed/           AGENTS.md + AGENTS.override.md       -> AGT-01 PARTIAL (override)
+  agt-01-nested-only/        .junie/AGENTS.md only, no root AGENTS.md -> AGT-01 PARTIAL (nested only)
   agt-01-marker-words-in-prose/ a finished AGENTS.md that says "placeholder", "TODO" and "TBD" in sentences -> AGT-01 PASS
   agt-02-uncovered/          two declared workspaces, one AGENTS.md -> AGT-02 PARTIAL
   agt-03-incomplete/         docs/ named, no style guide or scratch contract -> AGT-03 PARTIAL
@@ -39,11 +40,16 @@ fixtures/
   agt-06-thin/               one boundary rule naming a real path -> AGT-06 PARTIAL
   agt-07-missing-deny/       prohibitions cover tests only        -> AGT-07 PARTIAL
   agt-08-competitor/         AGENTS.md + CLAUDE.md                -> AGT-08 FAIL
+  agt-08-copilot-instructions/ AGENTS.md + .github/copilot-instructions.md -> AGT-08 FAIL
+  agt-08-cursor-rule-flat/   AGENTS.md + .cursor/rules/project.mdc -> AGT-08 FAIL
   agt-09-no-release/         branches stated, no release boundary -> AGT-09 PARTIAL
   agt-09-ruleset-branch-unnamed/ a ruleset protects staging, AGENTS.md does not name it -> AGT-09 PARTIAL
   agt-12-no-rules/           no rules for writing to people       -> AGT-12 FAIL
   agt-13-no-conventions/     no conventions file or section       -> AGT-13 FAIL
   agt-10-deferred/           AGENTS.md defers to CONVENTIONS.md   -> AGT-10 FAIL
+  agt-10-deferred-dot-folder/ AGENTS.md defers to `.agents/rules.md`, which no config names -> AGT-10 FAIL
+  agt-10-pointer-dot-folder/ opencode.json points at `./.rules/agent-rules.md`, which exists -> AGT-10 PASS
+  agt-10-pointer-glob-top-level/ opencode.json points at `guides/**/*.md`; the only match is `guides/agent-rules.md` -> AGT-10 PASS
   agt-05-verbs-named-not-resolved/ AGENTS.md names all verbs, no runner -> AGT-05 PARTIAL
   agt-05-ok/                 all verbs named and resolved on a runner -> AGT-05 PASS
   cmd-01-missing-verb/       six of seven verbs, security missing -> CMD-01 FAIL
@@ -55,13 +61,20 @@ fixtures/
   cmd-ok-make-prereqs/       `check` composes the verbs through its prerequisites -> CMD-01…04 PASS
   cmd-ok-make-alias/         `format-check`, the alias, in place of `format\:check` -> CMD-01…04 PASS
   cmd-ok-root-make-nested-template/ root Makefile with all seven verbs, `templates/package.json` beside it -> CMD-01…04 PASS; the templates are set aside (ADR-0008)
+  carried-jvm-example-package/ a Gradle application in package `com.example.demo`, a JUnit test, `examples/` and `src/main/resources/templates/` -> NAV-02, TST-01, TST-03 PASS; only `examples` and the resources `templates` are set aside (ADR-0008)
+  layout-app-per-folder/     two apps (`web/`, `api/`), each with its own manifest, lockfile, Jest coverage floor and `.env.example`, no root manifest; a CI script beside `scripts/ci/env.example`; `api/docker/Dockerfile.dev` (needs git) -> NAV-01 PARTIAL (two candidate components), AGT-02, BASE-04, EXEC-02, EXEC-03, EXEC-04 PASS
   cmd-01-make-parse-error/   unescaped `format:check:`, which GNU Make refuses -> CMD-01 FAIL, CMD-02…04 UNKNOWN
+  cmd-01-nested-makefile-only/ the only Makefile is `tools/Makefile`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
+  cmd-01-nested-gradle-only/ the only Gradle build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
+  cmd-01-nested-maven-only/  the only Maven build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-ok-pyproject-poe/      `format-check`, the pyproject task runners' spelling -> CMD-01…04 PASS
-  cmd-ok-gradle/             `formatCheck` registered, `test` and `check` built in -> CMD-01 PASS, CMD-02 UNKNOWN
+  cmd-ok-gradle/             `formatCheck` registered and wired into the built-in `check` -> CMD-01 PASS, CMD-02 PASS
   cmd-ok-maven/              Spotless, Checkstyle and dependency-check declared, the lifecycle phases -> CMD-01 PASS, CMD-02 UNKNOWN
   cmd-01-maven-no-formatter/ a plugin goal named `check`, and no formatter plugin -> CMD-01 FAIL, CMD-02 UNKNOWN
   sec-01-tracked-env/        tracked .env, comprehensive ignore (needs git) -> SEC-01 FAIL
   sec-01-excluded-env/       tracked `vendor-samples/.env`, ignored by rule (needs git) -> SEC-01 FAIL; `--exclude 'vendor-samples/*'` -> PASS
+  sec-01-tracked-ignored-env/ `config/prod.env` force-added past a `*.env` rule (needs git) -> SEC-01 FAIL, SEC-03 PASS
+  sec-03-tracked-ignored-key/ `server.key` force-added past a `*.key` rule (needs git) -> SEC-03 FAIL, SEC-01 PASS
   sec-02-key-shaped/         synthetic sk- value in a source file (needs git) -> SEC-02 FAIL
   sec-03-thin-ignore/        ignore rules cover no secret shapes   -> SEC-03 FAIL
   sec-03-ok-negated-exception/ every shape ignored, `!public.crt` re-includes one certificate -> SEC-03 PASS (ADR-0009)
@@ -72,11 +85,24 @@ fixtures/
   exec-01-nested-go-unpinned/ a nested go.mod with no go directive -> EXEC-01 FAIL
   exec-01-sibling-module-unpinned/ one go.mod pins Go, its sibling does not -> EXEC-01 PARTIAL
   exec-01-python-source-only/ a standard-library-only Python tool, no manifest, no pin -> EXEC-01 FAIL, EXEC-02 UNKNOWN
+  exec-01-php-version-file/  a composer.json with no php key, pinned by .php-version -> EXEC-01 PASS
+  exec-01-php-unpinned/      a composer.json with no php key, no .php-version -> EXEC-01 FAIL
+  exec-01-nested-composer-unpinned/ the root composer.json pins PHP, a nested one does not -> EXEC-01 PARTIAL
+  exec-01-tool-versions-only/ ruby, dotnet and jvm pinned only by .tool-versions lines -> EXEC-01 PASS
+  exec-01-tool-versions-go/  a go.mod with no go directive, pinned by a .tool-versions go line (mise) -> EXEC-01 PASS
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
-  exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
+  exec-02-nested-lockfile/   a tracked lockfile in `packages/app` out of step with the manifest beside it (needs git) -> EXEC-02 FAIL
+  exec-02-lockfile-no-manifest/ a tracked lockfile in `apps/web` with no manifest beside it (needs git) -> EXEC-02 PARTIAL, one finding
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
+  exec-03-readme-no-extension/ the root README is `README`, no extension, and fences the install -> EXEC-03, HYG-01 PASS
+  exec-03-devcontainer-subfolder/ the only setup path is `.devcontainer/node/devcontainer.json`, a layout the dev container spec reads -> EXEC-03 PASS
   exec-04-missing-env/       source reads an undeclared env var    -> EXEC-04 FAIL
+  exec-04-reincluded-example/ `.env.*` ignored, `!.env.example` re-includes the template -> EXEC-04 PASS
+  exec-04-anchored-ignored-dir/ `/scratch/` ignored; its untracked file reads an undeclared key (needs git) -> EXEC-04 PASS
+  exec-04-nested-ignored-dir/ `tools/.gitignore` ignores `cache/`; its untracked file reads an undeclared key (needs git) -> EXEC-04 PASS
   exec-05-generated/         tracked generated file, no header (needs git) -> EXEC-05 FAIL
+  exec-05-committed-dist/    tracked `dist/app.min.js`, and `build/x.class` force-added past the fixture's `build/` ignore rule (needs git) -> EXEC-05 FAIL
+  exec-05-build-script/      a hand-written `build/release.sh`, tracked, not ignored (needs git) -> EXEC-05 PASS
   exec-06-broken-command/    README runs an npm script that is not declared -> EXEC-06 FAIL
   exec-07-dual-lint/         .eslintrc.json + biome.json compete  -> EXEC-07 FAIL
   exec-07-dual-python-types/ mypy.ini + pyrightconfig.json, typecheck runs pyright -> EXEC-07 FAIL
@@ -85,14 +111,19 @@ fixtures/
   exec-ok/                   the smallest node repository passing every EXEC check (needs git)
   doc-01-empty/              docs/ present, no markdown page      -> DOC-01 PARTIAL
   doc-02-no-style-guide/     docs/ present, no STYLE_GUIDE.md     -> DOC-02 FAIL
+  doc-02-ok-claude-md-fallback/ no AGENTS.md; CLAUDE.md names docs/STYLE_GUIDE.md -> DOC-02 PASS
   doc-03-tracked-artefacts/  artefacts/ ignored but force-added (needs git) -> DOC-03 FAIL
   ignore-ok-nested-gitignore/ `artefacts/.gitignore` holds `*` and re-includes itself and its README (needs git) -> DOC-03, CON-03 PASS (ADR-0009)
   doc-04-adr-unindexed/      an ADR with no index                 -> DOC-04 PARTIAL
   doc-04-adr-tombstone/      an indexed ADR marked superseded      -> DOC-04 PARTIAL
+  doc-04-ok-parent-index/    docs/adr/ has no index; the parent docs/index.md lists the ADR -> DOC-04 PASS
   doc-05-long-sentences/     two thirds of the docs' sentences over 25 words -> DOC-05 FAIL
   nav-01-no-manifest/        source but no build manifest         -> NAV-01 UNKNOWN
+  nav-01-nested-manifest-only/ no root manifest, only `tools/lint/package.json` -> NAV-01 UNKNOWN
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL
+  nav-02-main-guard-only/    python library, only a guarded helper script -> NAV-02 FAIL
   nav-03-red-flags/          a checked-in binary and a minified asset -> NAV-03 PARTIAL
+  nav-05-methods/            python methods, a multi-line signature, a file that does not parse, a test file -> NAV-05 PARTIAL (6 of 8)
   doc-nav-ok/                the smallest repository passing every scored DOC/NAV check
   tool-01-no-formatter/      node project, no formatter config or verb -> TOOL-01 FAIL
   tool-02-no-linter/         node project, no linter config or verb  -> TOOL-02 FAIL
@@ -101,6 +132,8 @@ fixtures/
   tool-04-local-only-audit/  npm run security runs npm audit, no CI step runs it -> TOOL-04 PARTIAL
   tool-04-make-security-no-audit/ make security runs a prerequisite that expands to a secrets scan, no dependency audit -> TOOL-04 PARTIAL
   tool-05-unwired-hooks/     .husky/ present but never referenced   -> TOOL-05 PARTIAL
+  tool-05-husky-helpers-only/ only husky's own `.husky/_/husky.sh`, no hook -> TOOL-05 FAIL
+  tool-05-githooks-helpers-only/ only `.githooks/lib/common.sh`, which git never runs as a hook -> TOOL-05 FAIL
   tool-06-no-commit-rule/    wired hooks, no commit-message rule    -> TOOL-06 FAIL
   tool-06-local-only-commit-rule/  commit-msg hook, no CI step     -> TOOL-06 PARTIAL
   tool-06-ci-only-commit-rule/     PR-title check in CI, no hook   -> TOOL-06 PARTIAL
@@ -108,6 +141,7 @@ fixtures/
   tool-07-guard-no-exit/     wired lefthook guard reads the branch but only warns, no non-zero exit -> TOOL-07 PARTIAL
   tool-ok-node/              the smallest node repository passing every TOOL check (hook and CI step)
   ci-01-no-pr-trigger/       workflow without a pull-request trigger -> CI-01 PARTIAL
+  ci-01-nested-workflow-only/ the only workflow is `.github/workflows/reusable/ci.yml`, which GitHub never runs -> CI-01 FAIL
   ci-02-parity-break/        CI runs a framework verb with no local script -> CI-02 FAIL
   ci-03-ci-only-step/        CI runs `npm run deploy` with no local script -> CI-03 FAIL
   ci-05-no-workflow-lint/    workflows exist and no linter checks them -> CI-05 FAIL
@@ -139,6 +173,17 @@ fixtures/
   hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
   hyg-13-thin-contributing/  CONTRIBUTING.md with no setup pointer, gate or workflow rules -> HYG-05 PASS, HYG-13 FAIL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 and HYG-13 UNKNOWN
+  idx-01-no-mcp-config/      package.json, no code-index server registered in any harness config -> IDX-01 FAIL
+  idx-02-no-index/           opencode.json registers the server; the isolated HOME holds no index store -> IDX-02, IDX-03 UNKNOWN (machine-local)
+  stack-dotnet/              a .csproj with nullable on, global.json pinning the SDK, Program.cs, no packages.lock.json (needs git) -> EXEC-01, NAV-01, NAV-02, TOOL-03 PASS; EXEC-02 FAIL
+  stack-dotnet-locked/       stack-dotnet plus one PackageReference and the tracked root packages.lock.json that records it (needs git) -> EXEC-01, EXEC-02, NAV-01, NAV-02, TOOL-03 PASS
+  stack-gradle-wrapper-readme/ a Gradle application with gradlew; its README runs `./gradlew build` and `./gradlew test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (no gradle.lockfile)
+  stack-just-inline-version/ a pinned and locked Cargo project whose justfile runs `cargo install cargo-deny@0.16.1`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02 PASS
+  stack-maven-wrapper-readme/ a Maven application with mvnw; its README runs `./mvnw package` and `./mvnw test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (Maven has no lockfile)
+  stack-php-composer/        composer.json, a tracked composer.lock, public/index.php (needs git) -> NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the lock is not compared); EXEC-01 PASS (composer.json require.php)
+  stack-python-uv-inline-version/ a uv project with a tracked root uv.lock; its Makefile runs `uvx ruff@0.6.9`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02, NAV-02 PASS
+  stack-ruby-bundler/        Gemfile, a tracked Gemfile.lock, .ruby-version, a Rack config.ru (needs git) -> EXEC-01, NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the engine does not compare a Gemfile.lock with its Gemfile)
+  stack-rust-cargo/          Cargo.toml, a tracked Cargo.lock, rust-toolchain.toml, src/main.rs (needs git) -> EXEC-01, EXEC-02, NAV-02 PASS
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test
 ```
 

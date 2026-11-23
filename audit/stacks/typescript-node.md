@@ -1,22 +1,24 @@
 # TypeScript and Node
 
 > Follows the anatomy in [`README.md`](README.md). Covers npm, pnpm and Yarn on Node; a framework
-> section (NestJS) is added under its own heading, not a separate file (§1 there). `shipped`, per
-> `run_context.stack_profile` (DP §5.6).
+> section (NestJS) is added under its own heading, not a separate file (the README's
+> [scope note](README.md#stack-profiles)). `shipped`, per `run_context.stack_profile`
+> ([§4 Shipped versus derived](README.md#4-shipped-versus-derived)).
 
 ---
 
 ## Detection signals
 
-`facts.json`'s `stack` section already read this: `ecosystems: ["node"]` from a `package.json`
-anywhere in the tree; `package_managers` from the lockfile at the repository root
-(`package-lock.json` → npm, `pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, `bun.lockb` → bun);
-`test_frameworks` from `vitest.config.*` or `jest.config.*`; `ci_providers` from
-`.github/workflows/*.yml`. A multi-component repository with a `package.json` in each component but
-none at the root reads `ecosystems: ["node"]` correctly (the engine's `node` signal has no folder
-depth) but an empty `package_managers`/`ci_providers`/`test_frameworks` when the lockfile and CI config
-also live only inside a component — state that gap to the user rather than reading it as "no package
-manager."
+`facts.json`'s `stack` section already read this. `ecosystems: ["node"]` comes from a `package.json`
+anywhere in the tree. `package_managers` comes from a lockfile anywhere in the tree. `package-lock.json`
+or `npm-shrinkwrap.json` names npm, `pnpm-lock.yaml` pnpm and `yarn.lock` yarn. `bun.lock` (text, Bun's
+default since 1.2) or `bun.lockb` (binary) names bun.
+`test_frameworks` comes from `vitest.config.*` or `jest.config.*`, and `ci_providers` from
+`.github/workflows/*.yml` at the repository root. A multi-component repository with a
+`package.json` and a lockfile in each component but none at the root reads `ecosystems: ["node"]` and
+its package managers correctly (neither signal has a folder depth). Its `package_managers` can then
+list more than one manager, one per component — say which component uses which rather than reading
+the list as one project's choice.
 
 ## Command-surface map
 
@@ -40,9 +42,12 @@ Prettier and ESLint rows; its ecosystem does not run ESLint's own plugins, so a 
 plugin-dependent rules keeps a minimal ESLint config alongside it rather than switching outright. Type
 checker: `tsc` reading `tsconfig.json`'s `compilerOptions.strict`. Test runner: Vitest or Jest, both
 seen across the corpus (§Verified) — a third option, Node's own built-in test runner, is untested here.
-Dependency scanner: the package manager's own `audit` command; `audit-ci` or Snyk are alternatives that
-pin a fixed severity threshold in config rather than a CLI flag. Hook manager: Husky + lint-staged
-(`prepare: husky`), or simple-git-hooks; lefthook when there is no root `package.json`. Commit rule:
+Dependency scanner: the package manager's own `audit` command; Snyk is an alternative that pins a fixed
+severity threshold in config rather than a CLI flag. `audit-ci` is not offered: it has had no stable release
+since 2024-07-03 ([tool currency](../../implement/tool-choice.md#tool-currency)). Hook manager: Husky +
+lint-staged (`prepare: husky`), or simple-git-hooks; lefthook when there is no root `package.json`. Husky has
+had no stable release since 2024-11-18, so the tool currency rule applies. A repository that runs Husky keeps
+it. A new setup offers it only with the owner's recorded reason. Commit rule:
 commitlint in `.husky/commit-msg`, and `npx commitlint --from <base> --to <head>` in CI
 (`TOOL-06`). Branch guard (`TOOL-07`): a `git branch --show-current` check at the top of
 `.husky/pre-commit`. Dependency updates: Dependabot `package-ecosystem: npm` (npm, Yarn and
@@ -83,8 +88,8 @@ per-file `// @ts-strict-ignore`-style comments as each file is proven strict, ra
 flag repository-wide at once.
 
 Coverage: Jest's `coverageThreshold` (Vitest's `coverage.thresholds`) is the floor; Create React App passes it
-through the `jest` key in `package.json`. `BASE-04` reads the root `package.json` and `jest.config.*`/
-`vitest.config.*` at any depth, not a `jest` key in a nested component's `package.json`. ESLint 9.24 and newer
+through the `jest` key in `package.json`. `BASE-04` reads every `package.json` (a `jest` key in an app's own
+manifest included) and `jest.config.*`/`vitest.config.*` at any depth. ESLint 9.24 and newer
 have a native baseline, `eslint-suppressions.json`. The implement playbook
 `add-baselines-and-ratchet` covers both.
 
@@ -105,7 +110,8 @@ nothing — an alias without a matching lint rule is not a boundary, only a conv
 Reliable as the engine reads it: `CMD-01`/`CMD-02` (the npm-scripts runner resolver, `_common`, reads
 `package.json` scripts directly and completely); `TOOL-01`–`TOOL-03` (Prettier/ESLint/`tsconfig.json`
 strict are all in the engine's fixed filename and key lists); `EXEC-01`/`EXEC-02` (`engines.node` and
-the three lockfile names are read directly). Needs independent agent verification: `TOOL-02` when the
+its lockfile names are read directly). A Bun lockfile is found but not compared with the manifest, so a Bun
+project reads `EXEC-02` `PARTIAL` at best. Needs independent agent verification: `TOOL-02` when the
 "linter" verb is actually a `tsc`/formatter re-run under another name (the engine credits only a real
 linter config, but a human-readable script name can still mislead a quick read); `EXEC-02` on a
 multi-component repository, where a lockfile that exists only inside one component reads correctly as
@@ -142,8 +148,9 @@ not a gap. Boundaries: Nest's own module system is the idiom — a provider a `@
 `exports` is invisible outside it — enforced by Nest's DI container at run time, not by a lint rule;
 `eslint-plugin-boundaries` is additional, not idiomatic, and was not seen in this corpus. Env files
 often live under a non-root `environments/` directory (`local.env`, `local.env.example`) rather than a
-root `.env.example` — `EXEC-04` only reads root-named files, so a root-only miss here is the engine's
-real, root-only scope, not a defect to argue around; tell the user where the real example file is.
+root `.env.example`. `EXEC-04` reads the four example names (`.env.example`, `.env.sample`, `.env.template`,
+`env.example`) at any depth, each covering its own folder and below, but not `local.env.example`; tell the user
+where the real example file is.
 
 ## Verified
 

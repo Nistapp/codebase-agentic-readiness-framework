@@ -39,18 +39,19 @@ render_report.py <report> --out <md>
 ## report.py
 
 **Version:** 0.1.0  
-**Writes:** init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the target; a name that is taken is never replaced. import-engine, add-check, add-finding, set-disposition and set-stack-profile: that draft, in place and atomically, and no other file. status: nothing. finalise: a new final report, <label>.audit-report.<stamp>.json, and its Markdown, <label>.audit-report.<stamp>.md, beside the draft, which it leaves as it was.
+**Writes:** init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the target; a name that is taken is never replaced. The run-engine subcommand writes what engine.py writes in --out-dir, outside the target, then changes the draft as import-engine does. import-engine, add-check, add-finding, set-disposition and set-stack-profile: that draft, in place and atomically, and no other file. status: nothing. finalise: a new final report, <label>.audit-report.<stamp>.json, and its Markdown, <label>.audit-report.<stamp>.md, beside the draft, which it leaves as it was.
 
 Build the audit report: the only writer of the draft, and every write is validated.
 
 ```text
 report.py init <intake>
 report.py import-engine <draft> <engine report>
+report.py run-engine <draft> --out-dir DIR
 report.py add-check <draft> --from FILE|-
 report.py add-finding <draft> --from FILE|-
 report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)
 report.py set-stack-profile <draft> <id> [--derived] [--confirmed]
-report.py status <draft>
+report.py status <draft> [--all] [--severity BLOCKER|DEGRADER|COSMETIC]
 report.py finalise <draft>
 ```
 
@@ -76,6 +77,28 @@ List the audit findings whose cited files changed between the audited commit and
 check_drift.py REPORT REPO [--json]
 ```
 
+## check_gates.py
+
+**Version:** 0.1.0  
+**Writes:** nothing
+
+Check a theme branch's diff for a weakened gate (B-03) or a dependency the owner did not approve (B-11).
+
+```text
+check_gates.py WORKTREE --base SHA [--theme REF] [--state FILE]
+```
+
+## check_regressions.py
+
+**Version:** 0.1.0  
+**Writes:** With --workspace only: LABEL-regressions-THEME.json beside the state, outside the target.
+
+Compare two engine reports of one theme worktree: lost passes, regressions, other moves and evidence changes.
+
+```text
+check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]] [--workspace DIR --theme THEME [--label LABEL]]
+```
+
 ## compare_reports.py
 
 **Version:** 0.1.0  
@@ -90,7 +113,7 @@ compare_reports.py BEFORE AFTER [--state STATE] [--json]
 ## progress.py
 
 **Version:** 0.1.0  
-**Writes:** Only in the workspace, the report's folder, which must be outside the target: <label>-agentic-readiness-state.json (init, adopt) and <label>-agentic-readiness-STATE.md (init, adopt, render, and any command given --render), each replaced atomically; adopt also copies the source reports there, never over a different file. init and adopt never replace a state; show writes nothing; every other command rewrites the JSON after validating it.
+**Writes:** Only in the workspace, the report's folder, which must be outside the target: <label>-agentic-readiness-state.json (init, adopt) and <label>-agentic-readiness-STATE.md (init, adopt, render, and any command given --render), each replaced atomically; adopt also copies the source reports there, never over a different file. init and adopt never replace a state; show writes nothing; every other command rewrites the JSON after validating it. set-status, theme and accept-lost read the theme's LABEL-regressions-THEME.json verdict, which check_regressions.py writes. init, adopt and record-refs also write LABEL-ref-tips.json, the target's ref tips read with read-only git, and never replace it; accept-ref replaces one tip in it; verify-refs writes nothing.
 
 Create, show and render the implement recipe's per-repository state from a final audit report.
 
@@ -105,4 +128,8 @@ progress.py unskip|undefer FINDING --by owner --workspace DIR --phase PHASE [--r
 progress.py pref set KEY VALUE --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --workspace DIR --phase PHASE [--render]
+progress.py accept-lost THEME --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
+progress.py record-refs --target REPO --workspace DIR --phase PHASE [--label LABEL] [--render]
+progress.py verify-refs --target REPO --workspace DIR [--label LABEL]
+progress.py accept-ref REF --target REPO --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 ```

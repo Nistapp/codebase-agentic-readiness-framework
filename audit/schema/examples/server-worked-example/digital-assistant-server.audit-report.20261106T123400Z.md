@@ -5,16 +5,16 @@
 
 ## Bottom line
 
-- **7 blockers remaining: 4 FAIL, 1 PARTIAL, 2 UNKNOWN.**
+- **7 BLOCKER checks unmet: 4 FAIL, 1 PARTIAL, 2 UNKNOWN (2 BLOCKER findings).**
 - **Not settled by this scan:**
-  - 6 checks are UNKNOWN: `IDX-02`, `IDX-03`, `CMD-02`, `TOOL-03`, `TST-02` and 1 more.
+  - 6 checks are UNKNOWN: `IDX-02` An index exists for this checkout; `IDX-03` Index freshness; `CMD-02` check composes the read-only verbs; `TOOL-03` Type checker configured; `TST-02` Suite status known and 1 more.
   - 5 requirements are unattested: no check settles them.
 
 **First actions** (1 of 1 open finding):
 
 | # | Finding | Severity | Effort | What it blocks | Fix |
 |---:|---|---|:---:|---|---|
-| 1 | `EXEC-03` (F-001) | BLOCKER | — | An agent cannot prepare the environment non-interactively because no devcontainer, compose file, Dockerfile, setup target/script, or documented install command exists. | Add a committed setup path (a devcontainer, compose file, or a documented install command in README.md) that runs with no prompts. |
+| 1 | F-001: `EXEC-03` Non-interactive setup path | BLOCKER | — | An agent cannot prepare the environment non-interactively because no devcontainer, compose file, Dockerfile, setup target/script, or documented install command exists. | Add a committed setup path (a devcontainer, compose file, or a documented install command in README.md) that runs with no prompts. |
 
 ## Provenance
 
@@ -35,7 +35,7 @@
 ## Readiness summary
 
 - **Phase-1 score: 0.73**, over 57 scored checks
-- **7 blockers remaining: 4 FAIL, 1 PARTIAL, 2 UNKNOWN**
+- **7 BLOCKER checks unmet: 4 FAIL, 1 PARTIAL, 2 UNKNOWN (2 BLOCKER findings)**
 - **Unattested:** 5 requirements that no check settles, listed below
 
 5 of the 57 scored checks are UNKNOWN. An UNKNOWN check earns no credit, so the score understates what is true of the repository and does not certify it. No agent finding is waiting for a person's decision.
@@ -228,7 +228,7 @@ No scope was skipped.
 
 All 71 checks, grouped by family. The command surface, the credential-shaped-lines total and the missing secret-shape ignore rules above are rendered from the engine's structured payloads; other payloads (env-key inventories, harness-reach matrices, and so on) are in the JSON report only, for now.
 
-### IDX
+### Discovery and Index (`IDX`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -236,7 +236,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `IDX-02` | An index exists for this checkout | BLOCKER | automated | yes | UNKNOWN | UNKNOWN | index store could not be located; searched: user-level locations (not read: --no-user-config), \<target>/.codebase-memory/graph.db.zst |
 | `IDX-03` | Index freshness | DEGRADER | automated | yes | UNKNOWN | UNKNOWN | index freshness is a Tier-C probe; re-run with --run-gates to compare the indexed revision against HEAD |
 
-### AGT
+### Agent Governance (`AGT`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -252,7 +252,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `AGT-10` | Instruction indirection resolved | DEGRADER | automated | yes | PASS | PASS | — |
 | `AGT-11` | Instructions are specific and not inferable | DEGRADER | agent | yes | PASS | — | About 63 of 74 rule lines (85%) in AGENTS.md are specific (verified commands, real paths, prohibitions, non-default conventions); 11 are generic (the preamble and section 1 maxims, section 5 steps 1-4). All sampled specific lines resolve; section 6 is now one pointer line, no overview section dominates. |
 
-### DOC
+### Documentation Contract (`DOC`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -261,7 +261,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `DOC-03` | artefacts/ exists and is ignored | DEGRADER | automated | yes | PASS | PASS | no scratch directory in use |
 | `DOC-04` | ADR directory and index | COSMETIC | automated | yes | PASS | PASS | 3 ADR(s) indexed in docs/adr/README.md |
 
-### CMD
+### Command Surface (`CMD`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -270,7 +270,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `CMD-03` | No divergent second definition | DEGRADER | automated | yes | PASS | PASS | no runner defines check, so there is nothing to diverge |
 | `CMD-04` | Write verbs separated from read-only verbs | DEGRADER | automated | yes | PASS | PASS | no read-only verb invokes a write verb |
 
-### TOOL
+### Tooling (`TOOL`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -281,7 +281,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `TOOL-05` | Local hook chain active | DEGRADER | automated | yes | PASS | PASS | wired: lefthook.yml |
 | `TOOL-06` | Commit convention enforced | COSMETIC | automated | yes | FAIL | FAIL | no commit-message rule |
 
-### CI
+### Continuous Integration (`CI`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -290,7 +290,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `CI-03` | CI-only steps flagged | DEGRADER | automated | yes | PASS | PASS | no CI-only steps |
 | `CI-04` | CI enforces the same gate as the local check | DEGRADER | agent | yes | PARTIAL | — | build-test, secrets, codeql and workflow-lint gate the pull request through the CI Gate job (no continue-on-error, no swallowed exit); the dependency scan (the security verb) is report-only by design and sits outside the gate, docs-lint is also outside it, the image scan step is continue-on-error; required-status-check wiring on the platform cannot be read from the repository. |
 
-### BASE
+### Baselines and the Ratchet (`BASE`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -299,7 +299,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `BASE-03` | No-new-violations mechanism | DEGRADER | automated | yes | PASS | PASS | ratchet present: baseline compared in CI (.github/workflows/ci.yml) |
 | `BASE-04` | Coverage floor configured | DEGRADER | automated | yes | PARTIAL | PARTIAL | coverage threshold stated in prose only: AGENTS.md:\* \*\*coverage\*\* (needs the local stack): \`./gradlew coverage\` runs the tests, w; AGENTS.md:Existing debt is counted and cannot grow. \`./gradlew formatCheck\` runs \`scripts/ |
 
-### CON
+### Constraints (`CON`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -308,7 +308,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `CON-03` | artefacts/ excluded from index and agent reads | DEGRADER | automated | yes | PASS | PASS | no scratch or agent-state directory in use |
 | `CON-04` | Draft allow/deny emitted | COSMETIC | automated | no | PASS | PASS | draft deny list written: \<work>/do-not-do.draft.md |
 
-### EXEC
+### Execution determinism (`EXEC`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -320,7 +320,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `EXEC-06` | Documented commands resolve | DEGRADER | automated | yes | PASS | PASS | 4 documented command(s) resolve |
 | `EXEC-07` | No competing configs for one concern | DEGRADER | automated | yes | PASS | PASS | no concern configs found |
 
-### TST
+### Tests (`TST`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -330,7 +330,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `TST-04` | Fast path documented | DEGRADER | automated | yes | PASS | PASS | fast path documented: AGENTS.md:51 \`./gradlew test --tests '\*FieldLimitValidationTest' --tests '\*PrefixIndexLayoutStrategyTest' --tests '\*CurrentUserTest' --tests '\*InputSanitizerTest' --tests '\*XssSanitizationFilterTest'\` (scope: README.md, AGENTS.md, CLAUDE.md, CONTRIBUTING.md) |
 | `TST-05` | Coverage configuration present | COSMETIC | automated | yes | PASS | PASS | coverage configured: build.gradle |
 
-### NAV
+### Navigation (`NAV`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -340,7 +340,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `NAV-04` | Architecture orientation artifact | COSMETIC | automated | no | PASS | PASS | docs/architecture/; an ADR directory |
 | `NAV-05` | Public-symbol documentation coverage | COSMETIC | automated | no | UNKNOWN | UNKNOWN | no recognised source language, so 'public' cannot be defined |
 
-### SEC
+### Security hygiene (`SEC`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -348,7 +348,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `SEC-02` | No key-shaped strings in tracked files | BLOCKER | automated | yes | FAIL | FAIL | 1 credential-shaped line(s) across 1 file(s) in tracked text files |
 | `SEC-03` | Ignore patterns cover secret shapes | DEGRADER | automated | yes | PASS | PASS | covered: dotenv, dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials |
 
-### HYG
+### Hygiene (`HYG`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|

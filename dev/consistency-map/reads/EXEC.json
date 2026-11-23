@@ -1,0 +1,871 @@
+[
+  {
+    "binding": "file",
+    "check": "EXEC-01",
+    "note": "Pin files count by existence; .tool-versions needs a line for the ecosystem (java for jvm), package.json engines.node, pyproject.toml requires-python, go.mod a go directive and composer.json config.platform.php or require.php. A module manifest no pin reaches (its folder or a parent) is PARTIAL; a parent go.mod or composer.json does not reach a nested one.",
+    "source": "engine",
+    "threshold": "every ecosystem pinned and every module reached",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": ".nvmrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".node-version",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".python-version",
+        "scope": "any-depth"
+      },
+      {
+        "path": "gradlew",
+        "scope": "any-depth"
+      },
+      {
+        "path": "mvnw",
+        "scope": "any-depth"
+      },
+      {
+        "path": "global.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "rust-toolchain.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "rust-toolchain",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".ruby-version",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".php-version",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".tool-versions",
+        "scope": "any-depth"
+      },
+      {
+        "path": "package.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "go.mod",
+        "scope": "any-depth"
+      },
+      {
+        "path": "composer.json",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "EXEC-02",
+    "note": "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest first, and whether git tracks each one; a tracked lockfile the walk skipped as ignored counts too. Every tracked lockfile is compared with the dependency names of the manifests in its own folder; for .NET those are the PackageReference names of the project files in that folder, and a package reference in a Directory.* file in that folder or above it leaves the lockfile unverified.",
+    "source": "engine",
+    "threshold": "every lockfile tracked and in step with the manifest beside it",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "package-lock.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "npm-shrinkwrap.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "yarn.lock",
+        "scope": "any-depth"
+      },
+      {
+        "path": "bun.lock",
+        "scope": "any-depth"
+      },
+      {
+        "path": "bun.lockb",
+        "scope": "any-depth"
+      },
+      {
+        "path": "poetry.lock",
+        "scope": "any-depth"
+      },
+      {
+        "path": "uv.lock",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Pipfile.lock",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pdm.lock",
+        "scope": "any-depth"
+      },
+      {
+        "path": "gradle.lockfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Cargo.lock",
+        "scope": "any-depth"
+      },
+      {
+        "path": "go.sum",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Gemfile.lock",
+        "scope": "any-depth"
+      },
+      {
+        "path": "composer.lock",
+        "scope": "any-depth"
+      },
+      {
+        "path": "packages.lock.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "package.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "requirements.txt",
+        "scope": "any-depth"
+      },
+      {
+        "path": "requirements-dev.txt",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Cargo.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Directory.Build.props",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Directory.Build.targets",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Directory.Packages.props",
+        "scope": "any-depth"
+      },
+      {
+        "path": "go.mod",
+        "scope": "any-depth",
+        "unexercised": "no Go fixture: an honest module needs go.sum lines, whose hashes are key-shaped, and EXEC-02 reads a module with no dependencies, so with no go.sum, as unlocked"
+      },
+      {
+        "path": "**/*.csproj",
+        "scope": "glob"
+      },
+      {
+        "path": "**/*.fsproj",
+        "scope": "glob"
+      },
+      {
+        "path": "**/*.vbproj",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "EXEC-03",
+    "note": "A fenced shell command or an inline code span in the four docs whose tool and first argument install or set up passes. Else a setup file (at any depth, a Dockerfile with a variant in its name included) or a setup target (setup, bootstrap, install, dev, dev-setup) of the root Makefile or package.json named anywhere in the four docs passes; present but not named is PARTIAL.",
+    "source": "engine",
+    "threshold": "a documented non-interactive setup command",
+    "what": {
+      "kind": "fenced-command"
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "README.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CONTRIBUTING.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "README*",
+        "scope": "glob"
+      },
+      {
+        "path": ".devcontainer/devcontainer.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".devcontainer.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "docker-compose.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "docker-compose.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "compose.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "compose.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Dockerfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "setup.sh",
+        "scope": "any-depth"
+      },
+      {
+        "path": "bootstrap.sh",
+        "scope": "any-depth"
+      },
+      {
+        "path": "dev-setup.sh",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Dockerfile.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.Dockerfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.dockerfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".devcontainer/*.json",
+        "scope": "glob"
+      },
+      {
+        "path": ".devcontainer/*/devcontainer.json",
+        "scope": "glob"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "EXEC-04",
+    "note": "References: ${VAR} and ${VAR:?msg} in shell files and Dockerfile, less the keys the same file assigns, and os.environ, getenv, process.env and ENV[...] in every file of kind source or script. A shell reference with a fallback (${VAR:-x}, ${VAR-x}, ${VAR:=x}, ${VAR:+x}) is optional: listed, never missing. Declared keys are the KEY= lines of the four example file names at any depth; an example file covers the files in its own folder and below it, so a key counts when every file reading it is covered by one that names it. A fixed allow-list of host, CI and shell-set names is exempt.",
+    "source": "engine",
+    "threshold": "every referenced key declared by an example file that covers each file reading it",
+    "what": {
+      "kind": "key"
+    },
+    "where": [
+      {
+        "path": "**/*.sh",
+        "scope": "glob"
+      },
+      {
+        "path": "**/*.bash",
+        "scope": "glob"
+      },
+      {
+        "path": "**/*.zsh",
+        "scope": "glob"
+      },
+      {
+        "path": "**/*.fish",
+        "scope": "glob"
+      },
+      {
+        "path": "**/*.ksh",
+        "scope": "glob"
+      },
+      {
+        "path": "**/*.ps1",
+        "scope": "glob"
+      },
+      {
+        "path": "Dockerfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "**",
+        "scope": "glob"
+      },
+      {
+        "path": ".env.example",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".env.sample",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".env.template",
+        "scope": "any-depth"
+      },
+      {
+        "path": "env.example",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "window",
+    "check": "EXEC-05",
+    "note": "The scan classifies a file as generated by a case-insensitive substring of its path (scan._GENERATED_HINTS), a folder named dist (scan._GENERATED_DIRS) or by suffix. A tracked text file under a folder named build (scan.SIGNED_GENERATED_DIRS) counts too when an ignore rule (the root ignore files and every nested .gitignore) also matches it; another file there keeps its own kind. Only tracked files are read. The marker must stand in the first 20 lines, case-insensitive.",
+    "source": "engine",
+    "threshold": "every tracked generated file carries a marker",
+    "what": {
+      "kind": "phrase",
+      "text": [
+        "@generated",
+        "do not edit",
+        "generated by",
+        "code generated",
+        "auto-generated",
+        "autogenerated",
+        "this file is generated"
+      ]
+    },
+    "where": [
+      {
+        "path": "**/dist/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/generated/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/vendor/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.min.js",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.min.css",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.map",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.pb.go",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.g.cs",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.designer.cs",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.lock.gen",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/build/**",
+        "scope": "glob"
+      },
+      {
+        "path": ".gitignore",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".cbmignore",
+        "scope": "root"
+      },
+      {
+        "path": ".cursorignore",
+        "scope": "root"
+      },
+      {
+        "path": ".aiderignore",
+        "scope": "root"
+      },
+      {
+        "path": ".rooignore",
+        "scope": "root"
+      }
+    ],
+    "window": 20
+  },
+  {
+    "binding": "line",
+    "check": "EXEC-06",
+    "note": "Fenced bash, sh, shell, console and zsh blocks in the three root docs only, continuations joined, repeats and placeholders skipped. The first word must be a known tool, a shell keyword, a resolved verb, an npm script or bin of the root package.json, a root Makefile target or a real path. A make target also resolves through a pattern rule or a static pattern rule's list; one that only a computed target list may name (one with no static pattern, or whose static pattern matches it) is not verified and does not fail.",
+    "source": "engine",
+    "threshold": "every documented command resolves",
+    "what": {
+      "kind": "fenced-command"
+    },
+    "where": [
+      {
+        "path": "README.md",
+        "scope": "root"
+      },
+      {
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "path": "CLAUDE.md",
+        "scope": "root"
+      },
+      {
+        "path": "README*",
+        "scope": "glob"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "any-depth"
+      },
+      {
+        "path": "mvnw",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "EXEC-07",
+    "note": "Root files only, matched by fnmatch against the configs of six concerns, plus the [tool.*] tables of the root pyproject.toml; more than one for a concern fails. One pyright config beside one mypy config is a mirror when the typecheck verb, resolved on the runner manifests and followed through the root Makefile, runs mypy.",
+    "source": "engine",
+    "threshold": "one config per concern",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "eslint.config.*",
+        "scope": "glob"
+      },
+      {
+        "path": ".eslintrc",
+        "scope": "root"
+      },
+      {
+        "path": ".eslintrc.*",
+        "scope": "glob"
+      },
+      {
+        "path": "biome.json",
+        "scope": "root"
+      },
+      {
+        "path": "biome.jsonc",
+        "scope": "root"
+      },
+      {
+        "path": "ruff.toml",
+        "scope": "root"
+      },
+      {
+        "path": ".ruff.toml",
+        "scope": "root"
+      },
+      {
+        "path": ".flake8",
+        "scope": "root"
+      },
+      {
+        "path": ".pylintrc",
+        "scope": "root"
+      },
+      {
+        "path": ".golangci.yml",
+        "scope": "root"
+      },
+      {
+        "path": ".golangci.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "clippy.toml",
+        "scope": "root"
+      },
+      {
+        "path": ".stylelintrc",
+        "scope": "root"
+      },
+      {
+        "path": ".stylelintrc.*",
+        "scope": "glob"
+      },
+      {
+        "path": "oxlint.json",
+        "scope": "root"
+      },
+      {
+        "path": ".oxlintrc.json",
+        "scope": "root"
+      },
+      {
+        "path": "prettier.config.*",
+        "scope": "glob"
+      },
+      {
+        "path": ".prettierrc",
+        "scope": "root"
+      },
+      {
+        "path": ".prettierrc.*",
+        "scope": "glob"
+      },
+      {
+        "path": ".clang-format",
+        "scope": "root"
+      },
+      {
+        "path": "rustfmt.toml",
+        "scope": "root"
+      },
+      {
+        "path": ".rustfmt.toml",
+        "scope": "root"
+      },
+      {
+        "path": "dprint.json",
+        "scope": "root"
+      },
+      {
+        "path": "vitest.config.*",
+        "scope": "glob"
+      },
+      {
+        "path": "jest.config.*",
+        "scope": "glob"
+      },
+      {
+        "path": "pytest.ini",
+        "scope": "root"
+      },
+      {
+        "path": "tox.ini",
+        "scope": "root"
+      },
+      {
+        "path": ".mocharc.*",
+        "scope": "glob"
+      },
+      {
+        "path": "karma.conf.js",
+        "scope": "root"
+      },
+      {
+        "path": "cypress.config.*",
+        "scope": "glob"
+      },
+      {
+        "path": "tsconfig.json",
+        "scope": "root"
+      },
+      {
+        "path": "jsconfig.json",
+        "scope": "root"
+      },
+      {
+        "path": "mypy.ini",
+        "scope": "root"
+      },
+      {
+        "path": ".mypy.ini",
+        "scope": "root"
+      },
+      {
+        "path": "pyrightconfig.json",
+        "scope": "root"
+      },
+      {
+        "path": ".gitleaks.toml",
+        "scope": "root"
+      },
+      {
+        "path": "semgrep.yml",
+        "scope": "root"
+      },
+      {
+        "path": ".semgrep.yml",
+        "scope": "root"
+      },
+      {
+        "path": ".snyk",
+        "scope": "root"
+      },
+      {
+        "path": "osv-scanner.toml",
+        "scope": "root"
+      },
+      {
+        "path": ".bandit",
+        "scope": "root"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root",
+        "unexercised": "EXEC-07 resolves the typecheck verb only when one pyright config stands beside one mypy config, and the resolver looks a wrapper up only for a Gradle or Maven build; no fixture is both"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root",
+        "unexercised": "EXEC-07 resolves the typecheck verb only when one pyright config stands beside one mypy config, and the resolver looks a wrapper up only for a Gradle or Maven build; no fixture is both"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "EXEC-08",
+    "note": "Each non-comment line, split at shell operators: a launcher (npx, uvx, pip install, go install, cargo install and others) then a name@version or name==version token in the same segment; in a workflow also the version input of four installer actions. A file a Renovate custom manager matches is skipped, and every package.json, pyproject.toml, requirements*.txt, go.mod and Cargo.toml is read to see whether a manifest holds the version.",
+    "source": "engine",
+    "threshold": "no literal tool version outside a manifest",
+    "what": {
+      "kind": "word-list"
+    },
+    "where": [
+      {
+        "path": ".gitlab-ci.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".justfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".lefthook.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".lefthook.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "GNUmakefile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Justfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Makefile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "justfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "lefthook.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "lefthook.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "makefile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "package.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "**/*.mk",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/workflows/**/*.yml",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/workflows/**/*.yaml",
+        "scope": "glob"
+      },
+      {
+        "path": ".husky/*",
+        "scope": "glob"
+      },
+      {
+        "path": "renovate.json",
+        "scope": "root"
+      },
+      {
+        "path": ".renovaterc",
+        "scope": "root"
+      },
+      {
+        "path": ".renovaterc.json",
+        "scope": "root"
+      },
+      {
+        "path": ".github/renovate.json",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "go.mod",
+        "scope": "any-depth",
+        "unexercised": "no Go fixture: an honest module needs go.sum lines, whose hashes are key-shaped, and EXEC-02 reads a module with no dependencies, so with no go.sum, as unlocked"
+      },
+      {
+        "path": "Cargo.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "**/requirements*.txt",
+        "scope": "glob"
+      }
+    ]
+  }
+]

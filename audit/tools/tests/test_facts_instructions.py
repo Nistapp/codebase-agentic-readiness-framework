@@ -76,15 +76,15 @@ FAMILIES: dict[str, str] = {
     ".kiro/steering/a/x.md": ".kiro/steering/**/*.md",
     ".trae/rules/a/x.md": ".trae/rules/**/*.md",
     ".augment/rules/a/x.md": ".augment/rules/**/*.md",
-    ".junie/rules/x.md": ".junie/rules/*.md",
+    ".junie/rules/a/x.md": ".junie/rules/**/*.md",
     ".clinerules/x": ".clinerules/**",
     ".cline/rules/x": ".cline/rules/**",
     ".roo/rules/x": ".roo/rules/**",
     ".roo/rules-code/x": ".roo/rules-*/**",
 }
 
-# The table's names with a folder and no star. A file of one of them is found by its own name when that is a name of
-# the table too (the first three), and not found at all otherwise: the engine looks for such a name by its last part.
+# The table's names with a folder and no star. The engine finds a file of one of them as the whole path from the
+# root; the first three are also found by their last part, which is a name of the table too.
 PLAIN_WITH_A_FOLDER = {
     ".claude/CLAUDE.md",
     ".claude/AGENTS.md",
@@ -97,24 +97,25 @@ PLAIN_WITH_A_FOLDER = {
     ".junie/playbook.md",
 }
 
-# What the engine does not see today, though its table names it (Q36): each file, alone in its directory.
+# A file straight in a rules folder of the table, which the engine sees since its `**/` also matches no folder: each
+# file, alone in its directory, with the pattern that names it.
+FLAT_RULE_FILES = {
+    ".amazonq/rules/x.md": ".amazonq/rules/**/*.md",
+    ".augment/rules/x.md": ".augment/rules/**/*.md",
+    ".claude/rules/x.md": ".claude/rules/**/*.md",
+    ".continue/rules/x.md": ".continue/rules/**/*.md",
+    ".cursor/rules/x.mdc": ".cursor/rules/**/*.mdc",
+    ".devin/rules/x.md": ".devin/rules/**/*.md",
+    ".github/instructions/x.instructions.md": ".github/instructions/**/*.instructions.md",
+    ".junie/rules/x.md": ".junie/rules/**/*.md",
+    ".kiro/steering/x.md": ".kiro/steering/**/*.md",
+    ".trae/rules/x.md": ".trae/rules/**/*.md",
+    ".windsurf/rules/x.md": ".windsurf/rules/**/*.md",
+}
+
+# What the engine does not see, though its table names it (Q36): each file, alone in its directory. A folder pattern
+# matches from the repository root only.
 NOT_SEEN = [
-    ".devin/global_rules.md",
-    ".gemini/styleguide.md",
-    ".github/copilot-instructions.md",
-    ".idx/airules.md",
-    ".junie/guidelines.md",
-    ".junie/playbook.md",
-    ".amazonq/rules/x.md",
-    ".augment/rules/x.md",
-    ".claude/rules/x.md",
-    ".continue/rules/x.md",
-    ".cursor/rules/x.mdc",
-    ".devin/rules/x.md",
-    ".github/instructions/x.instructions.md",
-    ".kiro/steering/x.md",
-    ".trae/rules/x.md",
-    ".windsurf/rules/x.md",
     "sub/.cursor/rules/a/x.mdc",
 ]
 
@@ -157,7 +158,7 @@ class InstructionCase(RepoCase):
     def seen_by(self, check: str, target: Path) -> set[str]:
         """The set that `check` (`AGT-01` or `AGT-08`) gets from `instruction_paths`, recorded while the check runs."""
         scan = facts.engine_module("audit.scan")
-        agt = facts.engine_module("audit.rules.checks.agt")
+        agt = facts.engine_module("audit.rules.checks.agt." + check.replace("-", "_").lower())
         spec = facts.engine_module("audit.rules.registry").REGISTRY_BY_ID[check]
         real = agt.instruction_paths
         answers: list[set[str]] = []
@@ -340,6 +341,27 @@ class CutTests(InstructionCase):
         self.assertEqual([entry["path"] for entry in self.listed(self.repo)], ["sub/AGENTS.md"])
         self.assertEqual(self.listed(self.repo, "--max-files", "1"), [])
         self.assertEqual(self.listed(self.repo, "--exclude", "sub/*"), [])
+
+
+class FolderNameTests(InstructionCase):
+    def test_a_plain_name_with_a_folder_at_the_root_is_listed_by_its_own_name(self) -> None:
+        for rel in sorted(PLAIN_WITH_A_FOLDER):
+            with self.subTest(file=rel):
+                target = self.directory({rel: "x\n"})
+                self.assertEqual(self.engine_sees(target), {rel})
+                expected = rel.rpartition("/")[2] if rel.endswith("/CLAUDE.md") or rel.endswith("/AGENTS.md") else rel
+                self.assertEqual([entry["variant"] for entry in self.listed(target)], [expected])
+
+    def test_a_plain_name_with_a_folder_below_the_root_is_not_listed(self) -> None:
+        target = self.directory({"sub/.github/copilot-instructions.md": "x\n"})
+        self.assertEqual((self.engine_sees(target), self.listed(target)), (set(), []))
+
+    def test_a_file_straight_in_a_rules_folder_is_listed_with_its_folder_pattern(self) -> None:
+        for rel, pattern in FLAT_RULE_FILES.items():
+            with self.subTest(file=rel):
+                target = self.directory({rel: "x\n"})
+                self.assertEqual(self.engine_sees(target), {rel})
+                self.assertEqual([entry["variant"] for entry in self.listed(target)], [pattern])
 
 
 class EngineGapTests(InstructionCase):

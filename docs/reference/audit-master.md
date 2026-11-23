@@ -61,7 +61,8 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 `DEGRADER` · scored · engine check · fixed by [`register-index`](implement-master.md#register-index)
 
-- **Passes when:** the index's recorded revision matches `HEAD`, or a direct freshness query reports no drift.
+- **Passes when:** the index's recorded revision matches `HEAD`, the index was built at or after HEAD last moved, or a
+  direct freshness query reports no drift.
 - **Why it matters:** A stale graph is stale context: an agent edits based on symbols that have already moved or been
   deleted ([`docs/framework/phased-approach.md` § Activities](../framework/phased-approach.md#activities)).
 
@@ -111,7 +112,7 @@ Can an agent find the code, the rules and the documents it needs before it edits
 `DEGRADER` · scored · engine check · fixed by [`adapt-agents-md`](implement-master.md#adapt-agents-md)
 
 - **Passes when:** all seven verbs (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security`) are
-  named in the instruction file and each resolves on a runner.
+  named in the instruction file by the verb's name, and each resolves.
 - **Why it matters:** The agent needs the sanctioned verification path stated, or it invents one (`npx vitest` where the
   project uses something else), diverging from what CI actually runs ([greenfield/README.md § 1.4 The standardized
   command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
@@ -170,9 +171,10 @@ Can an agent find the code, the rules and the documents it needs before it edits
 - **Passes when:** at least 80% of rule lines are specific (by the count above) and every specific line checked resolves
   against the repository; no overview section exceeds roughly a fifth of the file (A14: the overview is optional and
   must not dominate).
-- **Why it matters:** This is where A14 (above) is judged directly: a file full of generic, inferable advice costs
-  inference time for no benefit, which is R-16's own finding ([Phased-Approach.md §
-  Activities](../framework/phased-approach.md#activities)).
+- **Why it matters:** This is where
+  [A14](../../audit/checks/02-agent-governance.md#the-a14-rubric-r-16-score-content-not-presence) is judged directly: a
+  file full of generic, inferable advice costs inference time for no benefit, which is R-16's own finding
+  ([Phased-Approach.md § Activities](../framework/phased-approach.md#activities)).
 
 #### `AGT-12` Communication rules stated
 
@@ -269,7 +271,8 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 `COSMETIC` · scored · engine check · fixed by [`establish-docs-contract`](implement-master.md#establish-docs-contract)
 
-- **Passes when:** no oversized file, no catch-all directory, no checked-in binary, and no minified asset is found.
+- **Passes when:** no oversized file, no catch-all directory, no checked-in binary, and no minified asset is found. A
+  lockfile is never an oversized file.
 - **Why it matters:** Oversized files, catch-all directories, checked-in binaries and minified assets are exactly where
   agents are drawn when they explore, and exactly where they should not be working ([Phased-Approach.md § Phase 1:
   Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-)).
@@ -551,9 +554,9 @@ Does the pipeline run the same gate the agent runs locally, and does it block th
 
 `DEGRADER` · scored · agent judgement · fixed by [`add-ci-parity`](implement-master.md#add-ci-parity)
 
-- **Passes when:** every job running a verb (or `check`) gates on it — no `continue-on-error`, no swallowed exit code on
-  the gating command — and the workflow is a required status check for merging (confirmed, not just assumed from the
-  workflow file alone).
+- **Passes when:** every job running a verb (or `check`) gates on it, and the workflow is a required status check for
+  merging. Gating means no `continue-on-error` and no swallowed exit code on the gating command. The required check is
+  confirmed, not assumed from the workflow file alone.
 - **Why it matters:** A pipeline that runs the verbs but does not fail the build when one of them fails is theatre, not
   enforcement ([greenfield/README.md § 1.4 The standardized command
   surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
@@ -581,8 +584,8 @@ Does the same command give the same result on a fresh machine, without a human i
 [`pin-execution-environment`](implement-master.md#pin-execution-environment)
 
 - **Passes when:** every detected pinnable ecosystem has at least one of its own pin files, or a matching
-  `.tool-versions` line, or (node/python/go) the manifest-level constraint, and a pin reaches every module manifest of
-  each pinned ecosystem.
+  `.tool-versions` line, or (node/python/go/php) the manifest-level constraint, and a pin reaches every module manifest
+  of each pinned ecosystem.
 - **Why it matters:** An agent's runtime must be the repository's, not whatever happens to be on the host — otherwise
   the gate passes locally and fails in CI, or an agent reproduces nothing ([greenfield/README.md § File Tree — What Gets
   Created](../../greenfield/README.md#file-tree--what-gets-created)).
@@ -592,8 +595,8 @@ Does the same command give the same result on a fresh machine, without a human i
 `BLOCKER` · scored · engine check · fixed by
 [`pin-execution-environment`](implement-master.md#pin-execution-environment)
 
-- **Passes when:** every detected ecosystem's lockfile exists, is tracked, and (where parsing is attempted) agrees with
-  the manifest.
+- **Passes when:** every detected ecosystem has a lockfile, every lockfile is tracked, and each one (where parsing is
+  attempted) agrees with the manifest in its folder.
 - **Why it matters:** Every run must resolve identical dependencies; a lockfile that is missing, untracked, or stale
   turns "works on my machine" into a problem the agent inherits too ([Phased-Approach.md § Phase 1: Agentic
   Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-)).
@@ -613,8 +616,9 @@ Does the same command give the same result on a fresh machine, without a human i
 `BLOCKER` · scored · engine check · fixed by
 [`env-inventory-and-secrets`](implement-master.md#env-inventory-and-secrets)
 
-- **Passes when:** every referenced key not on the allow-list is declared in a committed example file (including the
-  case of no references at all).
+- **Passes when:** every required referenced key not on the allow-list is declared in an example file that covers each
+  file reading it (including the case of no references at all). An optional key (a shell reference with a fallback) is
+  listed but never required.
 - **Why it matters:** A variable the code needs but nobody wrote down fails at runtime, mid-task, and the agent debugs
   an environment problem it has no way to see coming ([greenfield/README.md § File Tree — What Gets
   Created](../../greenfield/README.md#file-tree--what-gets-created)).
@@ -633,7 +637,8 @@ Does the same command give the same result on a fresh machine, without a human i
 
 `DEGRADER` · scored · engine check · fixed by [`adapt-agents-md`](implement-master.md#adapt-agents-md)
 
-- **Passes when:** every documented command resolves, or no fenced shell command is documented at all.
+- **Passes when:** every documented command resolves or is a make command not verified, or no fenced shell command is
+  documented at all.
 - **Why it matters:** An agent runs the documented command literally; a command that does not resolve is the most
   expensive brownfield trap there is, discovered only after the agent has already acted on it ([Phased-Approach.md §
   Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-)).
@@ -752,7 +757,7 @@ Is the repository run like a team project? Reported for the whole picture; never
 `COSMETIC` · not scored · engine check · fixed by [`add-repo-hygiene`](implement-master.md#add-repo-hygiene)
 
 - **Passes when:** a root README exists, reads as text, has at least 200 characters of body, carries no placeholder
-  marker, and is not a bare title.
+  marker where one counts (see Engine), and is not a bare title.
 - **Why it matters:** An agent (or a person) must be able to orient itself in this project in seconds, not by opening
   files at random.
 

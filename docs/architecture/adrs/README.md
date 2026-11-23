@@ -19,6 +19,7 @@ The root router is [`docs/README.md`](../../README.md).
 | [0009](0009-adrs-hold-only-the-current-decision.md) | ADRs Hold Only the Current Decision; Stale and Unnecessary Ones Are Deleted | Agents read ADRs as instructions, so an ADR states only today's decision and a stale one is deleted. |
 | [0010](0010-the-scaffolder-lives-beside-its-templates.md) | The Greenfield Scaffolder Lives in This Repository, Beside Its Templates | `greenfield/bootstrap/bootstrap.py` reads the templates beside it, and the positive fixture runs in CI. |
 | [0011](0011-index-the-documents-with-a-standard-library-tool.md) | Index the Documents With Our Own Standard-Library Tool in `dev/` | `dev/docindex/` builds a deterministic index of files, sections, IDs and links, set by `dev/docindex.config.json`. |
+| [0012](0012-keep-the-consistency-map-as-json-in-dev.md) | Keep the Consistency Map as JSON Files in `dev/`, Checked by a Standard-Library Script | The folder `dev/consistency-map/` declares what each check reads, what each step moves and the rule that keeps them in step. |
 
 ## Requirements: `spec/decisions/`
 
@@ -42,6 +43,9 @@ Number 0001 is retired in this group.
 | --- | --- | --- |
 | [0003](../../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) | The Implement Recipe Pushes and Opens a Pull Request Only When the Owner Opted In | The recipe stops at a local branch unless the owner opted in to a push and one pull request. |
 | [0004](../../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md) | The Implement State Lives in the Audit Workspace, Outside the Target | `progress.py` keeps the state beside the final report, outside the target; no tool writes inside a target. |
+| [0005](../../../implement/docs/architecture/adrs/0005-a-lost-pass-stops-the-theme.md) | A Lost Pass Stops the Theme Until the Owner Decides | An engine check that passed before the theme and not after it stops the theme; the owner fixes, accepts or stops. |
+| [0006](../../../implement/docs/architecture/adrs/0006-a-weakened-gate-stops-the-theme.md) | A Weakened Gate or an Unapproved Dependency Stops the Theme Until the Owner Decides | `check_gates.py` reads the theme's diff at close; a weakened gate or a dependency no preference approves stops the theme. |
+| [0007](../../../implement/docs/architecture/adrs/0007-recorded-ref-tips-guard-the-target-history.md) | Recorded Ref Tips Guard the Target's History | `progress.py init` records the target's ref tips beside the state; `verify-refs` exits 2 at theme close for a ref that is gone or rewritten. |
 
 ## Audit engine: `audit/engine/docs/architecture/adrs/`
 
@@ -56,5 +60,5 @@ The engine's own index is in its [`architecture/README.md`](../../../audit/engin
 | [0005](../../../audit/engine/docs/architecture/adrs/0005-module-layout-and-zipapp-distribution.md) | Module Layout and Zipapp Distribution | The package tree is the source; a zipapp is the distributable; nothing needs installing. |
 | [0006](../../../audit/engine/docs/architecture/adrs/0006-private-check-helpers-and-ignore-engine.md) | Private Check Helpers and the Ignore Engine | Checks share two private helpers, `audit/ignore.py` and `rules/checks/_common.py`; no new stage or pack. |
 | [0007](../../../audit/engine/docs/architecture/adrs/0007-json-report-render-contract.md) | The JSON Report Is the Render Contract; the Markdown Is a Template Over It | The JSON report (schema v2) is the contract; the Markdown report is a code template over it. |
-| [0008](../../../audit/engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md) | What Counts as the Repository | Runners rank depth first; templates, examples and fixtures are set aside, and the report lists them. |
-| [0009](../../../audit/engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md) | Nested Ignore Files and Negation | Four checks use a scoped matcher that honours nested `.gitignore` files and negation; the walk is unchanged. |
+| [0008](../../../audit/engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md) | What Counts as the Repository | Only root manifests are runners; templates, examples and fixtures are set aside (not below a JVM source root), and the report lists them. |
+| [0009](../../../audit/engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md) | Nested Ignore Files and Negation | The walk and four checks share a scoped matcher that honours nested `.gitignore` files, anchoring and negation; a tracked file is never skipped. |

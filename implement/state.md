@@ -21,6 +21,9 @@ committed or pushed ([ADR 0004](docs/architecture/adrs/0004-implement-state-live
 | The final report, `.json` and `.md` | Written by the audit and never edited; the state names it by file name |
 | `<label>-agentic-readiness-state.json` | The source of truth |
 | `<label>-agentic-readiness-STATE.md` | Rendered from the JSON; its header says it is generated and not to be edited |
+| `engine/<theme>/` | The engine reports of one theme's worktree, written by `engine.py`: the base report before the first change and the close report at theme close ([theme checks](theme-checks.md#keep-passing-checks-passing)) |
+| `<label>-regressions-<theme>.json` | The theme's latest lost-pass verdict, written by `check_regressions.py --workspace`; while it reads `lost`, `progress.py` refuses `done` and `merged` for the theme until the owner runs `accept-lost` ([theme checks](theme-checks.md#when-a-pass-is-lost)) |
+| `<label>-ref-tips.json` | The tips of the target's branches, tags and `origin/*` branches when the run began, written by `init`, `adopt` or `record-refs`; `verify-refs` checks them at each theme close, and only `accept-ref --by owner` changes one ([theme checks](theme-checks.md#keep-the-targets-history)) |
 
 `<label>` is the audit report's `provenance.target.label`.
 
@@ -54,7 +57,10 @@ Pass `--framework-rev <commit>` with the framework release's commit when you kno
 digits.
 
 `init` refuses a report that is not final or that `validate_report.py` rejects, and a report from a newer framework
-release than the tools. It also refuses a report whose folder is inside the target, and an existing state. A report
+release than the tools. It also refuses a report whose folder is inside the target, an existing state and an
+existing ref record. When the target is not the top folder of a git work tree, `init` records no ref tips and
+warns; `verify-refs` then says the history check did not run
+([ADR 0007](docs/architecture/adrs/0007-recorded-ref-tips-guard-the-target-history.md)). A report
 from an older release gives a warning; `data.versions` holds both releases and commits. It queues confirmed and
 edited findings (an edited finding's note goes into `notes`), imports a finding the owner deferred during the audit
 as `deferred` with the owner's note as its reason, and lists rejected findings as `not_queued`. Each item gets the
@@ -76,9 +82,12 @@ python3 implement/tools/progress.py adopt --target <checkout> --workspace <works
   refuses a missing report, a workspace inside the target, and a workspace that already holds the label.
 - Theme branches can hold a newer state than the integration branch. A session MUST adopt from the checkout whose
   state has the newest log entry, and MUST tell the owner which branch it chose. The tool does not merge states.
+  Read it from that branch's worktree. Without one, add a detached worktree:
+  `git -C <repo> worktree add --detach <dir> <branch>`, and remove it afterwards.
 - Its envelope lists the in-repo files the owner may now remove, in `data.may_remove`. They are the state folder,
   the report folder and the `AGENTS.md` line that points at the state. A session removes them only with the owner's
-  consent, as a normal change in the next theme branch or a small `chore` branch.
+  consent, as a normal change in the next theme branch or a small `chore` branch. Offer that removal as a change
+  in the next theme branch.
 
 ## Item statuses
 
@@ -143,9 +152,14 @@ the note and logs "note added"; without `--note` it is refused.
   recorded as a preference with a key, a value, a reason, who decided, the date and the step. A session MUST
   read every preference before it plans a theme. A playbook step that conflicts with a preference MUST stop
   and ask; it MUST NOT override the preference. Keys are lower case (`node.version-file`: letters, digits, dot,
-  underscore, hyphen). When the owner was asked and has no preference, record the value `none` with the owner's
+  underscore, hyphen). A key matches `^[a-z0-9][a-z0-9._-]{0,63}$` (lowercase: `extra.t3`, not `extra.T3`) and takes
+  one value. When the owner was asked and has no preference, record the value `none` with the owner's
   words as the reason (`pref set tool.formatter none --reason "..." --by owner`), so the question is not asked
   again.
+- **Approved dependencies and accepted gate changes.** Two keys are lists that `check_gates.py` reads at theme
+  close, separated by commas or white space. `dependencies.approved` names each dependency the owner approved.
+  `gates.accepted` holds the path globs whose weakened-gate findings the owner chose. See
+  [Keep every gate and approve every dependency](theme-checks.md#keep-every-gate-and-approve-every-dependency).
 
 ## Continue on error
 

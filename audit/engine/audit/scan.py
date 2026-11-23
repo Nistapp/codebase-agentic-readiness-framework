@@ -10,10 +10,12 @@ memory), and record's every path it chose not to inspect.
 Carried data (templates, examples, fixtures: ADR-0008) is walked and then set aside: it leaves
 ``Inventory.files`` and is recorded in ``Inventory.set_aside``, so no check can read it as the project.
 
-Known limitation, deliberately recorded rather than hidden: ignore-pattern matching implements a
-documented subset of gitignore semantics (anchored patterns, negation and `**` are approximated).
-Checks that depend on ignore certainty must therefore report ``UNKNOWN`` rather than ``PASS`` when
-they cannot be sure — see docs/architecture/contributor-deep-dive/01-scan-engine-and-tiering.md § 3.
+The walk skips what the target's ignore files ignore, read with the scoped matcher of ADR-0009 (nested
+``.gitignore`` files, anchoring, ``**`` and ``!``), and never skips a file git tracks. Known limitation,
+deliberately recorded rather than hidden: the matcher is a parser of a documented subset of gitignore, not
+``git check-ignore``, and it reads neither ``.git/info/exclude`` nor a global excludes file. Checks that depend
+on ignore certainty must therefore report ``UNKNOWN`` rather than ``PASS`` when they cannot be sure — see
+docs/architecture/contributor-deep-dive/01-scan-engine-and-tiering.md § 3.
 """
 
 from __future__ import annotations
@@ -24,8 +26,9 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from audit.ignore import ignore_patterns, is_ignored
-from audit.target import HARD_EXCLUDE_DIRS
+from audit.globs import path_match
+from audit.ignore import decide_path, load_ignore_file, load_scoped_rules, tracked_files
+from audit.target import HARD_EXCLUDE_DIRS, TRACKED_ONLY_DIRS
 
 #: Files larger than this are inventoried but their content is never read for content checks.
 #: Raised from 256 KiB (S3.6.4): a real `package-lock.json` at 514 KiB tripped it, degrading
@@ -113,18 +116,29 @@ _SUFFIX_KINDS: dict[str, Kind] = {
 
 _TEST_HINTS = ("test_", "_test.", ".test.", ".spec.", "tests/", "test/", "__tests__/")
 
+#: Substrings of the lowered path that mark a file as generated.
 _GENERATED_HINTS = (
-    "dist/",
-    "build/",
     "generated/",
     ".g.cs",
     ".designer.cs",
     ".pb.go",
     ".lock.gen",
-    "vendor/",
     ".min.css",
     ".min.js",
 )
+
+#: Directory names that mark every file below them as generated. Compared with each whole folder name of the
+#: lowered path, so ``redist/`` does not match. The walk reaches them only for tracked files
+#: (``TRACKED_ONLY_DIRS``). ``vendor`` is not here: vendored code is third-party source, not build output, and
+#: the walk never enters a ``vendor/`` folder.
+_GENERATED_DIRS = frozenset({"dist"})
+
+#: Directory names whose files count as generated only with a sign of it (issue #260). Repositories keep
+#: hand-written build scripts or Docker contexts in ``build/``, so the folder alone says nothing. A file here gets
+#: the kind it would get elsewhere: a generated hint or suffix still makes it ``GENERATED``, and ``EXEC-05`` adds
+#: the tracked files the target's own ignore rules also match. Compared like ``_GENERATED_DIRS``, so ``prebuild/``
+#: does not match.
+SIGNED_GENERATED_DIRS = frozenset({"build"})
 
 
 #: Directory names that mark the files under them as *carried data*: files the repository ships or tests
@@ -140,6 +154,10 @@ CARRIED_DATA_DIRS: tuple[str, ...] = (
     "testdata",
     "scaffold",
 )
+
+#: The language folders of a JVM source root, ``src/<source set>/<language>/``. A folder below one is a
+#: package (``com/example/``), never carried data (ADR-0008). Compared exactly, as the build tools do.
+_JVM_SOURCE_LANGUAGES = frozenset({"java", "kotlin", "scala", "groovy"})
 
 #: The manifests whose presence outside carried data means the repository has its own project.
 _PROJECT_MANIFESTS = frozenset(name for name, kind in _NAME_KINDS.items() if kind in (Kind.MANIFEST, Kind.BUILD))
@@ -173,6 +191,9 @@ class Inventory:
     excludes: tuple[str, ...] = ()
     #: Carried-data directories (``CARRIED_DATA_DIRS``) whose files are not in ``files``. Sorted by path.
     set_aside: list[SetAside] = field(default_factory=list)
+    #: Directories the walk did not enter because an ignore rule covers them and git tracks nothing in them.
+    #: Sorted by path. ``HARD_EXCLUDE_DIRS`` are not listed.
+    ignored_dirs: list[str] = field(default_factory=list)
 
     # -- lookups ---------------------------------------------------------
     def is_excluded(self, rel: str) -> bool:
@@ -194,11 +215,10 @@ class Inventory:
         return any(f.rel == rel or f.rel.endswith("/" + rel) for f in self.files)
 
     def match(self, *patterns: str) -> list[str]:
-        out: list[str] = []
-        for f in self.files:
-            if any(fnmatch.fnmatch(f.rel, p) or fnmatch.fnmatch(os.path.basename(f.rel), p) for p in patterns):
-                out.append(f.rel)
-        return out
+        """The paths any pattern finds: a pattern with a ``/`` is a glob from the root, matched folder by folder
+        (``audit/globs.py``: ``*`` stays inside one name, ``**`` matches any number of folders, none included), and
+        one with no ``/`` is a base name at any depth. Case folds where the platform folds it."""
+        return [f.rel for f in self.files if any(path_match(p, f.rel, fold_case=True) for p in patterns)]
 
     def with_suffix(self, *suffixes: str) -> list[str]:
         return [f.rel for f in self.files if f.rel.endswith(suffixes)]
@@ -236,6 +256,11 @@ class Inventory:
         return hits
 
 
+def in_signed_generated_dir(rel: str) -> bool:
+    """Whether a folder of ``rel``, lower-cased, is one of ``SIGNED_GENERATED_DIRS``."""
+    return not SIGNED_GENERATED_DIRS.isdisjoint(rel.lower().split("/")[:-1])
+
+
 def _classify(rel: str) -> Kind:
     base = os.path.basename(rel)
     if base in _NAME_KINDS:
@@ -248,7 +273,7 @@ def _classify(rel: str) -> Kind:
     ):
         return Kind.CI
     lowered = rel.lower()
-    if any(h in lowered for h in _GENERATED_HINTS):
+    if any(h in lowered for h in _GENERATED_HINTS) or not _GENERATED_DIRS.isdisjoint(lowered.split("/")[:-1]):
         return Kind.GENERATED
     if any(h in lowered for h in _TEST_HINTS):
         return Kind.TEST
@@ -266,27 +291,72 @@ def _looks_binary(path: Path) -> bool:
         return True
 
 
+#: The hard exclusions the walk never enters, tracked files or not.
+_ALWAYS_EXCLUDED = HARD_EXCLUDE_DIRS - TRACKED_ONLY_DIRS
+
+
+def _tracked_directories(tracked: set[str] | None) -> set[str]:
+    """Every directory that holds a tracked file at some depth."""
+    directories: set[str] = set()
+    for rel in tracked or ():
+        parts = rel.split("/")[:-1]
+        for index in range(1, len(parts) + 1):
+            directories.add("/".join(parts[:index]))
+    return directories
+
+
 def build_inventory(
     root: Path, *, extra_excludes: tuple[str, ...] = (), max_files: int = 250_000, max_depth: int = 24
 ) -> Inventory:
-    """Walk the target once. Never follows symlinks; never leaves ``root``."""
+    """Walk the target once. Never follows symlinks; never leaves ``root``.
+
+    The ignore files decide what the walk skips, with the scoped matcher of ADR-0009: the root ignore files, each
+    nested ``.gitignore`` as the walk enters its directory, anchoring, ``**`` and ``!``. A file git tracks is never
+    skipped by an ignore rule, because git tracks it whatever the rules say; the walk enters an ignored directory
+    only to reach such files. ``HARD_EXCLUDE_DIRS`` and ``--exclude`` still apply to tracked files, with one
+    exception: the walk enters a ``TRACKED_ONLY_DIRS`` folder (``dist/``, ``build/``) that holds a tracked file, and
+    reads only the tracked files in it. When git cannot report the tracked set, those folders stay excluded.
+    """
     root = root.resolve()
-    patterns = ignore_patterns(root)
+    rules = load_scoped_rules(root)
+    tracked = tracked_files(root)
+    tracked_dirs = _tracked_directories(tracked)
+    #: Directories the walk entered although an ignore rule covers them (it holds tracked files).
+    entered_ignored: set[str] = set()
+    #: ``TRACKED_ONLY_DIRS`` folders, and the folders below them, the walk entered to reach tracked files.
+    entered_tracked_only: set[str] = set()
     inv = Inventory(root=root, excludes=extra_excludes)
 
     for dirpath, dirnames, filenames in os.walk(root, topdown=True, followlinks=False):
         current = Path(dirpath)
+        here = current.relative_to(root).as_posix()
+        here = "" if here == "." else here
         depth = len(current.relative_to(root).parts)
         if depth >= max_depth:
             inv.skipped.append((str(current.relative_to(root)), "max-depth"))
             dirnames[:] = []
             continue
+        inside_ignored = here in entered_ignored
+        inside_tracked_only = here in entered_tracked_only
+        if here and not inside_ignored and ".gitignore" in filenames:
+            rules.extend(load_ignore_file(root, f"{here}/.gitignore"))
 
-        dirnames[:] = [
-            d
-            for d in sorted(dirnames)
-            if d not in HARD_EXCLUDE_DIRS and not is_ignored((current / d).relative_to(root).as_posix(), patterns)
-        ]
+        kept: list[str] = []
+        for d in sorted(dirnames):
+            rel_dir = f"{here}/{d}" if here else d
+            if inside_tracked_only or d in HARD_EXCLUDE_DIRS:
+                if d in _ALWAYS_EXCLUDED or rel_dir not in tracked_dirs:
+                    continue
+                entered_tracked_only.add(rel_dir)
+                kept.append(d)
+                continue
+            if inside_ignored or decide_path(rel_dir, rules, is_dir=True).ignored:
+                if rel_dir not in tracked_dirs:
+                    inv.ignored_dirs.append(rel_dir)
+                    continue
+                entered_ignored.add(rel_dir)
+            kept.append(d)
+        dirnames[:] = kept
 
         for name in sorted(filenames):
             if len(inv.files) >= max_files:
@@ -297,7 +367,10 @@ def build_inventory(
             if path.is_symlink():
                 inv.skipped.append((rel, "symlink"))
                 continue
-            if is_ignored(rel, patterns) or inv.is_excluded(rel):
+            if inside_tracked_only and (tracked is None or rel not in tracked):
+                continue
+            ignored = inside_ignored or decide_path(rel, rules).ignored
+            if (ignored and (tracked is None or rel not in tracked)) or inv.is_excluded(rel):
                 inv.skipped.append((rel, "ignored"))
                 continue
             try:
@@ -320,14 +393,21 @@ def build_inventory(
         if inv.truncated:
             break
 
+    inv.ignored_dirs.sort()
     _set_carried_data_aside(inv)
     return inv
 
 
 def _carried_directory(rel: str) -> str | None:
-    """The outermost directory of ``rel`` named in ``CARRIED_DATA_DIRS``, or ``None``."""
+    """The outermost directory of ``rel`` named in ``CARRIED_DATA_DIRS``, or ``None``.
+
+    A name below a JVM source root (``src/<set>/<java|kotlin|scala|groovy>/``, at any depth) is a package and
+    never counts, so ``src/main/java/com/example/`` stays while ``src/main/resources/templates/`` is set aside.
+    """
     parts = rel.split("/")[:-1]
     for index, part in enumerate(parts):
+        if index >= 2 and parts[index - 2] == "src" and part in _JVM_SOURCE_LANGUAGES:
+            return None
         if part.lower() in CARRIED_DATA_DIRS:
             return "/".join(parts[: index + 1])
     return None

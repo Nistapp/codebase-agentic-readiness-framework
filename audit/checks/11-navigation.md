@@ -6,11 +6,12 @@
 > [Why These Checks §12](../engine/docs/architecture/user-overview/03-why-these-checks.md#12-navigation-nav)
 > for the consequence behind this family: an agent that cannot see component boundaries, entry points or
 > structural traps either guesses at blast radius or is drawn to the worst places in the codebase. Every
-> check reads the engine's `NAV` pack (`audit/engine/audit/rules/checks/nav.py`), whose module
+> check reads the engine's `NAV` pack (`audit/engine/audit/rules/checks/nav/__init__.py`), whose module
 > docstring names each check's deliberate limits (`NAV-02` reads a fixed, documented entry-point signal
 > set per ecosystem rather than resolving one semantically; `NAV-05`'s "public" is a best-effort static
-> approximation — module-level names not starting with `_` for Python, exported declarations for
-> TypeScript/JavaScript — that never executes or reflects).
+> approximation — for Python, module-level functions and classes and the methods of public classes whose
+> names do not start with `_`, read with the standard library `ast`; for TypeScript/JavaScript, exported
+> declarations only — that never executes or reflects).
 
 ---
 
@@ -25,11 +26,20 @@ Engine           `NAV-01`. Reads `components.declared` (built by the engine's ow
                  build manifest (npm workspaces, `pnpm-workspace.yaml`, Maven modules, Gradle includes,
                  and the like) is `PASS`. None declared, but `components.candidates` names an
                  undeclared multi-app layout, is `PARTIAL` — the layout exists, nothing declares it. A
+                 candidate is an immediate child of `apps/`, `services/`, `packages/`, `components/`,
+                 `modules/`, `libs/` or `workers/` with a build manifest; when the root folder itself
+                 holds no build manifest, any top-level folder with one is a candidate too (an app per
+                 folder, such as `web/` and `api/`). Candidates are reported, never scored (ADR-0003). A
                  single-root repository that still declares a manifest is `PASS` too: the boundary
-                 exists, it is just the root. No manifest at all, with the stack unrecognised, is
-                 `UNKNOWN`, never `FAIL` — an unrecognised ecosystem is not proof that boundaries are
-                 absent. Distrust a `PARTIAL`/`UNKNOWN` when the workspace convention used is one the
-                 engine's component detector does not yet recognise — verify by reading the manifest
+                 exists, it is just the root. Only a manifest at the root itself declares the root; a
+                 nested `tools/x/package.json` does not. The detector reads `package.json`, `pyproject.toml`,
+                 `pom.xml`, `build.gradle(.kts)`, `Cargo.toml`, `go.mod`, `Gemfile`, `composer.json`,
+                 and a .NET `*.sln`, `*.slnx`, `*.csproj`, `*.fsproj` or `*.vbproj` in the component's
+                 own folder. No manifest it reads is `UNKNOWN`, never `FAIL` — an unrecognised ecosystem
+                 is not proof that boundaries are absent. The summary names the ecosystems the engine
+                 recognised, or says the stack is not recognised. Distrust a `PARTIAL`/`UNKNOWN` when
+                 the workspace convention used is one the engine's component detector does not yet
+                 recognise — verify by reading the manifest
                  directly before treating the boundary as undeclared.
 Method           automated
 Look for         `components.declared` for any non-root member; failing that, `components.candidates`
@@ -42,13 +52,13 @@ Rubric           PASS: at least one non-root component is declared by a build ma
                  FAIL: not used by this check — an unrecognised stack with nothing declared is `UNKNOWN`,
                  never a defect to score.
                  NOT_APPLICABLE: never.
-                 UNKNOWN when: no build manifest declares a component and the stack is not recognised at
-                 all.
+                 UNKNOWN when: no build manifest the component detector reads declares a component (for
+                 example a Python project with only `requirements.txt`, or no recognised stack at all).
 Evidence to cite A `file` evidence item per declared component (up to 6 named in the summary) for PASS;
                  a `file` evidence item per candidate component (up to 12) for PARTIAL.
 Absence proof    A PARTIAL names every candidate component the engine's own layout heuristic found, so
                  "nothing declares them" is a checked list, not an assumption; the UNKNOWN case records
-                 that no manifest exists at all as its own stated reason.
+                 that no manifest the detector reads exists as its own stated reason.
 Remediation      playbook `establish-docs-contract` (`catalogue.json` lists it for `NAV-01`); point
                  at the workspace mechanism appropriate to the detected ecosystem inline.
 Pitfalls         A single-package repository with a root manifest is a legitimate `PASS`, not a weaker
@@ -63,10 +73,10 @@ Why it matters   Agents must find where execution begins before they can reason 
 Severity         DEGRADER
 Engine           `NAV-02`. For each detected ecosystem, checks a fixed, documented set of entry-point
                  signals: npm `main`/`bin`/`exports` plus a conventional index/server/main/app file for
-                 node; `__main__.py`, `main.py`/`app.py`/`manage.py`, a line that
-                 starts with the `if __name__ == "__main__"` guard (a file that only holds that text in a
-                 regex, a string or a comment is not an entry point), or a `console_scripts`/`[project.scripts]` entry
-                 point for python; `public static void main`/`fun main`/`@SpringBootApplication` for jvm;
+                 node; `__main__.py`, `main.py`/`app.py`/`manage.py`, or a
+                 `console_scripts`/`[project.scripts]` entry point for python (an
+                 `if __name__ == "__main__"` guard alone is not an entry point: helper scripts and dev tools
+                 carry one too); `public static void main`/`fun main`/`@SpringBootApplication` for jvm;
                  `func main` for go; `src/main.rs` or a `[[bin]]` section for rust; and fixed conventional
                  names for dotnet/ruby/php. No recognised ecosystem at all ⇒ `UNKNOWN` — there is no
                  language convention to check against. Distrust a `FAIL` when the entry point is named
@@ -102,7 +112,13 @@ Severity         COSMETIC
 Engine           `NAV-03`. A census, never a verdict on a heuristic: counts files over 512 KB
                  (`LARGE_FILE_BYTES`), directories with more than 50 immediate files (`CATCH_ALL_FILES`),
                  files the scan classifies `Kind.BINARY`, and generated files whose name contains
-                 `.min.`. Both thresholds are documented constants in `nav.py`, not tuned per repository.
+                 `.min.`. Committed build output counts: the walk enters `dist/` and `build/` to
+                 reach the files git tracks there (an untracked build folder stays out). Both
+                 thresholds are documented constants in `nav/nav_03.py`, not tuned per repository.
+                 A lockfile is large by design, so the size count leaves it out. The match is by exact
+                 base name, never by pattern, against a closed list: `LOCKFILE_NAMES` in `stack.py`. It
+                 holds `package-lock.json`, `yarn.lock`, `uv.lock`, `Cargo.lock`, `go.sum` and others. A
+                 large file with any other name still counts. The summary names each lockfile it left out.
                  Carried-data directories (`templates/`, `fixtures/`, `examples/`) are not counted, so a
                  test corpus of a hundred fixtures is not a catch-all directory; the report's
                  `inventory.set_aside` lists them.
@@ -115,9 +131,9 @@ Engine           `NAV-03`. A census, never a verdict on a heuristic: counts file
 Method           automated
 Look for         Every file's size against the 512 KB threshold; every directory's immediate file count
                  against the 50-file threshold; every file's scan classification (`Kind.BINARY`); every
-                 generated file's name for `.min.`.
+                 generated file's name for `.min.`. Leave the lockfiles out of the size count.
 Rubric           PASS: no oversized file, no catch-all directory, no checked-in binary, and no minified
-                 asset is found.
+                 asset is found. A lockfile is never an oversized file.
                  PARTIAL: at least one of the four categories has a nonzero count.
                  FAIL: not used by this check — the engine's own outcome is never a hard failure,
                  whatever the counts.
@@ -178,10 +194,19 @@ Severity         COSMETIC
 Engine           `NAV-05`. Not a scored check (`catalogue.json`: `scored: false`, no `req_ids`). Picks one
                  language to census — python if the stack recognises python and python files exist, else
                  typescript/javascript under the same condition, else whichever of the two has more files
-                 present — then counts "public" symbols for that language only (python: module-level
-                 `def`/`class` not starting with `_`; typescript/javascript: `export`-prefixed
-                 declarations) against how many are immediately preceded (python: followed) by a
-                 docstring or `/** */` block comment. No recognised source language at all, or the chosen
+                 present — then counts "public" symbols for that language only, against how many
+                 carry a docstring or a `/** */` block comment.
+                 Python: the engine parses each file with the standard library `ast`. It counts
+                 module-level functions and classes, plus the methods of public classes (nested public
+                 classes too, never a function inside a function). A name starting with `_` is private,
+                 so dunder methods such as `__init__` are not counted. A symbol is documented when
+                 `ast.get_docstring` finds a docstring, so a multi-line signature is read correctly.
+                 A test file is left out: a `tests` or `test` folder in its path, or a `test_*.py` or
+                 `*_test.py` name. A file that does not parse (Python 2, a template) falls back to
+                 column-0 `def`/`class` lines with a docstring on the next code line; the summary
+                 counts such files.
+                 TypeScript/JavaScript: `export`-prefixed declarations immediately preceded by a
+                 `/** */` block. Class members are not counted. No recognised source language at all, or the chosen
                  language finds zero public symbols, is `UNKNOWN` — "public" cannot be defined, or there
                  is nothing to measure. A repository with both python and typescript files censuses only
                  the one language chosen; the other's documentation coverage is not reported by this run

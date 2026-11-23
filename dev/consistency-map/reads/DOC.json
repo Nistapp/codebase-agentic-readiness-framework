@@ -1,0 +1,187 @@
+[
+  {
+    "binding": "file",
+    "check": "DOC-01",
+    "note": "With no Markdown file, the folder docs is looked for on disk: present is PARTIAL, absent is FAIL.",
+    "source": "engine",
+    "threshold": "one or more Markdown files under docs/",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "docs/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": "docs/**/*.markdown",
+        "scope": "glob"
+      },
+      {
+        "path": "docs",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "DOC-02",
+    "note": "The exact path docs/STYLE_GUIDE.md, never a suffix match. The entry file (the DOC-02 module's own reader) must hold STYLE_GUIDE.md on any line, else PARTIAL.",
+    "source": "engine",
+    "threshold": "present and named",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "docs/STYLE_GUIDE.md",
+        "scope": "root"
+      },
+      {
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "path": "CLAUDE.md",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "DOC-03",
+    "constants": [
+      "audit.rules.checks.doc:_SCRATCH_ROOTS",
+      "audit.ignore:IGNORE_FILE_NAMES"
+    ],
+    "note": "The scratch folders in the scan or on disk, the files git tracks there, and every ignore rule: the five root ignore files and each nested .gitignore. The folder's own .gitignore and a file a ! rule re-includes are allowed.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "artefacts",
+        "scope": "root"
+      },
+      {
+        "path": "artifacts",
+        "scope": "root"
+      },
+      {
+        "path": ".gitignore",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".cbmignore",
+        "scope": "root"
+      },
+      {
+        "path": ".cursorignore",
+        "scope": "root"
+      },
+      {
+        "path": ".aiderignore",
+        "scope": "root"
+      },
+      {
+        "path": ".rooignore",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "DOC-04",
+    "note": "Entries are NNN- or NNNN-slug.md files in the first folder that holds a file, less a template; each must appear in the index by file name or its first four characters. A status line, a superseded-by or replaced-by line, or a Status section that retires a record is PARTIAL.",
+    "source": "engine",
+    "threshold": "every ADR listed in the index and none retired",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "docs/architecture/adrs/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": "docs/adr/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": "docs/architecture/adrs/README.md",
+        "scope": "root"
+      },
+      {
+        "path": "docs/architecture/adrs/index.md",
+        "scope": "root"
+      },
+      {
+        "path": "docs/architecture/adrs/_index.md",
+        "scope": "root"
+      },
+      {
+        "path": "docs/architecture/README.md",
+        "scope": "root"
+      },
+      {
+        "path": "docs/architecture/index.md",
+        "scope": "root"
+      },
+      {
+        "path": "docs/adr/README.md",
+        "scope": "root"
+      },
+      {
+        "path": "docs/adr/index.md",
+        "scope": "root"
+      },
+      {
+        "path": "docs/adr/_index.md",
+        "scope": "root"
+      },
+      {
+        "path": "docs/README.md",
+        "scope": "root"
+      },
+      {
+        "path": "docs/index.md",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "DOC-05",
+    "note": "Prose only (fences, tables, headings, comments, code spans and prose-check off regions skipped); a sentence over 25 words, or 20 in a numbered step, is long. Each page under docs/explanation/ or docs/tutorials/, less README.md and index.md, needs a Mermaid block.",
+    "source": "engine",
+    "threshold": "at most 10% long sentences and 1 vague word per 1,000 words",
+    "what": {
+      "kind": "word-list",
+      "text": [
+        "simply",
+        "just",
+        "obviously",
+        "clearly",
+        "basically",
+        "easily",
+        "utilize",
+        "utilise",
+        "leverage",
+        "in order to",
+        "and/or",
+        "etc"
+      ]
+    },
+    "where": [
+      {
+        "path": "docs/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": "docs/**/*.markdown",
+        "scope": "glob"
+      }
+    ]
+  }
+]

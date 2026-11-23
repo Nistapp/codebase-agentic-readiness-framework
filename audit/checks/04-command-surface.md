@@ -17,12 +17,16 @@ Why it matters   The verbs are the contract; without them resolving an agent has
 Severity         BLOCKER
 Engine           `CMD-01`. Reads every runner manifest `_common` understands in full
                  (`resolve_all_verbs`), so a verb split across, or duplicated on, more than one runner is
-                 visible. Runners are ranked by depth first (a root manifest of any kind beats a nested one,
-                 then the shallowest, then `RUNNER_PRECEDENCE`), and a manifest under a carried-data
+                 visible. `RUNNER_PRECEDENCE` (kind) orders the runners. A manifest under a carried-data
                  directory (`templates/`, `fixtures/`, `examples/`) is not a runner at all, so a template's
                  `package.json` cannot take the verbs from the root `Makefile`
-                 ([ADR-0008](../engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). All seven verbs resolving on exactly one runner is `PASS`. Any verb missing from
-                 every runner is `FAIL`. Verbs resolving but spread across more than one runner is
+                 ([ADR-0008](../engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). A
+                 `package.json`, a `Makefile`, a Taskfile, a `pyproject.toml`, a Gradle or a Maven build
+                 counts only at the root, where its runner reads it. A nested `tools/Makefile` is not a
+                 runner, and no finding cites it. Only a root `gradlew` or `mvnw` launches the build. All
+                 seven verbs
+                 resolving on exactly one runner is `PASS`. Any verb missing from every runner is `FAIL`.
+                 Verbs resolving but spread across more than one runner is
                  `PARTIAL` (the stray second definition itself is `CMD-03`'s territory, not this check's).
                  A `Makefile` GNU Make refuses to parse (an unescaped `format:check:` target, a static
                  pattern rule with no `%`) is not a runner at all: `FAIL` as `CMD-01:Makefile` when no
@@ -71,10 +75,17 @@ Engine           `CMD-02`. Resolves `check` on its one runner (the same resolver
                  by invoking another resolved verb by name (indirection: `npm run format:check`) or by a
                  documented tool equivalent (`ruff check`, `tsc`, `pytest`, and others the engine's own
                  pattern list names). In a `Makefile`, `check`'s prerequisites are its body, and a
-                 prerequisite that is not itself a verb is followed into its own recipe, once. All three
-                 concerns present is `PASS`; some is `PARTIAL`; none is `FAIL`. A Gradle or Maven `check`
-                 that is a lifecycle task is `UNKNOWN` — its dependency graph is the build's own, not a
-                 command the engine reads (S2.6's own finding on this repository's dogfooding run). No
+                 prerequisite that is not itself a verb is followed into its own recipe, once. A package
+                 script that is not a verb is followed the same way. So `npm run test:coverage` running
+                 `jest --coverage` is the test run. All three
+                 concerns present is `PASS`; some is `PARTIAL`; none is `FAIL`. A Gradle `check` is read
+                 from the build file. A JVM plugin (`java`, `io.quarkus`, the Kotlin JVM plugin) gives the
+                 compile, which is the typecheck, and `test`. Spotless or ktlint gives the format check.
+                 `check.dependsOn` or a `check { dependsOn ... }` block adds each verb or known task it
+                 names. Something the engine does not read may add a missing concern: an unknown plugin, a
+                 version-catalog alias, `apply from`, subprojects in the settings file, or an unknown task.
+                 Then the verdict is `UNKNOWN`. A Maven `check` (`verify`) is `UNKNOWN`: the engine does
+                 not read which plugin goals a pom binds to it. No
                  runner at all, or the Makefile `CMD-01` already flagged as unparseable, is also `UNKNOWN`.
                  Distrust a `FAIL` or `PARTIAL` when `check`'s tool choice is one the engine's documented-
                  equivalent list does not yet name — verify by reading the command for a tool this project
@@ -88,8 +99,9 @@ Rubric           PASS: `check`'s body invokes, directly or by a resolved verb, a
                  FAIL: a `check` verb is defined but invokes none of the three.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no runner exists to read, the only runner is a `Makefile` `CMD-01` already
-                 reports as unparseable, or `check` is a Gradle/Maven lifecycle task whose composition is
-                 set by the build graph rather than a readable command.
+                 reports as unparseable, `check` is a Maven lifecycle phase whose plugin bindings the
+                 engine does not read, or a Gradle `check` misses a concern that an unread plugin, script,
+                 subproject or task could add.
 Evidence to cite A `command` evidence item citing the runner and `check`'s resolved command text, with
                  `note` listing the concerns it was found to compose.
 Absence proof    A FAIL or PARTIAL names each missing concern (`format-check`, `typecheck`, `test`)
@@ -109,7 +121,7 @@ Why it matters   A runner other than the authoritative one must delegate, not co
                   ([greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
 Severity         DEGRADER
 Engine           `CMD-03`. When more than one runner defines a `check` target, the primary is the
-                 first runner by `runner_rank` (the shallowest manifest, then `RUNNER_PRECEDENCE`); every
+                 first runner by `runner_rank` (`RUNNER_PRECEDENCE` among the root manifests); every
                  other runner's `check` is
                  checked for a delegation to the primary (a known delegation pattern per runner —
                  `npm run check`, `make check`/`$(MAKE) check`, `task check`, `./gradlew check`, and the
@@ -137,12 +149,12 @@ Evidence to cite A `file` evidence item per divergent runner, citing its manifes
 Absence proof    A FAIL names the divergent runner(s) explicitly and cites each one's actual `check`
                  command as the evidence that no delegation pattern matched.
 Remediation      `define-command-surface`
-Pitfalls         The primary runner is decided by depth, then `RUNNER_PRECEDENCE`, not by which one was
+Pitfalls         The primary runner is decided by `RUNNER_PRECEDENCE`, not by which one was
                  added first or is used more often — if the project's own convention disagrees with the
                  engine's order, say so explicitly in the finding rather than silently treating the
                  engine's choice of primary as the project's intent. A nested component's own `check`
-                 (`apps/web/package.json`) still counts as a second runner; scoping checks to declared
-                 components is issue #20, not done.
+                 (`apps/web/package.json`) is not a runner, so it is never a second definition; scoping
+                 checks to declared components is issue #20, not done.
 
 ## CMD-04 — Write verbs separated from read-only verbs
 

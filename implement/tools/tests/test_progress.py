@@ -16,6 +16,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import tempfile
 import unittest
@@ -117,6 +118,24 @@ class ThemeMapTests(unittest.TestCase):
 
     def test_the_themes_are_t1_to_t8_in_order(self) -> None:
         self.assertEqual(progress.THEME_IDS, tuple(f"T{number}" for number in range(1, 9)))
+
+    def test_a_check_with_a_playbook_has_the_theme_of_one_of_its_playbooks(self) -> None:
+        # The playbook-to-theme source is the Themes table of implement/SKILL.md. EXEC-03, EXEC-06 and TST-01 are the
+        # cross-theme checks that file's text names: no playbook of their own theme closes them.
+        skill = (_implement_paths.REPO / "implement" / "SKILL.md").read_text(encoding="utf-8")
+        playbook_theme: dict[str, str] = {}
+        for row in re.finditer(r"^\| (T\d) \| `[^`]+` \| (.+) \|$", skill, re.MULTILINE):
+            for playbook in re.findall(r"`([^`]+)`", row.group(2)):
+                playbook_theme[playbook] = row.group(1)
+        catalogue = json.loads((RECIPES / "catalogue.json").read_text(encoding="utf-8"))
+        odd: list[str] = []
+        for check in catalogue["checks"]:
+            playbooks = check.get("playbooks", [])
+            self.assertTrue(all(name in playbook_theme for name in playbooks), (check["id"], playbooks))
+            homes = {playbook_theme[name] for name in playbooks}
+            if playbooks and progress.CHECK_THEME[check["id"]] not in homes:
+                odd.append(check["id"])
+        self.assertEqual(sorted(odd), ["EXEC-03", "EXEC-06", "TST-01"])
 
 
 class ContractTests(unittest.TestCase):
@@ -411,6 +430,182 @@ class ShowTests(TargetCase):
         self.assertIn("repeats the key", envelope["data"]["error"])
 
 
+class NextStepTests(TargetCase):
+    """`show` says the stage and step of implement/SKILL.md a session goes on with: one rule per test."""
+
+    def next_of(self, change: Any = None, *, source: Path = LATER_STATE, mode: Sequence[str] = ()) -> dict[str, Any]:
+        state = json.loads(source.read_text(encoding="utf-8"))
+        if change is not None:
+            change(state)
+        self.json_path.write_text(json.dumps(state), encoding="utf-8")
+        code, envelope, err = call(["show", "--workspace", str(self.state_dir), *mode])
+        self.assertEqual(code, 0, (envelope, err))
+        shown: dict[str, Any] = envelope["data"]["next"]
+        return shown
+
+    @staticmethod
+    def set_item(state: dict[str, Any], finding: str, status: str) -> None:
+        item = next(entry for entry in state["items"] if entry["finding"] == finding)
+        item["status"] = status
+
+    @staticmethod
+    def set_theme(state: dict[str, Any], theme: str, status: str) -> None:
+        entry = next(entry for entry in state["themes"] if entry["id"] == theme)
+        entry["status"] = status
+
+    def test_an_item_in_progress_is_resumed(self) -> None:
+        shown = self.next_of()
+        self.assertEqual((shown["stage"], shown["step"]), (3, 4))
+        self.assertTrue(shown["text"].startswith("Stage 3, step 4: resume F-003 (T2)"), shown)
+
+    def test_show_json_says_the_same(self) -> None:
+        self.assertEqual(self.next_of(mode=["--json"]), self.next_of())
+
+    def test_a_new_state_is_triaged_first(self) -> None:
+        shown = self.next_of(source=EXAMPLE_STATE)
+        self.assertEqual((shown["stage"], shown["step"]), (1, 1))
+        self.assertIn("ci.pr_by_agent", shown["text"])
+
+    def test_a_recorded_pr_preference_ends_triage(self) -> None:
+        def triaged(state: dict[str, Any]) -> None:
+            state["preferences"].append(
+                {
+                    "key": "ci.pr_by_agent",
+                    "value": "no",
+                    "reason": "owner",
+                    "by": "owner",
+                    "date": "2026-10-29",
+                    "phase": "s1",
+                }
+            )
+
+        shown = self.next_of(triaged, source=EXAMPLE_STATE)
+        self.assertEqual((shown["stage"], shown["step"]), (2, 2))
+
+    def test_an_open_theme_is_checked_for_its_merge(self) -> None:
+        shown = self.next_of(lambda state: self.set_item(state, "F-003", "done"))
+        self.assertEqual((shown["stage"], shown["step"]), (2, 1))
+        self.assertEqual(
+            shown["text"],
+            "Stage 2, step 1: check whether T2 (pr_open) merged, and record each merge; "
+            "no other theme can start until they merge.",
+        )
+        self.assertEqual((shown["theme"], shown["check_first"]), (None, ["T2"]))
+
+    # --- S3.2: the next theme -----------------------------------------------------------------------------
+
+    def picked(self, statuses: dict[str, str], queued: Sequence[tuple[str, str]], **themes: str) -> dict[str, Any]:
+        """`next` for a triaged state whose items have `statuses` by check, plus `queued` (finding, check) items."""
+
+        def build(state: dict[str, Any]) -> None:
+            state["preferences"].append(
+                {
+                    "key": "ci.pr_by_agent",
+                    "value": "no",
+                    "reason": "owner",
+                    "by": "owner",
+                    "date": "2026-10-29",
+                    "phase": "s1",
+                }
+            )
+            template = state["items"][0]
+            state["items"] = []
+            for number, (check, status) in enumerate(statuses.items(), start=1):
+                state["items"].append(self.item(template, f"F-{number:03d}", check, status))
+            for finding, check in queued:
+                state["items"].append(self.item(template, finding, check, "queued"))
+            for theme, status in themes.items():
+                entry = next(entry for entry in state["themes"] if entry["id"] == theme)
+                entry.update(self.theme_fields(status))
+
+        return self.next_of(build, source=EXAMPLE_STATE)
+
+    @staticmethod
+    def item(template: dict[str, Any], finding: str, check: str, status: str) -> dict[str, Any]:
+        entry: dict[str, Any] = copy.deepcopy(template)
+        entry.update(finding=finding, check=check, theme=progress.CHECK_THEME[check], status=status)
+        if status in progress.NEEDS_REASON:
+            entry.update(reason="the owner said so", by="owner")
+        return entry
+
+    @staticmethod
+    def theme_fields(status: str) -> dict[str, Any]:
+        fields: dict[str, Any] = {"status": status, "phase": "s1", "branch": "agentic-readiness/s1-x"}
+        if status in ("pr_open", "merged"):
+            fields["pr"] = 7
+        if status == "merged":
+            fields["merged_sha"] = "aaaabbbbcccc"
+        return fields
+
+    def test_the_first_theme_with_queued_items_is_next(self) -> None:
+        shown = self.picked({}, [("F-101", "SEC-01"), ("F-102", "CMD-01")])
+        self.assertEqual((shown["stage"], shown["step"], shown["theme"]), (2, 2, "T1"))
+        self.assertEqual(shown["text"], "Stage 2, step 2: plan T1, the next theme.")
+
+    def test_a_theme_waits_for_an_unmerged_predecessor_with_work_left(self) -> None:
+        shown = self.picked({}, [("F-101", "CI-01"), ("F-102", "SEC-01")], T1="pr_open")
+        self.assertEqual((shown["stage"], shown["step"], shown["theme"]), (2, 1, "T3"))
+        self.assertEqual(shown["check_first"], ["T1"])
+        self.assertTrue(shown["text"].endswith("then T3 is next."), shown)
+
+    def test_a_merged_predecessor_lets_the_theme_start(self) -> None:
+        shown = self.picked({"CMD-01": "done"}, [("F-101", "CI-01")], T1="merged")
+        self.assertEqual(shown["theme"], "T4")
+
+    def test_a_predecessor_with_nothing_left_counts_as_satisfied(self) -> None:
+        shown = self.picked({"EXEC-01": "skipped", "EXEC-02": "deferred"}, [("F-101", "CI-01")])
+        self.assertEqual(shown["theme"], "T4")
+
+    def test_an_indirect_predecessor_with_work_left_holds_a_theme_back(self) -> None:
+        # T7 waits for T5, which waits for T4, which waits for T2. T4 and T5 have nothing left; T2 is open.
+        shown = self.picked({"EXEC-01": "done"}, [("F-101", "AGT-01")], T2="branch_open")
+        self.assertEqual((shown["stage"], shown["step"], shown["theme"]), (2, 1, None))
+
+    def test_a_cross_theme_item_neither_holds_its_theme_back_nor_starts_it(self) -> None:
+        # EXEC-03 belongs to T2 by family and is worked by T1's define-command-surface.
+        shown = self.picked({"CMD-01": "done"}, [("F-101", "EXEC-03"), ("F-102", "CI-01")], T1="merged")
+        self.assertEqual(shown["theme"], "T4")
+        alone = self.picked({}, [("F-101", "EXEC-03")], T1="merged")
+        self.assertEqual((alone["stage"], alone["theme"]), (5, None))
+        self.assertIn("no theme works the queued F-101", alone["text"])
+
+    def test_a_cross_theme_item_in_progress_is_resumed_in_the_playbook_theme(self) -> None:
+        shown = self.picked({"EXEC-03": "in_progress"}, [], T1="branch_open")
+        self.assertEqual((shown["stage"], shown["theme"]), (3, "T1"))
+        self.assertIn("F-001 (T1)", shown["text"])
+
+    def test_an_open_branch_with_queued_items_goes_on(self) -> None:
+        shown = self.picked({"CMD-01": "done"}, [("F-101", "CMD-02")], T1="branch_open")
+        self.assertEqual((shown["stage"], shown["step"], shown["theme"]), (3, 4, "T1"))
+        self.assertEqual(shown["check_first"], ["T1"])
+
+    def test_the_cross_theme_checks_come_from_the_catalogue_and_themes(self) -> None:
+        self.assertEqual(progress.cross_theme_checks(), {"EXEC-03": "T1", "TST-01": "T1", "EXEC-06": "T7"})
+
+    def test_the_predecessors_are_the_diagram_in_skill_md_and_themes_is_an_order_it_allows(self) -> None:
+        skill = (_implement_paths.REPO / "implement" / "SKILL.md").read_text(encoding="utf-8")
+        block = skill.split("flowchart LR", 1)[1].split("```", 1)[0]
+        edges: dict[str, set[str]] = {theme: set() for theme in progress.THEME_IDS}
+        for line in block.splitlines():
+            if "-->" in line:
+                before, after = line.split("-->")
+                edges[after.split()[0].split("[")[0]].add(before.split()[0].split("[")[0])
+        self.assertEqual({theme: set(earlier) for theme, earlier in progress.THEME_PREDECESSORS.items()}, edges)
+        for theme, earlier_themes in progress.THEME_PREDECESSORS.items():
+            for earlier in earlier_themes:
+                self.assertLess(progress.THEME_IDS.index(earlier), progress.THEME_IDS.index(theme))
+
+    def test_nothing_queued_and_no_open_theme_closes_out(self) -> None:
+        def finished(state: dict[str, Any]) -> None:
+            for item in state["items"]:
+                if item["status"] in ("queued", "in_progress"):
+                    item.update(status="blocked", reason="waits for the owner")
+            self.set_theme(state, "T2", "merged")
+
+        shown = self.next_of(finished)
+        self.assertEqual((shown["stage"], shown["step"]), (5, 1))
+
+
 class WorkspaceTests(TargetCase):
     """Every command but init finds the state in the folder --workspace names."""
 
@@ -522,6 +717,29 @@ class AdoptTests(TargetCase):
         before = tree_bytes(self.target)
         self.adopt_ok()
         self.assertEqual(tree_bytes(self.target), before)
+
+    def test_adopt_records_the_ref_tips_of_a_git_target(self) -> None:
+        _git.make_repo(self.target, files=())
+        envelope = self.adopt_ok()
+        ref_path = self.workspace / progress.ref_tips_name("example-service")
+        self.assertEqual(Path(envelope["data"]["ref_tips"]), ref_path)
+        document = json.loads(ref_path.read_text(encoding="utf-8"))
+        self.assertEqual([entry["ref"] for entry in document["refs"]], ["refs/heads/main"])
+        code, verified, err = call(["verify-refs", "--target", str(self.target), "--workspace", str(self.workspace)])
+        self.assertEqual(code, 0, (verified, err))
+
+    def test_adopt_of_a_target_without_git_warns_and_records_nothing(self) -> None:
+        envelope = self.adopt_ok()
+        self.assertIsNone(envelope["data"]["ref_tips"])
+        self.assertTrue(any("verify-refs cannot guard the history" in w for w in envelope["warnings"]))
+
+    def test_adopt_refuses_a_ref_record_the_workspace_already_holds(self) -> None:
+        self.workspace.mkdir()
+        (self.workspace / progress.ref_tips_name("example-service")).write_text("{}", encoding="utf-8")
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("a ref record already exists", envelope["data"]["error"])
+        self.assertFalse(self.json_path.exists())
 
     def test_the_envelope_lists_what_the_owner_may_remove(self) -> None:
         code, envelope, err = self.adopt()

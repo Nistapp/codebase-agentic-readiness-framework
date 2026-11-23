@@ -1,0 +1,187 @@
+[
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "key"
+    ],
+    "id": "register-index/row-1",
+    "intent": "The project-level MCP config that IDX-01 reads for the codebase-memory-mcp entry, also under --no-user-config.",
+    "origin": {
+      "path": "implement/playbooks/register-index.md",
+      "row": 1,
+      "step": "Step 2"
+    },
+    "to": [
+      ".mcp.json"
+    ],
+    "touches": [
+      "IDX-01"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "rule-line"
+    ],
+    "id": "register-index/row-2",
+    "mode": "add",
+    "origin": {
+      "path": "implement/playbooks/register-index.md",
+      "row": 2,
+      "step": "Step 2"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-10",
+      "IDX-01"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose",
+      "fenced-command",
+      "heading"
+    ],
+    "id": "register-index/row-3",
+    "mode": "add",
+    "note": "Only with document-only.",
+    "origin": {
+      "path": "implement/playbooks/register-index.md",
+      "row": 3,
+      "step": "Step 2"
+    },
+    "to": [
+      "AGENTS.md",
+      "docs/**/*.md"
+    ],
+    "touches": [
+      "DOC-05",
+      "EXEC-06",
+      "IDX-01"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "register-index/row-4",
+    "note": "Appends the harness copy's path; adds no negation.",
+    "origin": {
+      "path": "implement/playbooks/register-index.md",
+      "row": 4,
+      "step": "Step 3"
+    },
+    "to": [
+      ".gitignore"
+    ],
+    "touches": [
+      "IDX-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "rule-line"
+    ],
+    "id": "register-index/row-5",
+    "mode": "add",
+    "note": "In the section that already keeps tool guidance.",
+    "origin": {
+      "path": "implement/playbooks/register-index.md",
+      "row": 5,
+      "step": "Step 5"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "IDX-03"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "key"
+    ],
+    "id": "register-index/row-6",
+    "intent": "A language-server input the owner accepted, under the name its stack's server reads.",
+    "origin": {
+      "path": "implement/playbooks/register-index.md",
+      "row": 6,
+      "step": "Step 6"
+    },
+    "to": [
+      "tsconfig.json",
+      "pyrightconfig.json",
+      "go.work",
+      "Cargo.toml",
+      "*.sln"
+    ],
+    "touches": [
+      "AGT-02",
+      "CMD-01",
+      "EXEC-07"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "heading",
+      "prose"
+    ],
+    "id": "register-index/row-7",
+    "origin": {
+      "path": "implement/playbooks/register-index.md",
+      "row": 7,
+      "step": "Step 7"
+    },
+    "to": [
+      "docs/**/*.md"
+    ],
+    "touches": [
+      "DOC-05"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "register-index/row-8",
+    "note": "Appends .agentic-readiness/; adds no negation.",
+    "origin": {
+      "path": "implement/playbooks/register-index.md",
+      "row": 8,
+      "step": "Step 7"
+    },
+    "to": [
+      ".gitignore"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "rule-line"
+    ],
+    "id": "register-index/row-9",
+    "mode": "add",
+    "note": "One line at the top of the instruction file.",
+    "origin": {
+      "path": "implement/playbooks/register-index.md",
+      "row": 9,
+      "step": "Step 7"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-10"
+    ]
+  }
+]

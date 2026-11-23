@@ -1,0 +1,84 @@
+[
+  {
+    "check": "AGT-10",
+    "home": {
+      "path": "implement/playbooks/register-index.md",
+      "quote": "So make `.mcp.json` the one source of truth, and have the instruction file say: \"Tools that read another file copy the `codebase-memory-mcp` entry from `.mcp.json`.\"",
+      "section": "implement/playbooks/register-index.md#playbook-register-index/inputs-to-ask"
+    },
+    "move": "register-index/row-2",
+    "note": "The fixed wording has no deferral phrase, so the .json reference on the line does not fail AGT-10.",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-05",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+      "section": "implement/SKILL.md#implement/stage-3-apply"
+    },
+    "move": "register-index/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/register-index.md",
+      "quote": "Put a registration command in a fenced block of `AGENTS.md` only when its first word resolves.",
+      "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
+    },
+    "move": "register-index/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-02",
+    "home": {
+      "path": "implement/playbooks/register-index.md",
+      "quote": "If either verdict falls, revert the commit and tell the owner.",
+      "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
+    },
+    "move": "register-index/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-01",
+    "home": {
+      "path": "implement/playbooks/register-index.md",
+      "quote": "If either verdict falls, revert the commit and tell the owner.",
+      "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
+    },
+    "move": "register-index/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-07",
+    "home": {
+      "path": "implement/playbooks/register-index.md",
+      "quote": "Read EXEC-07's rubric first: a pyright config beside mypy may count as a second type-checker config.",
+      "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
+    },
+    "move": "register-index/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-05",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+      "section": "implement/SKILL.md#implement/stage-3-apply"
+    },
+    "move": "register-index/row-7",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-10",
+    "home": {
+      "path": "implement/playbooks/register-index.md",
+      "quote": "The line names a one-time step, not a file to read before every change.",
+      "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
+    },
+    "move": "register-index/row-9",
+    "note": "The old example line passed only because the deferral pattern skips \"before your\"; the new one holds no deferral phrase.",
+    "status": "kept"
+  }
+]

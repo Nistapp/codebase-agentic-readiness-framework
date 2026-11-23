@@ -15,8 +15,8 @@ which leaves no trace in the verdict.
 
 A flat list causes three defects:
 
-1. **Precedence by kind, not by depth.** A kind order puts `package.json` above `Makefile` whatever their paths.
-   With the shallowest file of each kind picked alone, a nested `package.json` outranks a root `Makefile`.
+1. **A runner at any depth.** A manifest at any depth counts as a runner. A kind order puts `package.json`
+   above `Makefile` whatever their paths, so a nested `package.json` outranks a root `Makefile`.
 2. **Presence at any depth.** A name matched at any depth credits a misplaced hygiene file
    (`HYG-02/03/05/06/08/09`). `HYG-02`'s own text places the file at the root, under `.github/` or under `docs/`.
 3. **Carried data is indistinguishable from the project.** Nothing records that `tests/fixtures/`,
@@ -30,19 +30,28 @@ decide how a monorepo's components are scoped.
 
 **Three rules, applied once, in the inventory and the runner resolver, so that every check gets the same answer.**
 
-1. **Runner precedence is depth first.** A runner is ranked by `(depth of its manifest, kind rank, path)`. A root
-   manifest of any kind beats a nested one; among nested manifests the shallowest wins; a tie at equal depth is
-   broken by `RUNNER_PRECEDENCE` (kind), then by path. The rank is one function in
-   `audit/rules/checks/_common.py` (`runner_rank`) that the resolver (`resolve_all_verbs`), `runner_commands` and
-   `CMD-03`'s choice of a primary runner all use. Precedence is applied per verb: a root `Makefile` that does not
-   define `lint` does not hide a nested manifest that does.
+1. **Only a root manifest is a runner.** A `package.json`, `Makefile`, Taskfile, `pyproject.toml`, Gradle or
+   Maven build counts only at the repository root. Its tool reads it there (`_at_root` in
+   `audit/rules/checks/_common.py`). Only a root `gradlew` or `mvnw` launches that build. A nested manifest, such
+   as `tools/Makefile` or `packages/web/package.json`, is not a runner: no check reads its verbs or cites it.
+   Among the root runners, `RUNNER_PRECEDENCE` (kind) decides. One sort key, `runner_rank`, holds this order.
+   The resolver (`resolve_all_verbs`), `runner_commands` and `CMD-03`'s choice of a primary runner all use it.
+   Precedence is applied per verb: a root `Makefile` that does not define `lint` does not hide another runner
+   that does.
 2. **Carried data is set aside.** A file whose path has a directory component named `templates`, `template`,
    `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` (compared whole and case-insensitively; the
    target's own root name is never part of the comparison) is *carried data*. It is not a runner, not a source of
    hygiene, tooling, baseline or coverage evidence, not part of a directory census, and no check can read it. The
-   list is one constant, `CARRIED_DATA_DIRS` in `audit/scan.py`. **Exception:** when no manifest remains outside
-   the carried directories and a carried directory holds one, nothing is set aside, because that directory then
-   holds the only manifest in the repository and is the project.
+   list is one constant, `CARRIED_DATA_DIRS` in `audit/scan.py`. Two exceptions:
+   * **Below a JVM source root, a folder is a package.** A JVM source root is `src/<source set>/<language>/`.
+     The language is `java`, `kotlin`, `scala` or `groovy`; the source set has any name (`main`, `test`,
+     `androidTest`). A carried name below such a root is never carried data. So `src/main/java/com/example/` is
+     code. `src/main/resources/templates/`, `src/test/resources/fixtures/` and an `examples/` folder above the
+     root are still carried data. The root is matched at any depth (`app/src/main/kotlin/`), by exact name, in
+     `_carried_directory`.
+   * **A carried directory can be the project.** Sometimes no manifest remains outside the carried directories,
+     and a carried directory holds one. Then nothing is set aside: that directory holds the only manifest in the
+     repository and is the project.
 3. **The report says what it set aside.** `inventory.set_aside` in the report lists each outermost carried
    directory with its file count; `inventory.files_set_aside` totals them. The Markdown report shows both in
    "Scan coverage". A reader can therefore explain a verdict that surprises them, and see when a real directory
@@ -68,7 +77,11 @@ vendored trees). Template, example and fixture directories do not need it.
 | Detect "a nested project" structurally (a directory with its own manifest and no parent link is not the project) | In a monorepo that directory is a component. The rule would set aside exactly the directories ADR-0003 and issue #20 want scoped, not hidden. |
 | Consider only the repository root for every presence check | `docs/`, `.github/` and `.gitlab/` are conventional homes for repository-level files, and monorepo tooling lives in subdirectories. |
 | Read `.gitattributes` (`linguist-vendored`, `export-ignore`) to find carried data | Needs git and an attribute almost no repository sets; the engine must work on a bare directory (ADR-0006: `None`, never an inference, when git cannot answer). |
+| Count nested manifests as runners, ranked below the root ones by depth | A nested manifest's tool does not read it from the root: `make` at the root ignores `tools/Makefile`. Ranking it still lets it supply a verb the root lacks, or count as a second gate for `CMD-03`, and a finding then cites a file the repository's commands never run. |
 | Let nested manifests outrank the root when they declare more verbs | Rewards the wrong file: the repository's gate is the one at its root, and a template generated into a new project will always declare more than the framework that generates it. |
+| Apply the names everywhere, with no JVM exception | Spring Initializr's default group is `com.example`, so a generated project's code and tests under `src/main/java/com/example/` would vanish from every check, and `NAV-02` and the `TST` checks would report a repository with no entry point and no tests. |
+| Drop the singular names `example` and `template` from the list | Fixes `com.example` but lets a real `example/` sample folder with its own manifest rejoin the project, where it becomes a second runner for `CMD-03`. It leaves a package such as `com.acme.samples` set aside. |
+| Exempt every source folder of every language (`src/example/` in Python, too) | Outside the JVM layout, nothing in the path tells a package from a folder of samples. Below `src/<set>/<language>/` every folder is a package by the build tool's convention. |
 | A flag to turn set-aside off | Cheap, but no repository needs it. The report lists every set-aside directory, so a misfire is visible. |
 
 ## Consequences
@@ -83,16 +96,19 @@ vendored trees). Template, example and fixture directories do not need it.
 
 ### Negative / Trade-offs
 
-* **A real directory with a carried name is set aside.** A Java package `com.acme.samples` or a Python package
-  named `scaffold` disappears from every check. The report names it; there is no flag to bring it back (see
-  Alternatives). The risk is judged smaller than the one it removes: the three names that matter most for
-  repositories that carry data (`templates`, `fixtures`, `examples`) rarely name source packages.
+* **A real directory with a carried name is set aside outside a JVM source root.** A Python package named
+  `scaffold`, or `src/example/`, disappears from every check. So does a JVM package kept outside the standard
+  layout. The report names it; there is no flag to bring it back (see Alternatives). The risk is judged smaller
+  than the one it removes. Outside the JVM layout, `templates`, `fixtures` and `examples` rarely name source
+  packages, and they are the names that matter most for repositories that carry data.
+* **The JVM exception trusts the layout.** A folder of real fixtures placed below `src/test/java/` is read as code,
+  because the build tool compiles it as code.
 * **Hazard checks lose the carried files too.** A real secret committed under `examples/` is not scanned by
   `SEC-02`. The alternative (hazards read carried data, credits do not) would make the engine flag every fixture
   that holds a fake credential on purpose, including its own. `inventory.set_aside` shows that the directory was
   not read.
-* **Monorepo scoping is not covered.** A nested `package.json` outside the list keeps its place: it is ranked
-  below the root's manifests, and `CMD-03` sees it as a second runner. Declaring components for `DOC-01/02`,
-  `EXEC-04/07` and `NAV-01` is GitHub issue #20.
+* **Monorepo scoping is not covered.** A nested `package.json` is not a runner (rule 1). A package's own
+  scripts give the repository no verb, and `CMD-03` sees no second runner in them. Declaring components for
+  `DOC-01/02`, `EXEC-04/07` and `NAV-01` is GitHub issue #20.
 * **Hygiene presence is stricter.** A repository that keeps its only `CONTRIBUTING.md` in `packages/web/` fails
   `HYG-05`. These checks are informational and never score.

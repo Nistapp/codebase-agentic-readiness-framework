@@ -21,9 +21,11 @@ anchor is the text after the first ``#``, kept as written; an empty anchor is no
 
 :func:`link_edges` makes the edges of one file. A **links** edge runs from the address of the section that holds
 the link (the file node for the text before the first heading and the frontmatter) to the target file node or,
-with an anchor that names a heading of a parsed Markdown file, to that section node. Its confidence is ``exact``,
-and it keeps the anchor. A link whose target does not resolve is kept, not dropped: its edge still points at the
-resolved path, and a :class:`Link` with a ``problem`` flags it (:data:`PROBLEMS`).
+with an anchor that names a heading of a parsed Markdown file, to that section node. It keeps the anchor. Its
+confidence is ``exact``, except for a link to a folder: the index has no folder nodes, so no node has that address,
+and the edge is ``name-match``. A link whose target does not resolve is kept, not dropped: its edge still points at
+the resolved path and keeps the problem as its ``broken`` flag, and a :class:`Link` with a ``problem`` names it
+(:data:`PROBLEMS`).
 
 A **name-match** edge comes from a bare file name in prose: a token such as ``recipe_lint.py`` or
 ``check-a-recipe-change.md`` that has an extension, is not part of a path (no ``/`` next to it), and lies outside
@@ -45,7 +47,7 @@ from typing import Collection, Mapping, Sequence
 from urllib.parse import unquote
 
 from .markdown import Document
-from .model import Edge
+from .model import LINK_PROBLEMS, Edge
 
 __all__ = [
     "PROBLEMS",
@@ -62,7 +64,7 @@ __all__ = [
 
 #: Why a link's target does not resolve: the path leaves the repository, no tracked file or folder has the path,
 #: or the anchor names no heading of the (parsed Markdown) target.
-PROBLEMS = ("outside", "missing", "anchor")
+PROBLEMS = LINK_PROBLEMS
 
 _SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]+:")
 _NAME = re.compile(r"(?<![\w./\\-])\w[\w.-]*(?![\w/\\-])")
@@ -364,7 +366,9 @@ def link_edges(document: Document, holders: Sequence[str], context: LinkContext)
         target = resolved
         if anchor is not None and problem is None:
             target = context.anchors.get(resolved, {}).get(anchor, resolved)
-        edges.setdefault(Edge(kind="links", source=source, target=target, anchor=anchor), None)
+        confidence = "name-match" if resolved in context.folders else "exact"  # no node has a folder's address
+        edge = Edge(kind="links", source=source, target=target, confidence=confidence, anchor=anchor, broken=problem)
+        edges.setdefault(edge, None)
         if problem is not None:
             problems.setdefault(Link(source, found.text, resolved, anchor, problem), None)
     folder = posixpath.dirname(path)

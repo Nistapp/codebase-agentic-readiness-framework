@@ -50,7 +50,7 @@ a fix. The state files keep CON-04 in T7 so the theme reads it.
 
   Read `do-not-do.draft.md` beside the report. Propose only entries that match this repository (a path the scan
   observed); drop the canonical patterns that match nothing here. If the draft cannot be written (CON-04 `UNKNOWN`,
-  the reason is in its summary), list the paths by hand with the commands in Steps 2.
+  the reason is in its summary), list the paths by hand with the commands in [Steps](#generic) step 2.
 - Preferences this playbook reads, when present:
 
 | Key | Effect |
@@ -69,9 +69,9 @@ No tool is installed. Ask:
    `Deny`, `Off-limits`) or, failing that, by three or more prohibition lines in its body. A section found only by
    its body falls out of the check if a later edit trims it below three lines, so when the heading has no trigger
    word, propose adding one (`## Security and safety: never`); the owner decides.
-2. **Which test directories.** Show the list from Steps 2. Default: name each directory in its own code span. For
-   many nested test folders, offer one ignore-style pattern that covers them (a bare name such as `__tests__/`
-   covers that name at any depth); the owner picks.
+2. **Which test directories.** Show the list from [Steps](#generic) step 2. Default: name each directory in its own code
+   span. For many nested test folders, offer one ignore-style pattern that covers them; the owner picks. A bare name
+   such as `__tests__/` covers that name at any depth.
 3. **Generated paths.** From the CON-04 draft and the build files: build output, generated clients, vendored code,
    lock files a tool regenerates. Ask which the owner wants named; a lock file is usually "regenerate with the tool,
    never edit by hand", not "never touch".
@@ -116,7 +116,8 @@ No tool is installed. Ask:
    `.codebase-memory/`, `.opencode/`, `.agentic-tdd/`: confirm an ignore rule covers it
    (`git check-ignore -v <root>/x`) and `git ls-files <root>` prints nothing. Use
    [`establish-docs-contract`](establish-docs-contract.md#steps) step 7 for the procedure (add the rule; untrack only
-   what the owner confirms is scratch). A root that does not exist needs nothing.
+   what the owner confirms is scratch). A root that does not exist needs nothing. The same rule and untracking
+   keep "`DOC-03` artefacts/ exists and is ignored" true for `artefacts/`.
 5. **Stub files.** A vendor pointer file (`CLAUDE.md` holding `@AGENTS.md`) does not need its own prohibitions: the
    harness reads `AGENTS.md` through it. If a vendor file carries prohibitions of its own, do not edit it here; hand
    it to the "ask about stub files" rule in [`adapt-agents-md`](adapt-agents-md.md#inputs-to-ask) (Inputs 3).
@@ -168,8 +169,8 @@ layout name each app's directories (`app-a/test/`), not a root `test/` that does
 - **A test directory the owner does not want named** (fixtures that are data, a folder being deleted): the item is
   `partial` with `--debt "what=test directories not named in the deny list,count=N"`, or `skipped` if the owner says
   so. CON-02 keeps reading `PARTIAL`.
-- **A tracked scratch file the owner wants kept:** `partial` with the count of tracked files under the root; nothing
-  is untracked without the owner.
+- **A tracked scratch file the owner wants kept:** `partial` with
+  `--debt "what=tracked files under the scratch root,count=N"`; nothing is untracked without the owner.
 - **Harness permission gaps:** reported, not fixed (unless `agents_md.harness_deny=yes`). They are not debt on any
   check, because no check scores them; record them as a note on the AGT-07 item.
 
@@ -201,7 +202,8 @@ scratch files to the index.
 - Do not untrack, ignore or delete a file the owner has not confirmed is scratch, and do not change which env files
   are tracked; state the owner's decision instead.
 - Do not paste the CON-04 draft whole: an entry that matches nothing in the repository is noise.
-- Do not open, print or quote a secret store while listing the paths.
+- Do not open, print or quote a secret store while listing the paths. This echoes the hard
+  rule [Never touch secrets](../SKILL.md#hard-rules).
 
 ## State updates
 
@@ -221,4 +223,5 @@ python3 implement/tools/progress.py pref set agents_md.harness_deny no \
 ```
 
 Record `agents_md.harness_deny` only when the owner answers; absent means report only. The theme closes once, after
-both T7 playbooks ([Stage 4](../SKILL.md#stage-4-close-the-theme)).
+both playbooks of the theme T7 AGENTS.md and governance ([themes](../SKILL.md#themes),
+[Stage 4](../SKILL.md#stage-4-close-the-theme)).

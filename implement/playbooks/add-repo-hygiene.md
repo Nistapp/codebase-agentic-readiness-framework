@@ -136,7 +136,8 @@ the policy files, and for nothing else:
    home), and the PR rules. At least 200 characters of body text, no `todo`, `tbd`, `placeholder`, `coming soon` or
    `fill this in` anywhere in it, more than a title. Do not copy another repository's description. A proprietary
    repository may describe itself in full; an open-source one describes only what is in it. The README is one more page
-   to keep true, so link to the docs rather than restate them.
+   to keep true, so link to the docs rather than restate them. Copy each fenced command from a verb or script that
+   exists. The check "`EXEC-06` Documented commands resolve" reads every fenced command in the root README.
 3. **CODEOWNERS (HYG-02).** Create or extend the file as Inputs 2 says. Put it where the host reads it:
    `.github/CODEOWNERS` on GitHub, `.gitlab/CODEOWNERS` on GitLab. An existing file at the root or under `docs/`
    stays where it is. Keep every existing path rule.
@@ -149,6 +150,8 @@ the policy files, and for nothing else:
 5. **CONTRIBUTING and SECURITY (HYG-05, HYG-06).** CONTRIBUTING: where the setup is (link, do not restate), the gate
    command, the branch and PR flow as the repository actually runs it (squash into the integration branch, who merges),
    the title rule, and where `AGENTS.md` fits. Write it as a diff when a generic one exists. SECURITY: as Inputs 3.
+   Write a new CONTRIBUTING at the root, even when other pages live under `docs/`. The check "`TST-04` Fast path
+   documented" reads it only there.
 6. **CHANGELOG and release process (HYG-07, HYG-08).** Find out who writes the changelog:
    - **A release tool writes it** (`release-please-config.json`, `.releaserc*`, `changesets`, a release workflow that
      mentions `CHANGELOG`): do not hand-write or seed `CHANGELOG`. The tool creates it at the first release; a seeded
@@ -158,10 +161,16 @@ the policy files, and for nothing else:
    - **No tool:** offer the keep-a-changelog skeleton from the template, one entry per release, and let the owner
      decide.
 
-   The release-process page (HYG-08) is a short document, not the 358-line template. A workflow file named
-   `release.yml` does not count; the check wants prose. It states: which tool opens release pull requests and tags,
-   what a merge to the release branch triggers, how versions are decided (the commit or title convention), who
-   merges the release pull request, and that agents never tag or release (when `agents_md.release_tags` says so).
+   The release-process page ("`HYG-08` Release process documented") is a short document, not the long
+   [`RELEASE_PROCESS.md`](../../greenfield/templates/RELEASE_PROCESS.md) template. A workflow file named
+   `release.yml` does not count; the check wants prose. It states:
+
+   - which tool opens release pull requests and tags;
+   - what a merge to the release branch triggers;
+   - how versions are decided (the commit or title convention);
+   - who merges the release pull request;
+   - that agents never tag or release (when `agents_md.release_tags` says so).
+
    Name it with `release` in the file name, at the root or `docs/`. It needs no CI edit; if the page would need a
    workflow change to become true, say so as a finding instead of editing CI.
 
@@ -271,6 +280,10 @@ the policy files, and for nothing else:
      the source of truth. If the state says the platform plan cannot enforce protection (a private repository on a
      free plan returns an error for rulesets), the page says **"recorded, not enforced"** at the top; it must not
      read as enforcement.
+   - **Name each newly protected branch.** T7 and T4 ran before this theme, so their files do not name a branch
+     that a new rule file protects. Add the name to the `AGENTS.md` release sentence (Commits row 16). The check
+     "`AGT-09` Branch and release boundary declared" reads it there. Add it to the local branch guard too (row 17),
+     for "`TOOL-07` Local guard against commits to a protected branch". Change no other word of either file.
 8. **Dependency updates (HYG-09).** Read what exists first; never replace one tool with the other.
    - **Tool.** Keep the tool the repository already uses. With none: Dependabot on GitHub, Renovate on GitLab,
      Azure DevOps or Bitbucket, where Dependabot does not run.
@@ -304,6 +317,9 @@ the policy files, and for nothing else:
      dependencies only; say so in the pull request body. Source: Renovate's docs, "Security presets"
      (`docs.renovatebot.com/presets-security/`) and the `vulnerabilityAlerts` and `osvVulnerabilityAlerts`
      options (`docs.renovatebot.com/configuration-options/`).
+   - **Custom managers.** The check "`EXEC-08` Tool versions visible to dependency automation" skips each file
+     that a Renovate `customManagers` entry matches. Add such an entry only for a file whose versions Renovate
+     really updates.
    - **Owner action.** Record "turn on Dependabot security updates in the repository settings" as a note on the
      item: an agent can neither read nor set it.
    - When HYG-09 passed and has no item, name it in the pull request body and change nothing.
@@ -313,7 +329,7 @@ the policy files, and for nothing else:
    missing. Then follow the owner's answer (Inputs 5). The file itself is `HYG-05`'s: this step improves a file that
    exists and never creates one. Text comes from
    [`greenfield/templates/CONTRIBUTING.md`](../../greenfield/templates/CONTRIBUTING.md), adapted to the repository's
-   own commands, branch names and file names (D18).
+   own commands, branch names and file names.
    - **a. Propose, from facts.** For each missing item, write one proposed line from what the repository shows. Cite
      the file behind it. Three items:
      - **Setup:** a link to the place that holds the setup command (`README.md` or `AGENTS.md`). Link the command;
@@ -331,7 +347,14 @@ the policy files, and for nothing else:
      file per commit, and leave a link in the old place. Under `suggest`, name the rules in the pull request body
      and move nothing.
    - **d. Check the neighbours.** The `AGENTS.md` branch and release sentence (`AGT-09`) and the "same change set"
-     rule (`AGT-04`) must still read as they did. Run the engine's `AGT-04` and `AGT-09` after a move.
+     rule (`AGT-04`) must still read as they did. Run the engine's `AGT-04` and `AGT-09` after a move. Three
+     more readers need care:
+     - A line of the prohibitions section stays in `AGENTS.md`. "`AGT-07` Do-not-do / deny rules present",
+       "`CON-01` Allow/deny artifact present" and "`CON-02` Test directories protected" read it there.
+     - The link left behind is a reference, never "read `CONTRIBUTING.md` first". That form is a deferral for
+       "`AGT-10` Instruction indirection resolved".
+     - The conventions file keeps its other items for "`AGT-13` Coding conventions written". Run these five checks
+       after the move too; a fall stops it.
 
    Then run the engine's `HYG-13`.
 
@@ -374,6 +397,8 @@ One commit per file or concern. A check that already passes makes no commit.
 | 13 | Dependency-update file | `HYG-09` | config |
 | 14 | Contributing items the owner accepted (only at `PARTIAL` or `FAIL`; one per item) | `HYG-13` | hand |
 | 15 | Git rules moved into `CONTRIBUTING.md`, with a link left behind (only on the owner's yes; one per source file) | `HYG-13` | hand |
+| 16 | A newly protected branch named in the `AGENTS.md` release sentence (after row 9, only for a branch it does not name) | - | hand |
+| 17 | A newly protected branch added to the local branch guard (after row 9, only when a guard exists and misses it) | - | wiring |
 
 ## Continue on error
 
@@ -384,11 +409,12 @@ One commit per file or concern. A check that already passes makes no commit.
   revisit trigger in the note.
 - **HYG-11 on a plan that cannot enforce protection:** `done` for the check (the files and the page exist) with the
   note "recorded, not enforced"; the unenforced setting is an owner action, not debt.
-- **HYG-11 on GitLab without Terraform:** `partial` (the engine reads the page only as recorded), with the note
-  "no repository file for GitLab protected branches; declare them in Terraform to close" and the setting as an owner
-  action. It is not debt.
-- **HYG-13 with items the owner declines, or a fact the repository does not show:** the item is `partial`, and the
-  note names each missing item (`setup`, `gate`, `workflow`). It is not debt, because the check is unscored.
+- **HYG-11 on GitLab without Terraform:** `partial` (the engine reads the page only as recorded), with
+  `--debt "what=protected branches with no repository file,count=N"`. N is the number of branches the page protects.
+  The note says "declare them in Terraform to close", and the setting is an owner action.
+- **HYG-13 with items the owner declines, or a fact the repository does not show:** the item is `partial`, with
+  `--debt "what=contributing items missing (<names>),count=N"`. The names are each missing item (`setup`, `gate`,
+  `workflow`), and N is how many. `progress.py` refuses `partial` without debt, even for this unscored check.
 - **HYG-13 with no contributing file:** the check gives `UNKNOWN`. Close the `HYG-05` item first, then run Step 9.
 - **A missing licence:** the item is `blocked` until the owner chooses one; it is not debt the playbook can fix.
 - None of this is a count of violations, so no ratchet or baseline file applies: report-only is the wiring.
@@ -397,7 +423,7 @@ One commit per file or concern. A check that already passes makes no commit.
 
 | Check | Command or file | Expected |
 |---|---|---|
-| HYG-01 | `wc -m README.md`; read the first lines; grep for the marker words | Root file, 200+ characters of body, no marker, not a bare title; `PASS` |
+| [`HYG-01`](../../audit/checks/13-hygiene-informational.md#hyg-01--readme-present-and-non-placeholder) | `wc -m README.md`; read the first lines; grep for the marker words | Root file, 200+ characters of body, no marker, not a bare title; `PASS` |
 | HYG-02 | `ls .github/CODEOWNERS` (or `.gitlab/`); `test -e` on each path in a rule | File present; routing-only header when no approval is required; `PASS` |
 | HYG-03 | `ls .github/pull_request_template*` | Present; `PASS` |
 | HYG-04 | `ls .github/ISSUE_TEMPLATE/` | At least one file; `PASS` |
@@ -417,6 +443,7 @@ its required-check entry first, or the release branch requires a check that neve
 repository changes: GitHub settings (private
 vulnerability reporting, branch protection, required reviews) are never touched, so there is nothing to put back.
 A contributing item (Step 9) reverts alone. A moved rule reverts alone too, and puts the lines back in their old file.
+Rows 16 and 17 name the branch that row 9 protects: revert them with row 9, before it.
 
 ## Do-not-do
 
@@ -426,7 +453,8 @@ A contributing item (Step 9) reverts alone. A moved rule reverts alone too, and 
 - Do not apply a ruleset file (`gh api -X POST` or `PUT`); the owner does.
 - Do not invent a mailbox, a response time or a second reviewer.
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
-- Do not copy a private runbook, another repository's page, or its values into a repository's file.
+- Do not copy a private runbook, another repository's page, or its values into a repository's file. This echoes
+  the hard rule [Keep private content private](../SKILL.md#hard-rules).
 - Do not choose a licence.
 - Do not add a contributing item the owner has not accepted, or a rule the repository does not show. Do not write
   contributing text that does not come from `greenfield/templates/`.
@@ -459,8 +487,9 @@ python3 implement/tools/progress.py pref set security.disclosure <github-private
 python3 implement/tools/progress.py pref set contributing.content <suggest|suggest-and-move|skip> \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
-  --commit <sha> --note "contributing items missing (gate); owner declined the line"
+  --commit <sha> --debt "what=contributing items missing (gate),count=1" --note "owner declined the line"
 ```
 
-Record a preference only when the owner answers; absent means the default above. The theme closes once, after
-both T8 playbooks ([Stage 4](../SKILL.md#stage-4-close-the-theme)).
+Record a preference only when the owner answers; absent means the default in [Inputs to ask](#inputs-to-ask). The
+theme closes once, after both playbooks of the theme T8 Hygiene and index ([themes](../SKILL.md#themes),
+[Stage 4](../SKILL.md#stage-4-close-the-theme)).

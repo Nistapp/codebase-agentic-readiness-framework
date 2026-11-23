@@ -30,7 +30,7 @@ section, one commit at a time ([details](#no-instruction-file-yet)).
 | AGT-09 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-09--branch-and-release-boundary-declared) | One release-boundary sentence built from the state and the repository |
 | AGT-10 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-10--instruction-indirection-resolved) | A "read X first" deferral becomes an ordinary link, with the must-always rules moved into `AGENTS.md` |
 | AGT-11 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-11--instructions-are-specific-and-not-inferable) | Generic text moves to `docs/`; contradicted rules become target state with the exception count; stale lines corrected |
-| AGT-12 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-12--communication-rules-stated) | A "How to write for people" section that names the reader, how to report and how to ask for a decision. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
+| AGT-12 | [02-agent-governance-2.md](../../audit/checks/02-agent-governance-2.md#agt-12--communication-rules-stated) | A "How to write for people" section that names the reader, how to report and how to ask for a decision. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
 | AGT-13 | [02-agent-governance-2.md](../../audit/checks/02-agent-governance-2.md#agt-13--coding-conventions-written) | Writes `CONVENTIONS.md` from the greenfield template when no conventions exist; at `PARTIAL`, suggests the missing items and adds the ones the owner accepts. Trigger: a confirmed finding |
 | EXEC-06 | [09-execution-determinism.md](../../audit/checks/09-execution-determinism.md#exec-06--documented-commands-resolve) | Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline |
 | TST-04 | [10-tests.md](../../audit/checks/10-tests.md#tst-04--fast-path-documented) | Verification only, when T5 wrote the fenced single-test line; written here when the item sits in T7 |
@@ -86,7 +86,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    goes through `progress.py skip` by the owner.
 2. **Boundary rules (AGT-06).** Propose two or three rules from the code index (which directory may import which,
    which layer owns persistence, which folder is generated or vendored). The owner picks; never invent a boundary
-   the code does not show. If the code index shows no boundary, ask the owner for one or record the item `partial`.
+   the code does not show. If the code index shows no boundary, ask the owner for one or record the item `partial`
+   (see Continue on error).
    With no code index, a `grep` over the import lines can stand in for it to check a layer rule (which directory
    imports which); say which one you used.
 3. **Vendor pointer files (AGT-08, the "ask about stub files" rule).** Default `keep`:
@@ -95,8 +96,10 @@ engine. The questions are about text. Ask them per finding, before the diff for 
      line to `AGENTS.md` (Steps 7). Ask before deleting anything; deletion is the owner's choice
      (`agents_md.stubs=delete-asked`) and loses that harness's reach.
    - A vendor file that carries extra rules beside the pointer: offer to move those rules into `AGENTS.md` (move,
-     not copy) and ask whether the vendor file then becomes the one-line pointer. A rule that only makes sense for
-     that harness (a tool preference, a harness setting) may stay there; say so in the pull request, under
+     not copy) and ask whether the vendor file then becomes the one-line pointer. Move a line that names
+     `STYLE_GUIDE.md` as well: "`DOC-02` docs/STYLE_GUIDE.md exists" reads that name in `AGENTS.md`. A rule that
+     only makes sense for that harness (a tool preference, a harness setting) may stay there; say so in the pull
+     request, under
      "What changed".
    - A vendor file with independent rules and no pointer (a true competitor): reconcile its rules into `AGENTS.md`
      and offer the one-line pointer. Never delete it unasked.
@@ -125,7 +128,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
       engineer who knows Java and Gradle, but not this repository or its terms". a. the draft (default); b. the
       owner's edit. Never ask the owner to write it from nothing.
    2. **The docs language** (`docs.language`). a. English, `en` (default); b. another language: the owner supplies
-      the rules in that language, and the item is `partial`, because the check reads English words.
+      the rules in that language, and the item is `partial` (see Continue on error), because the check reads
+      English words.
    3. **The long form** (`agents_md.comm_long_form`): a separate rules file. It starts from the greenfield template
       [`COMMUNICATION_RULES.md`](../../greenfield/templates/docs/COMMUNICATION_RULES.md). a. no (default): the style
       guide holds the docs rules ([`establish-docs-contract`](establish-docs-contract.md)); b. yes.
@@ -177,7 +181,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    lock regeneration command) is added here if it is missing, verified if it is present.
 3. **Single test (TST-04).** If T5 wrote the fenced single-test line, verify it is still fenced and still matches the
    runner. If the item sits in T7, add one: `./gradlew test --tests 'org.example.FooTest'`,
-   `npx jest -t '<test name>'` (Jest needs `-t` or `--testNamePattern`; a path alone is not read as a single test),
+   `npx jest -t '<test name>'` (or a `.test.` or `.spec.` file path),
    `python3 -m unittest tests.test_module -k name`. The framework's own [`AGENTS.md`](../../AGENTS.md#commands)
    is the worked example.
 4. **Documentation contract and boundaries (AGT-03, AGT-06).** Three facts, each on its own line: `docs/` is the
@@ -191,7 +195,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    exists), naming the triggers and the same change set. The framework's own wording is the example:
    "When a change alters a public interface, observable behaviour, the architecture or a decision, update the
    affected documentation and the decision records in the same change set." Name this repository's decision log
-   path (`docs/adr/`) if T6 created one.
+   path (`docs/architecture/adrs/`) if T6 created one.
 6. **Release boundary (AGT-09).** Build one sentence from facts, never from a template:
    - the branches that exist: the integration branch (from the state or the branch rule already in the file) and
      the default branch (`git symbolic-ref refs/remotes/origin/HEAD`);
@@ -215,21 +219,30 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    Releases are cut by release-please." Re-check the sentence whenever `ci.pr_by_agent` or
    `agents_md.release_tags` changes. The prohibition half also lands in the prohibitions section through
    [`add-deny-rules`](add-deny-rules.md) (default branch); keep the two consistent, do not state the rule twice in
-   different words.
+   different words. The sentence is the one line of its section that holds never, do not or must not (Step 14).
+   Keep it the only one. Three such lines make the section a prohibitions section for "`AGT-07` Do-not-do / deny
+   rules present"
+   ([its Engine field](../../audit/checks/02-agent-governance.md#agt-07--do-not-do--deny-rules-present)).
+   Then "`CON-01` Allow/deny artifact present" and "`CON-02` Test directories protected" read it too.
 7. **Reach and vendor files (AGT-08).** Add one line near the top of `AGENTS.md`: `This file is read by <harnesses>.`
    Name only harnesses that really reach it: native `AGENTS.md` readers, plus each harness whose vendor file points
    at it (a `CLAUDE.md` that imports `@AGENTS.md` makes Claude Code a reader). The engine takes the line as given; the
    line must be true. Then handle each vendor file per Inputs 3. A shadowed pair or an override file is reported to
    the owner with the harness it affects; do not delete either side unasked.
+   Close all `AGT-08` findings here as one item. The audit may list up to three: vendor files, a shadowed pair
+   and harness reach.
 8. **Deferral (AGT-10).** Find the "read X first" line. Per Inputs 4: list the must-always rules in X that
    `AGENTS.md` does not already state, propose moving them (a diff that adds them to `AGENTS.md` and, if the owner
    agrees, removes them from X, so the rule lives in one place), and turn the deferral into a reference link. Check
    the tree or layout description in X against the repository while there: a stale tree is reported, and fixed only
-   if the owner asks (X is not this playbook's file).
+   if the owner asks (X is not this playbook's file). X may be the conventions file or `CONTRIBUTING.md`. Then run
+   "`AGT-13` Coding conventions written" and "`HYG-13` Contributing rules written" after the move. If either verdict
+   falls, put the rule back in X.
 9. **Specificity (AGT-11).** Classify every rule line as the check does (specific or generic), and verify every
    specific line against the repository: the command resolves, the path exists, the convention holds in the code.
    Then, per Inputs 5:
-   - move each generic block to the `docs/` page and leave one link line;
+   - move each generic block to the `docs/` page and leave one link line. Move only a section that no root-only
+     check reads: the sections Step 12 lists stay in the root `AGENTS.md`, and so does a conventions section;
    - reword each contradicted rule as target state with the measured exception count and the command that finds
      them (a code-index query or a `grep`); count with the code index (`search_graph`) and cross-check with `grep`;
    - correct each stale line.
@@ -238,16 +251,20 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 10. **Instruction file and components (AGT-01, AGT-02).** Verify: root `AGENTS.md`, exact case, no stub marker, no
     override file beside it. For a multi-component repository, a component `AGENTS.md` is written only when the owner
     asks and the component has rules the root file cannot state; otherwise record AGT-02 as the owner's choice
-    (component scoping is planned for a later framework version).
+    (component scoping is planned for a later framework version). Name a component file `AGENTS.md`, never a vendor
+    name such as `CLAUDE.md`. "`AGT-08` No competing instruction files, and the reach matrix is stated" counts only
+    vendor-named files as competitors.
 11. **Communication rules (AGT-12).** Add a section headed "How to write for people". Match the file's heading
-    level and style (D18), and keep a word the check reads (`write for`, `communication`, `reporting`). Place it
-    after the section `agents_md.pointer_section` names; without that preference, place it before the prohibitions
-    section. Start from the template in the greenfield
+    level and style, and keep a heading word the
+    [`AGT-12` check](../../audit/checks/02-agent-governance-2.md#agt-12--communication-rules-stated) reads
+    (`communication`, `how to write`, `writing for people`, `reporting`, `talking to the user`). Place it after the
+    section `agents_md.pointer_section` names; without that preference, place it before the prohibitions section.
+    Start from the template in the greenfield
     [`AGENTS.md` § 5](../../greenfield/templates/AGENTS.md#5-how-to-write-for-people). It holds a scope line (5.1,
     with the link to the long form) and six numbered rules (5.2 to 5.7):
     - the reader: the persona the owner confirmed (Inputs 7);
     - bottom line first;
-    - plain language: short sentences (at most 25 words), active voice, one term per meaning;
+    - plain language: short sentences (at most 25 words; 20 in a step), active voice, one term per meaning;
     - form: choose the form from the content (numbered rules, tables, diagrams or alerts), and link the style
       guide's form rules;
     - reports: a status report (done, not done, blocked, next) and a done report (what changed, how it was checked,
@@ -257,11 +274,21 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     An existing section that already covers one of the three (reader, reports, decisions) gets only the missing
     rules. With `agents_md.comm_long_form=yes`, start the long-form file from the greenfield template
     [`docs/COMMUNICATION_RULES.md`](../../greenfield/templates/docs/COMMUNICATION_RULES.md). Adapt it to the target.
-    Put it under `docs/`, with a name and place that follow the repository's convention (D18). Set its reader to the
+    Put it under `docs/`, with a name and place that follow the repository's convention. Set its reader to the
     persona the owner confirmed. Link it from the section, and keep `communicat` in the file name: AGT-12 reads a
     linked file whose name contains it. Then run the engine's AGT-12.
 12. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
-    record the overage as debt. Never shorten by reflowing or deleting the owner's rules.
+    record the overage as debt. Never shorten by reflowing or deleting the owner's rules. Move only a section that
+    no root-only check reads. These stay in the root `AGENTS.md`, because the checks read them there and nowhere else:
+    - the commands: "`AGT-05` Seven verbs named", "`EXEC-03` Non-interactive setup path", "`EXEC-06` Documented
+      commands resolve" and "`TST-04` Fast path documented";
+    - the documentation contract and the boundaries: "`AGT-03` Documentation contract named", "`DOC-02`
+      docs/STYLE_GUIDE.md exists" and "`AGT-06` Architectural boundaries declared";
+    - the definition of done ("`AGT-04` Definition of done stated") and the release boundary ("`AGT-09` Branch and
+      release boundary declared");
+    - the "How to write for people" section ("`AGT-12` Communication rules stated");
+    - the baseline and coverage lines: "`BASE-01` Baseline artifact exists", "`BASE-03` No-new-violations
+      mechanism" and "`BASE-04` Coverage floor configured".
 13. **Numbering.** Text this playbook writes into a target comes from `greenfield/templates/`. It follows the form
     rules of the greenfield [style guide](../../greenfield/templates/docs/STYLE_GUIDE.md#31-form-follows-content).
     Read those rules there and do not copy them here. Then read `agents_md.numbering`:
@@ -311,11 +338,13 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     reader cannot infer from the code.
     - **a. No conventions.** Write `CONVENTIONS.md` from the greenfield
       [`CONVENTIONS.md`](../../greenfield/templates/CONVENTIONS.md) template. Adapt it to the target's stack and to its
-      own naming of files (D18): a repository that already calls its docs `CODE_STYLE.md` or keeps them under `docs/`
+      own naming of files: a repository that already calls its docs `CODE_STYLE.md` or keeps them under `docs/`
       gets that name and place, because the engine finds any of the names the check page lists. Keep the template's
       five sections. Replace `[Project Name]` and every example with the target's own. Text comes from
       `greenfield/templates/` only: write no rule from memory or from this playbook. Add one link line to `AGENTS.md`,
-      in the section that names the documentation, and state no convention there a second time.
+      in the section that names the documentation, and state no convention there a second time. Word it as a
+      reference ("Coding conventions: `CONVENTIONS.md`"), never as "read `CONVENTIONS.md` first". The check
+      "`AGT-10` Instruction indirection resolved" reads that second form as a deferral.
     - **b. Evidence for every rule.** Every rule written comes from the code. Find it with the code index
       (`search_graph` for the types, the layers and the error classes) and cross-check it with a `grep` or `rg`. With
       no code index, a `grep` stands in; say which one you used. Evidence by item:
@@ -326,7 +355,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
       - the config link: the formatter and linter config files that exist (`test -e <path>`). Link each one. Never copy
         its settings.
 
-      The owner confirms each section before its commit. A rule with no evidence stays out, and the item is `partial`.
+      The owner confirms each section before its commit. A rule with no evidence stays out, and the item is `partial`
+      with that rule counted as debt (see Continue on error).
     - **c. Conventions at `PARTIAL`.** List the missing items as suggestions, each with the evidence behind it. Add only
       the items the owner accepts. Never invent the missing rule. A stub word (`TBD`, `TODO`) goes to the owner as a
       question: "this line says `TBD`; what is the rule?" Remove the word only when the owner answers or says to drop
@@ -367,12 +397,15 @@ holds the owner's text is an existing file: use the Generic steps. A vendor file
    | 5. How to write for people | Step 11 | The persona the owner confirms (Inputs 7) |
    | 6. Never | [`add-deny-rules`](add-deny-rules.md) | Not written here; it runs on the same branch |
 
+   Section 6 stays empty until `add-deny-rules` fills it. Then "`AGT-07` Do-not-do / deny rules present",
+   "`CON-01` Allow/deny artifact present" and "`CON-02` Test directories protected" read it.
+
 3. **Review.** The owner reads each section as its diff arrives (Inputs 1 sets the order). The file is a draft until
    the owner has seen every section. Then run the engine's AGT-01, AGT-05 and AGT-12.
-4. **Budget.** The skeleton is far below 400 lines. Step 12 applies if a filled file is not.
+4. **Budget.** The skeleton is far below 400 lines. [Generic](#generic) step 12 applies if a filled file is not.
 
-If a fact is missing (no boundary the code shows, no release tool), leave that line out and record the item
-`partial` with a note, as the Generic steps say. Do not fill a gap with generic text.
+If a fact is missing (no boundary the code shows, no release tool), leave that line out. Record the item `partial`
+with `--debt "what=facts the code does not show (<names>),count=N"` and a note. Do not fill a gap with generic text.
 
 ### Gradle and Quarkus
 
@@ -437,23 +470,31 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 
 - **Over budget:** an `AGENTS.md` over 400 lines after the moves is `partial` with
   `--debt "what=AGENTS.md lines over the 400 budget,count=N"`. The next theme or the owner moves more text out.
+  The [A14 rubric](../../audit/checks/02-agent-governance.md#the-a14-rubric-r-16-score-content-not-presence) sets the
+  budget.
 - **Contradicted rules:** each rule kept as target state carries its exception count as debt
   (`what=files that break the <rule> rule,count=N`). The count may only go down; the item is `partial` until it is 0
   or the owner records the rule as describing the code.
 - **Stale claims the owner has not settled** (a line whose correct wording needs an owner decision not in the state):
   the line is left as it is, flagged in the pull request under "What was not done", and the item is `partial`
-  with a note.
+  with `--debt "what=stale claims waiting for the owner,count=N"`.
 - **Generic text the owner keeps:** the item is `partial` with the measured ratio as debt
   (`what=generic rule lines,count=N`), or `skipped` if the owner says so.
 - A verb that does not resolve is not fixed here; record it and point at T1.
-- **A changed verdict in the renumbering (Step 15):** the step stops at that section. The item is `partial` with a
-  note that names the check and the section. Sections already renumbered stay; the rest keep their old numbering.
+- **A changed verdict in the renumbering (Step 15):** the step stops at that section. The item is `partial` with
+  `--debt "what=sections not renumbered,count=N"` and a note that names the check and the section. Sections already
+  renumbered stay; the rest keep their old numbering.
   Say so in the pull request, under "What was not done".
 - **The owner declines conventions items (Step 16):** the item is `partial`, with each declined item as debt
   (`what=conventions items missing (<names>),count=N`). The count may only go down. A rule with no evidence in the code
   stays out and counts the same way.
-- **A stub word the owner has not answered:** the line stays as it is, the item is `partial`, and the pull request says
-  so under "What was not done".
+- **A stub word the owner has not answered:** the line stays as it is. The item is `partial` with
+  `--debt "what=stub words not answered,count=N"`, and the pull request says so under "What was not done".
+- **No boundary the code shows (AGT-06), and the owner gives none:** `partial` with
+  `--debt "what=boundary rules missing,count=N"`, where N is the rules short of two.
+- **A non-English docs language (AGT-12):** `partial` with `--debt "what=communication rules the check cannot
+  read (<language>),count=1"`.
+- `progress.py` refuses `partial` without a `--debt` entry. Every `partial` above names one.
 
 ## Verification
 
@@ -497,6 +538,8 @@ numbering. A conventions commit (Step 16) reverts alone too.
   them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
 - Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).
+  It is the section that "`AGT-07` Do-not-do / deny rules present", "`CON-01` Allow/deny artifact present" and
+  "`CON-02` Test directories protected" read.
 - Do not edit code to make a rule true, and do not drop a rule because the code breaks it.
 - Do not create a harness configuration file to point at a second rules file.
 - Do not write a fact an earlier theme has not made true (a verb that does not resolve, a docs page that does not
@@ -508,7 +551,7 @@ numbering. A conventions commit (Step 16) reverts alone too.
 - Do not move or rewrite a conventions section in `AGENTS.md` or `CONTRIBUTING.md` unasked, copy a Git rule into the
   conventions, or copy a formatter or linter setting into them.
 - Do not copy content from a private repository or workspace into an open-source one, or from any target into the
-  framework.
+  framework. This echoes the hard rule [Keep private content private](../SKILL.md#hard-rules).
 
 ## State updates
 

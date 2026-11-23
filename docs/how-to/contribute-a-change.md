@@ -148,11 +148,22 @@ If the work follows a roadmap step, add a trailer to the commit message: `Roadma
 
 ### Step 4: Run the gates
 
+While you work on a step, run only the tests of the code you change, as
+[Contributing](../../CONTRIBUTING.md#the-gates) shows. That is quick, but it never replaces the gates below: a change
+in one area can break a test in another suite.
+
 Run these commands from the root of the repository. All of them must pass before you push.
 
 ```bash
 make check
 make security
+```
+
+Or run both, and the rest of CI's gates (coverage, the self-audit, the Markdown lint and the commit-subject check),
+in one command. On Linux the gates run at once, so it takes about 4 minutes:
+
+```bash
+make gate
 ```
 
 If you changed Markdown, also run:
@@ -163,6 +174,10 @@ make docs-prose FILES=<file.md>
 ```
 
 `docs-prose` never fails. Fix the warnings it reports on the lines you changed.
+
+If your change adds a ruleset revision and `dev` gained one meanwhile, run `make ruleset-renumber RULESET_ARGS=check`.
+It lists your revisions and exits 2 when one also exists on `dev`. Merge `origin/dev` into your branch, then run
+`make ruleset-renumber` to move your revisions after the newest one on `dev`. Review the diff and commit.
 
 If you added or changed a Mermaid diagram, also run this for each file:
 

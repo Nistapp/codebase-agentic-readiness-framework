@@ -65,10 +65,11 @@ bounded by construction:
 
 | Rule | Behaviour |
 |---|---|
-| Ignore semantics | `.gitignore` respected; `.cbmignore` respected when present; both lifted from the target, not invented. Matching is a **documented subset** owned by [`audit/ignore.py`](../../../audit/ignore.py) — see § 3.1 |
-| Hard excludes | `.git`, `node_modules`, `vendor`, `dist`, `build`, `target`, `.venv`, `venv`, `__pycache__`, `.next`, `coverage`, `.gradle` |
+| Ignore semantics | The root ignore files (`.gitignore`, `.cbmignore`, `.cursorignore`, `.aiderignore`, `.rooignore`) and each nested `.gitignore` are respected, lifted from the target, not invented. A file git tracks is never skipped by an ignore rule. An ignored directory is not entered unless git tracks a file in it, and `Inventory.ignored_dirs` names it. Matching is a **documented subset** owned by [`audit/ignore.py`](../../../audit/ignore.py) — see § 3.1 |
+| Hard excludes | `.git`, `node_modules`, `vendor`, `dist`, `build`, `target`, `.venv`, `venv`, `__pycache__`, `.next`, `coverage`, `.gradle` and the others in `HARD_EXCLUDE_DIRS` (`audit/target.py`), at any depth, tracked or not. The exception is `dist` and `build` (`TRACKED_ONLY_DIRS`): the walk enters them only to reach the files git tracks there, so `EXEC-05` and `NAV-03` see committed build output. Every tracked file under `dist/` is classified `GENERATED`. A file under `build/` (`SIGNED_GENERATED_DIRS` in `audit/scan.py`) gets the kind it would get elsewhere, since repositories keep hand-written build scripts there; `EXEC-05` adds the ones the target's own ignore rules match (issue #260). When git cannot report the tracked set, they stay out too |
 | Operator excludes | `--exclude GLOB`, repeatable, matched against the whole path from the target's root, where `*` crosses directories. It leaves a file out of the walk and out of the set of tracked files that `SEC-01`, `DOC-03`, `CON-03` and `EXEC-02` read (`tracked_in_scope` in `audit/rules/checks/_common.py`) |
-| Carried data | A file under a directory named `templates`, `template`, `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` (`CARRIED_DATA_DIRS` in `audit/scan.py`, compared whole and case-insensitively) is walked and then set aside: it leaves `Inventory.files`, so no check reads it, and `Inventory.set_aside` records each outermost directory with its file count. Nothing is set aside when the repository's only manifests are inside such directories. [ADR-0008](../adrs/0008-what-counts-as-the-repository.md) |
+| Carried data | A file under a directory named `templates`, `template`, `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` (`CARRIED_DATA_DIRS` in `audit/scan.py`, compared whole and case-insensitively) is walked and then set aside, unless the name is below a JVM source root (`src/<source set>/<java\|kotlin\|scala\|groovy>/`, where a folder is a package): it leaves `Inventory.files`, so no check reads it, and `Inventory.set_aside` records each outermost directory with its file count. Nothing is set aside when the repository's only manifests are inside such directories. [ADR-0008](../adrs/0008-what-counts-as-the-repository.md) |
+| Path globs | A check names a place in the walk with a glob through `Inventory.match`, which uses the one matcher in [`audit/globs.py`](../../../audit/globs.py). A pattern with a `/` is a glob from the root, matched folder by folder: `*`, `?` and `[...]` stay inside one name, and `**` matches any number of folders, none included. So `.github/workflows/*.yml` finds no nested file, and `docs/**/*.md` finds `docs/a.md`. A pattern with no `/` is a base name at any depth. Case folds only where the platform folds it. The instruction-file globs of `AGT-01` and `AGT-08` and the consistency map's `glob` scope use the same semantics |
 | File-count cap | Configurable; on breach the scan reports `UNKNOWN` for the affected check rather than silently shrinking scope |
 | File-size cap | Files over the cap are inventoried but not read for content checks |
 | Encoding | Decode as UTF-8 with replacement; binary files are classified, never parsed |
@@ -81,26 +82,46 @@ binary, secret-shaped.
 ### 3.1 Ignore semantics — the documented subset
 
 Ignore matching is implemented by [`audit/ignore.py`](../../../audit/ignore.py) and deliberately overclaims
-nothing. A rule is matched with `fnmatch` against both the repository-relative path and the basename;
-**anchored** patterns (`/dist`) are not treated as anchored, **negation** lines (`!keep`) are dropped rather
-than honoured, and `**` is a plain glob. The same module answers "which files does git track?" through
-`tracked_files()`, returning `None` — never an empty set — when the target is not a repository or git fails.
+nothing. The walk and the checks that ask "is this path ignored?" use one scoped matcher
+([ADR-0009](../adrs/0009-nested-ignore-files-and-negation.md)). Each nested `.gitignore` applies to its own
+directory, read as the walk enters it. A leading or inner `/` anchors a rule, a trailing `/` makes it match
+directories only, and `**` crosses directories. A `!` line re-includes a path, but never out of an ignored
+directory. The last matching rule wins.
+
+The same module answers "which files does git track?" through `tracked_files()`, returning `None` — never an
+empty set — when the target is not a repository or git fails. When git answers, a tracked file stays in the
+walk whatever the ignore rules say, as it does in git. When git cannot answer, the parser alone decides. The
+matcher is a parser, not `git check-ignore`: it reads neither `.git/info/exclude` nor a global excludes file.
 A check that cannot be certain of a tracked or ignore answer reports `UNKNOWN`, never `PASS`.
 
 ---
 
 ## 4. Stack & Layout Detection
 
+An ecosystem is named by its manifest alone (`ECOSYSTEM_SIGNALS` in `audit/stack.py`). A package manager is named
+by its own file (`PACKAGE_MANAGERS`), and that file never names an ecosystem. A `uv.lock` with no Python
+manifest does not make a Python project. Both are matched anywhere in the tree, at any depth: by base name, or by a
+glob such as `requirements*.txt`. `EXEC-02` reads an ecosystem's package-manager files as its lockfiles; pip and pdm
+are not among them.
+
+| Ecosystem (id) | Manifest that names it | Package manager, from its file |
+|---|---|---|
+| Node (`node`) | `package.json` | npm (`package-lock.json`, `npm-shrinkwrap.json`), pnpm (`pnpm-lock.yaml`), yarn (`yarn.lock`), bun (`bun.lock`, `bun.lockb`) |
+| Python (`python`) | `pyproject.toml`, `setup.py`, `requirements*.txt`, `Pipfile`; or, when none of them is present, a `.py` source file (not a test or a generated file). The stack then lists `python` in `source_only` and says so in its notes | pip (`requirements*.txt`), poetry (`poetry.lock`), uv (`uv.lock`), pipenv (`Pipfile.lock`), pdm (`pdm.lock`) |
+| JVM (`jvm`) | `pom.xml`, `build.gradle`, `build.gradle.kts` | maven (`pom.xml`), gradle (`gradle.lockfile`) |
+| Go (`go`) | `go.mod` | gomod (`go.sum`) |
+| Rust (`rust`) | `Cargo.toml` | cargo (`Cargo.lock`) |
+| .NET (`dotnet`) | `*.csproj`, `*.sln` | nuget (`packages.lock.json`) |
+| Ruby (`ruby`) | `Gemfile` | bundler (`Gemfile.lock`) |
+| PHP (`php`) | `composer.json` | composer (`composer.lock`) |
+
+The other signals:
+
 | Signal | Detected from |
 |---|---|
-| Node / npm, pnpm, yarn, bun | `package.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb` |
-| Python | `pyproject.toml`, `requirements*.txt`, `setup.py`, `Pipfile`, `poetry.lock`, `uv.lock`; or, when none of them is present, a `.py` source file outside tests, generated code and vendored code. The stack then lists `python` in `source_only` and says so in its notes |
-| JVM | `pom.xml`, `build.gradle(.kts)`, `settings.gradle`, `gradlew` |
-| Go | `go.mod`, `go.sum`, `go.work` |
-| Rust | `Cargo.toml`, `Cargo.lock` |
-| .NET | `*.csproj`, `*.sln`, `global.json` |
-| Ruby / PHP | `Gemfile`, `composer.json` |
-| Components | `workspaces`, `pnpm-workspace.yaml`, maven `<modules>`, gradle `include(...)`, `go.work use`, Cargo `[workspace] members`, Nx `project.json` |
+| Components | `workspaces`, `pnpm-workspace.yaml`, maven `<modules>`, gradle `include(...)` in `settings.gradle(.kts)`, `go.work use`, Cargo `[workspace] members` |
+| Candidate components (reported, never scored) | an immediate child of `apps/`, `services/`, `packages/`, `components/`, `modules/`, `libs/` or `workers/` with a build manifest; and, when the root folder holds no build manifest, any top-level folder with one (ADR-0003) |
+| A component's own manifest | `package.json`, `pyproject.toml`, `pom.xml`, `build.gradle(.kts)`, `Cargo.toml`, `go.mod`, `Gemfile`, `composer.json`, or a `*.sln`, `*.slnx`, `*.csproj`, `*.fsproj` or `*.vbproj` in the component's own folder |
 | CI provider | `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/`, `.buildkite/` |
 | Test framework | config files and manifest dependencies (`vitest`, `jest`, `pytest`, `junit`, `go test`) |
 | Local hooks | `.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`, `core.hooksPath` |
@@ -128,8 +149,11 @@ and this page does not restate them. The verb's own name is accepted on every ru
 | `pom.xml` | The lifecycle phases of any pom (`test`, `compile test-compile` for `typecheck`, `verify` for `check`) and the goals of the Spotless, Checkstyle and OWASP dependency-check plugins, when the pom declares the plugin's `artifactId`. A `<goal>` is not a verb: it names what a plugin runs, and `./mvnw check` is not a Maven command. |
 
 Gradle's `test` and `check` and Maven's lifecycle phases resolve as verbs but are not a definition the repository
-wrote, so `CMD-03` does not count them as a second gate beside an npm project. `CMD-02` is `UNKNOWN` for a `check` on
-those runners: what a lifecycle task composes is set by the build's task graph, which the engine does not read.
+wrote, so `CMD-03` does not count them as a second gate beside an npm project. `CMD-02` reads a Gradle `check` from the
+build file. A JVM plugin runs the compile and `test`, and Spotless or ktlint runs the format check. The `check` wiring
+adds each task it depends on. A plugin, script, subproject or task the engine does not know may add more. Beside one,
+a check that still misses a concern is `UNKNOWN`. A Maven `check` is `UNKNOWN`: the engine does not read which goals a
+pom binds to `verify`.
 
 A Makefile that GNU Make refuses is not a runner, because nothing in it can run. The one refusal the engine detects
 is the one that sank its own fixture: an unescaped colon in a name (`format:check:`) is a static pattern rule whose
@@ -174,8 +198,19 @@ Executing a repository's own commands is a supply-chain decision. Consequently:
 - **Never installs.** No `npm install`, `pip install`, or wrapper download, ever.
 - **No network by default.** Probes that need it (dependency CVE checks) are excluded unless explicitly permitted.
 - **Timeout per probe**, with the timeout itself recorded as the evidence.
-- **Evidence capture:** exit code, duration, and a bounded tail of output — with secret-shaped lines redacted
-  before they enter the report.
+- **Evidence capture:** exit code, duration, and a bounded tail of output — with credential-shaped text redacted
+  before it enters the report. `redact()` in `audit/probes.py` replaces each of these with `[REDACTED]` and
+  counts one redaction per secret in the probe's `redactions` field:
+  - a keyword assignment with its value. The keyword is `token`, `secret`, `password`, `passwd`, `pwd` or
+    `api_key`, alone or as one part of a name joined by `_` or `-` (`GITHUB_TOKEN=`, `client_secret=`). A quoted
+    value runs to its closing quote on the line, and `Bearer` with its token is one value. Prose is left alone:
+    `passwords must be rotated`, `token count: 5` and `max_tokens: 4096` assign no keyword. A harmless name such
+    as `TOKEN_URL=` is redacted too, because a hidden URL costs less than a shown credential;
+  - a whole PEM private key, BEGIN line to END line, or to the end of the output when the key was cut off;
+  - the shapes `sk-...`, `ghp_...` (and the other `gh*_` kinds), `AKIA...`, a `Bearer` token, and a Slack token
+    (`xoxb-...`, `xoxp-...`, `xapp-...`).
+
+  `SEC-02` and the report validator read the same patterns.
 - **No side-effect probes:** only verbs declared read-only in the rule pack are eligible.
 
 ---
@@ -220,7 +255,8 @@ Schema v2. The JSON is the **render contract**: the Markdown report is a pure fu
   "stack": { "ecosystems": [], "package_managers": [], "ci_providers": [],
              "test_frameworks": [], "hook_managers": [], "notes": [] },
   "inventory": { "files_inspected": 0, "files_skipped": 0, "truncated": false,
-                 "files_set_aside": 0, "set_aside": [ { "path": "templates", "files": 0 } ] },
+                 "files_set_aside": 0, "set_aside": [ { "path": "templates", "files": 0 } ],
+                 "ignored_dirs": [ "dist-local" ] },
   "findings": [ { "id": "EXEC-02:packages/api", "check": "EXEC-02", "phase": 1,
                   "severity": "BLOCKER", "verdict": "FAIL",
                   "evidence": [ { "path": "packages/api/package.json", "line": 1, "note": null } ],

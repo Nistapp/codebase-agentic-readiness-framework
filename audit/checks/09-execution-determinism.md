@@ -4,7 +4,7 @@
 > [Why These Checks §10](../engine/docs/architecture/user-overview/03-why-these-checks.md#10-execution-determinism-exec)
 > for the consequence behind this family: this is where brownfield repositories fail hardest, and where
 > the framework's Phase 1 is thinnest. Every check reads the engine's `EXEC` pack
-> (`audit/engine/audit/rules/checks/execution.py`), whose module docstring names each check's own
+> (`audit/engine/audit/rules/checks/execution/__init__.py`), whose module docstring names each check's own
 > `UNKNOWN` conditions and its one documented limitation (manifest↔lockfile parsing beyond
 > node/python/rust/go is not attempted, so those ecosystems report the tracked fact and `PARTIAL`
 > consistency rather than a false `PASS`).
@@ -17,17 +17,20 @@ Why it matters   An agent's runtime must be the repository's, not whatever happe
                   otherwise the gate passes locally and fails in CI, or an agent reproduces nothing
                   ([greenfield/README.md § File Tree — What Gets Created](../../greenfield/README.md#file-tree--what-gets-created)).
 Severity         BLOCKER
-Engine           `EXEC-01`. For every detected ecosystem among node, python, jvm, dotnet, rust and ruby
-                 (go is pinnable too but has no dedicated pin file of its own), looks for that
-                 ecosystem's pin: a version file (`.nvmrc`, `.python-version`, `.ruby-version`,
-                 `rust-toolchain.toml`/`rust-toolchain`), a wrapper (`gradlew`, `mvnw`), `global.json`
-                 for dotnet, a matching line in a shared `.tool-versions`, `package.json`'s
-                 `engines.node`, `pyproject.toml`'s `requires-python`, or `go.mod`'s `go` directive. Pin
-                 files and these manifests count at any depth: a nested module (`tools/osv/go.mod`) pins
-                 its ecosystem, and one pinning manifest is enough (the shallowest is cited). No
-                 ecosystem from this pinnable set is detected at all ⇒ `UNKNOWN` — there is no toolchain
-                 to choose a pin for. php is a recognised ecosystem the table does not assert a pin for,
-                 so a php-only repository is also `UNKNOWN` on this check. Distrust a `FAIL` when the
+Engine           `EXEC-01`. The pinnable ecosystems are node, python, jvm, dotnet, rust, ruby, php and
+                 go (go has no pin file of its own). For each one detected, the engine looks for its pin.
+                 A version file pins: `.nvmrc`, `.python-version`, `.ruby-version`, `.php-version`,
+                 `rust-toolchain.toml` or `rust-toolchain`. So do a wrapper (`gradlew`, `mvnw`) and, for
+                 dotnet, `global.json`. A shared `.tool-versions` pins with a line that starts with the
+                 ecosystem's asdf or mise plugin name: `nodejs` or `node`, `python`, `rust`, `golang`
+                 (asdf) or `go` (mise), `php`, `ruby`, `java` (jvm), and `dotnet` or `dotnet-core`. A
+                 manifest pins with `package.json`'s `engines.node`,
+                 `pyproject.toml`'s `requires-python` or `go.mod`'s `go` directive. A `composer.json`
+                 pins with `config.platform.php`, then `require.php`. Pin files and these manifests
+                 count at any depth: a nested module
+                 (`tools/osv/go.mod`) pins its ecosystem, and one pinning manifest is enough (the
+                 shallowest is cited). No ecosystem from this pinnable set is detected at all ⇒
+                 `UNKNOWN` — there is no toolchain to choose a pin for. Distrust a `FAIL` when the
                  pin lives in a convention the engine's table does not yet carry (a newer per-ecosystem
                  version manager) — verify by reading the repository's own tool documentation before
                  treating the gap as real.
@@ -35,7 +38,7 @@ Method           automated
 Look for         Each detected pinnable ecosystem's own pin file or declaration, named above; absent any
                  of them, `.tool-versions` for a matching line.
 Rubric           PASS: every detected pinnable ecosystem has at least one of its own pin files, or a
-                 matching `.tool-versions` line, or (node/python/go) the manifest-level constraint, and a
+                 matching `.tool-versions` line, or (node/python/go/php) the manifest-level constraint, and a
                  pin reaches every module manifest of each pinned ecosystem.
                  PARTIAL: every ecosystem is pinned, but a module manifest of a pinned ecosystem has no pin
                  of its own and no pin in its folder or a parent folder. An ecosystem left unpinned still
@@ -43,7 +46,7 @@ Rubric           PASS: every detected pinnable ecosystem has at least one of its
                  FAIL: at least one detected pinnable ecosystem has none of its pin evidence.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no ecosystem from the pinnable set (node, python, jvm, dotnet, rust, ruby,
-                 go) is detected at all.
+                 php, go) is detected at all.
 Evidence to cite A `file` evidence item per unpinned ecosystem, citing the pin file names that were
                  searched for and not found; for PASS, cite the pin file or declaration actually found
                  for each ecosystem.
@@ -55,10 +58,12 @@ Pitfalls         A monorepo where only one of several ecosystems is pinned still
                  the engine fails the whole check on the first unpinned ecosystem, so a `FAIL` summary
                  naming one ecosystem does not mean the others are also unpinned; read which ecosystem
                  the finding actually names before writing remediation. Within one ecosystem, each module
-                 manifest (`package.json`, `pyproject.toml`, `go.mod`) must be reached by a pin: its own
-                 manifest, or a pin file or (node, python) a pinning manifest in its folder or a parent
-                 folder; one unreached module reads `PARTIAL` and is named in the evidence. A nested
-                 `.tool-versions` is not read, and a parent `go.mod` does not pin a nested Go module.
+                 manifest (`package.json`, `pyproject.toml`, `go.mod`, `composer.json`) must be reached by
+                 a pin: its own manifest, or a pin file or (node, python) a pinning manifest in its folder
+                 or a parent folder; one unreached module reads `PARTIAL` and is named in the evidence. A
+                 nested `.tool-versions` is not read. A parent `go.mod` does not pin a nested Go module,
+                 and a parent `composer.json` does not pin a nested Composer project, which Composer
+                 installs on its own.
 
 ## EXEC-02 — Lockfile committed and consistent
 
@@ -67,15 +72,32 @@ Why it matters   Every run must resolve identical dependencies; a lockfile that 
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `EXEC-02`. For each detected ecosystem with a package manager the engine recognises
-                 (node, python, jvm, rust, go, ruby, php), finds that manager's lockfile at any depth,
-                 prefers the shallowest, and requires it to be git-tracked; for node/python/rust/go it
-                 then compares the lockfile's own declared packages against the root manifest's. No
-                 ecosystem with a recognised manager is detected ⇒ `UNKNOWN`; an ecosystem recognised only
+                 (node, python, jvm, rust, go, ruby, php, dotnet), finds every lockfile of that manager at any
+                 depth and requires each one to be git-tracked; for node/python/rust/go/dotnet it then
+                 compares each lockfile's own declared packages against the manifest in the lockfile's own
+                 folder (`api/package-lock.json` against `api/package.json`), so a second app's lockfile
+                 is judged too. For .NET the lockfile is NuGet's `packages.lock.json`, and the manifest is
+                 the `PackageReference` names (casefolded) of the project files in the lockfile's folder. A
+                 .NET project with no `packages.lock.json` reads `FAIL`, as every other ecosystem does
+                 (owner decision); NuGet writes one only when the project sets
+                 `RestorePackagesWithLockFile`. For node the
+                 lockfiles are `package-lock.json`, `npm-shrinkwrap.json` (compared as a
+                 `package-lock.json`), `pnpm-lock.yaml`, `yarn.lock`, `bun.lock` and `bun.lockb`. Neither
+                 Bun file is compared, so a Bun project reads `PARTIAL` at best. For python they are
+                 `poetry.lock`, `uv.lock`, `Pipfile.lock` and `pdm.lock`, and each is compared. No
+                 ecosystem with a recognised manager is detected ⇒ `UNKNOWN`, and the summary names a
+                 recognised ecosystem that has no lockfile convention the engine reads; an ecosystem recognised only
                  from its source files, with no manifest (`Stack.source_only`), is also `UNKNOWN` — it
                  declares no dependencies, so no lockfile is expected. Git unable to report tracked files
                  (no repository, or the command failed) makes the tracked half `UNKNOWN` for the whole
-                 check, never inferred as passing. A lockfile found only in a subdirectory is tracked but
-                 its consistency is left `PARTIAL`, because only the root manifest is read. Distrust a
+                 check, never inferred as passing. A lockfile with no manifest in its own folder is tracked
+                 but its consistency is left `PARTIAL`. Each tracked lockfile the engine could not compare is a
+                 `PARTIAL` finding of its own, keyed by the lockfile's path. A tracked lockfile that the
+                 scan's walk skipped as ignored is found too. The walk applies `!` lines (the scoped ignore matcher,
+                 [ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)), so a
+                 `!apps/web/package-lock.json` line already brings that lockfile back. The tracked list still
+                 finds a lockfile that an ignore rule covers but git tracks, such as one added with
+                 `git add -f`. Distrust a
                  `FAIL` for "no lockfile" when the manager is one the engine does not recognise for that
                  ecosystem — verify against `PACKAGE_MANAGERS` in `audit/stack.py` before concluding the
                  project truly has none. Distrust a `PARTIAL` citing "consistency unverified" when the
@@ -84,28 +106,31 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  manifest's and lockfile's declared dependency names directly before accepting the gap.
 Method           automated
 Look for         Every lockfile name for each detected package manager, at any depth; `git ls-files` (or
-                 equivalent) for whether the shallowest one is tracked; for node/python/rust/go, the
-                 manifest's declared dependency names against the lockfile's own.
-Rubric           PASS: every detected ecosystem's lockfile exists, is tracked, and (where parsing is
-                 attempted) agrees with the manifest.
-                 PARTIAL: every detected ecosystem's lockfile exists and is tracked, but consistency could
-                 not be verified for at least one (an ecosystem beyond node/python/rust/go, an unparsable
-                 manifest or lockfile, or a lockfile found only below the root).
-                 FAIL: at least one detected ecosystem has no lockfile, has one that is not tracked, or
-                 has one whose declared dependencies omit manifest dependencies.
+                 equivalent) for whether each one is tracked; for node/python/rust/go/dotnet, the declared
+                 dependency names of the manifest beside each lockfile against the lockfile's own.
+Rubric           PASS: every detected ecosystem has a lockfile, every lockfile is tracked, and each one
+                 (where parsing is attempted) agrees with the manifest in its folder.
+                 PARTIAL: every lockfile is tracked, but consistency could not be verified for at least one
+                 (an ecosystem beyond node/python/rust/go/dotnet, an unparsable manifest or lockfile, a
+                 lockfile with no manifest in its own folder, or a .NET project whose package references
+                 come from an imported MSBuild file or a `Directory.*` file in its folder or above it).
+                 FAIL: at least one detected ecosystem has no lockfile, a lockfile is not tracked, or a
+                 lockfile's declared dependencies omit dependencies of the manifest beside it.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no ecosystem with a recognised package manager is detected; an ecosystem
                  is recognised only from source with no manifest; or git could not report tracked files.
 Evidence to cite A `file` evidence item citing the lockfile path for a missing/untracked finding, or the
-                 lockfile path plus the omitted dependency names for a mismatch; for PASS, the tracked
-                 lockfile path for each ecosystem.
+                 lockfile path plus the omitted dependency names for a mismatch. A `PARTIAL` finding cites the
+                 lockfile whose consistency is unverified. For PASS, the engine's
+                 recorded output is the evidence (`audit/schema/SCHEMA.md`, rule 5 Methods); its summary
+                 names every tracked lockfile path.
 Absence proof    A "no lockfile" FAIL names every lockfile filename that manager uses and that none was
                  found at any depth; an "untracked" FAIL cites the untracked path directly; a mismatch
                  FAIL lists the specific manifest dependencies the lockfile omits.
 Remediation      `pin-execution-environment`
-Pitfalls         A lockfile that exists and is tracked but lives in a subdirectory reads `PARTIAL`, not
-                 `PASS` — the engine only ever compares the root manifest, so a nested lockfile's
-                 consistency is genuinely unverified, not a false negative to argue away.
+Pitfalls         A lockfile is compared only with the manifest in its own folder, never with one above it. A
+                 workspace lockfile at the root is compared with the root manifest only, so a dependency
+                 that only a member's manifest declares is not checked against it.
 
 ## EXEC-03 — Non-interactive setup path
 
@@ -114,17 +139,22 @@ Why it matters   An agent cannot answer an interactive prompt or provision a dat
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `EXEC-03`. First looks for a documented, non-interactive install command (one whose
-                 head tool and subcommand the engine recognises, such as `npm install` or `make setup`)
-                 inside a fenced block of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md` — found ⇒
-                 `PASS` outright. Failing that, looks for a setup artifact (a devcontainer, a compose
+                 head tool and subcommand the engine recognises, such as `npm install` or `make setup`).
+                 It reads the fenced shell blocks and the inline code spans (`` - Install: `npm ci` ``)
+                 of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md`. Found ⇒ `PASS` outright.
+                 Failing that, looks for a setup artifact (a devcontainer: `.devcontainer.json`,
+                 `.devcontainer/*.json` or `.devcontainer/<name>/devcontainer.json`; a compose
                  file, a Dockerfile, or a `setup`/`bootstrap`/`install`/`dev`/`dev-setup` Makefile or
-                 npm-script target) and whether any doc file names it in prose. No ecosystem detected at
-                 all ⇒ `UNKNOWN` — with no build manifest there is no provisioning to characterise.
+                 npm-script target) and whether any doc file names it in prose. The setup files count at
+                 any depth, and so does a Dockerfile with a variant in its name (`Dockerfile.*`,
+                 `*.Dockerfile`, `*.dockerfile`), such as Quarkus's `src/main/docker/Dockerfile.jvm`. No ecosystem
+                 detected at all ⇒ `UNKNOWN` — with no build manifest there is no provisioning to characterise.
                  Distrust a `FAIL` when the setup instructions live in a doc file outside the four this
                  check reads — verify by reading whatever onboarding doc the repository actually points
                  to before treating the absence as real.
 Method           automated
-Look for         A fenced install command in README.md, AGENTS.md, CLAUDE.md or CONTRIBUTING.md first;
+Look for         An install command, fenced or as inline code, in README.md, AGENTS.md, CLAUDE.md or
+                 CONTRIBUTING.md first;
                  failing that, a devcontainer/compose/Dockerfile/setup-script/setup-target artifact, and
                  whether any of those four docs names it.
 Rubric           PASS: a documented non-interactive install command exists, or a setup artifact exists
@@ -138,7 +168,8 @@ Evidence to cite A `file` evidence item citing the documented command's location
                  absence proof.
 Absence proof    A FAIL states explicitly that none of the devcontainer, compose file, Dockerfile, setup
                  target/script, or documented install command forms was found, naming the exact file
-                 names searched for (the full `_SETUP_FILES` and `_SETUP_TARGETS` lists).
+                 names searched for (the full `_SETUP_FILES`, `_DOCKERFILE_PATTERNS` and `_SETUP_TARGETS`
+                 lists).
 Remediation      `define-command-surface`
 Pitfalls         A setup script that exists but is named only by its filename inside a code block that is
                  not itself a shell command (a file tree listing, say) does not count as "documented" —
@@ -154,22 +185,33 @@ Severity         BLOCKER
 Engine           `EXEC-04`. Collects every `${VAR}` reference in shell-family files (`.sh`, `.bash`,
                  `.zsh`, `.fish`, `.ksh`, `.ps1`, `Dockerfile`) and every `os.environ`/`os.getenv`/
                  `process.env`/`ENV[...]`-style reference in source and script files, then subtracts the
-                 keys declared in a committed example file (`.env.example`, `.env.sample`,
-                 `.env.template`, `env.example`) and a fixed, in-code allow-list of conventional host/CI
-                 variables (`CI`, `HOME`, `GITHUB_*`, `VITEST_*`, and the like). This check runs
+                 keys declared in committed example files (`.env.example`, `.env.sample`,
+                 `.env.template`, `env.example`, at any depth) and a fixed, in-code allow-list of
+                 conventional host/CI variables (`CI`, `HOME`, `GITHUB_*`, `VITEST_*`, and the like). The
+                 allow-list also holds the variables the shell sets itself (`SECONDS`, `RANDOM`, `LINENO`,
+                 `OLDPWD`, `UID`, `BASH_*`, and the like). An example file covers the files in its own folder
+                 and below it: `api/.env.example` declares the keys `api/` reads, `scripts/ci/env.example`
+                 the keys of the CI scripts, and a root file every key. A key is declared when every file
+                 that reads it is covered by an example file that names it. A shell reference with a
+                 fallback (`${VAR:-default}`, `${VAR-x}`, `${VAR:=x}`, `${VAR:+x}`) runs without the variable,
+                 so the key is optional: the summary and the payload's `optional` list name it when no
+                 covering example file declares it, and it never fails the check. `${VAR:?message}` stops the
+                 script without the variable, so it is required, as a bare `${VAR}` is. One required
+                 reference anywhere makes a key required. This check runs
                  regardless of detected ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` that
                  names a key your own reading recognises as a CI/host convention the allow-list has not
                  yet caught — verify against `_ENV_ALLOWLIST`/`_ENV_ALLOW_PREFIXES` in
-                 `audit/rules/checks/execution.py` before writing a false "missing variable" finding.
+                 `audit/rules/checks/execution/exec_04.py` before writing a false "missing variable" finding.
 Method           automated
 Look for         `${VAR}`-style references in shell/`Dockerfile` files, and language-level environment
-                 reads in source and script files generally; the keys declared in whichever committed
-                 example file exists.
-Rubric           PASS: every referenced key not on the allow-list is declared in a committed example
-                 file (including the case of no references at all).
+                 reads in source and script files generally; the keys declared in each committed example
+                 file, and which reading files each example file covers.
+Rubric           PASS: every required referenced key not on the allow-list is declared in an example
+                 file that covers each file reading it (including the case of no references at all). An
+                 optional key (a shell reference with a fallback) is listed but never required.
                  PARTIAL: not used by this check — any undeclared key fails the whole check.
-                 FAIL: at least one referenced, non-allow-listed key is absent from every committed
-                 example file.
+                 FAIL: at least one required, non-allow-listed key is absent from every example file
+                 that covers a file reading it.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: never — the reference scan runs whether or not an ecosystem is detected.
 Evidence to cite A `file` evidence item per committed example file read (for PASS, when references
@@ -191,17 +233,27 @@ Why it matters   An agent that edits a file the build regenerates loses its work
                   the next CI run or review
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
-Engine           `EXEC-05`. Looks at every path the scan already classifies `GENERATED` (including
-                 vendored paths) and, of those that are git-tracked, whether its first 20 lines carry a
+Engine           `EXEC-05`. Looks at every path the scan already classifies `GENERATED` and, of
+                 those that are git-tracked, whether its first 20 lines carry a
                  generated-file marker (`@generated`, `do not edit`, `generated by`, `code generated`,
                  `auto-generated`, `autogenerated`, `this file is generated`, case-insensitive). Git
                  unable to report tracked files ⇒ `UNKNOWN` — generated-file state cannot be read without
                  it. No tracked generated path at all, or every one carrying a header, is `PASS`.
+                 A file is `GENERATED` when a folder in its path is named `dist`, as a whole name in
+                 any case (`redist/` does not count). A path that contains `generated/` is
+                 `GENERATED` too, and so is a suffix such as `.min.js`, `.min.css`, `.map` or `.pb.go`.
+                 A folder named `build` alone is no sign, because repositories keep hand-written build
+                 scripts and Docker contexts there. A tracked text file under `build/` counts when the
+                 target's own ignore rules match it. Any other file there is read as elsewhere. The
+                 walk enters `dist/` and `build/` only to reach the files git tracks there; an
+                 untracked build folder is never read. A vendored tree (`vendor/`) is third-party
+                 source, not build output: the walk never enters it, and it is not `GENERATED`.
                  Distrust a `FAIL` when the header lives past line 20 of the file — verify by reading
                  further into the file before trusting the absence.
 Method           automated
-Look for         Paths the scan classifies `GENERATED`, limited to those git reports as tracked; the
-                 first 20 lines of each for one of the marker phrases above.
+Look for         Paths the scan classifies `GENERATED` that git reports as tracked. Tracked text files
+                 under `build/` that an ignore rule also matches. In each, the first 20 lines, for one
+                 of the marker phrases above.
 Rubric           PASS: no tracked path is classified `GENERATED`, or every tracked `GENERATED` path
                  carries a generated-file header in its first 20 lines.
                  PARTIAL: not used by this check — any header-less tracked generated path fails the
@@ -237,17 +289,24 @@ Engine           `EXEC-06`. Extracts every fenced shell command from README.md, 
                  command surface's own verbs, `npm`/`pnpm`/`yarn` scripts, Makefile targets, declared
                  package binaries, or a real repository path. A `make <t>` or `npm run <s>` also resolves
                  when `<t>`/`<s>` is a verb the shared resolver binds on that runner, so `make format:check`
-                 reads the same here and in `AGT-05` when the Makefile spells it `format-check`. This check runs regardless of detected
+                 reads the same here and in `AGT-05` when the Makefile spells it `format-check`. A
+                 `make <t>` resolves too when a pattern rule's target (`build-%:`) matches `<t>`, or a static
+                 pattern rule lists `<t>` (`lint-a lint-b: lint-%:`). The engine never runs Make, so it cannot
+                 expand a target list built from a variable or a function (`$(TARGETS): test-%:`). Such a
+                 list may name `<t>` when it has no static pattern, or when its static pattern matches `<t>`:
+                 Make requires every listed name to match it. When only such a list may name `<t>`, the
+                 command is not verified. It does not fail the check, and the summary names it and the
+                 lines of those lists. Any other unfound target fails. This check runs regardless of detected
                  ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` naming a tool the fixed table
                  does not yet carry — verify the tool is genuinely unresolvable, not merely missing from
-                 `_KNOWN_TOOLS` in `audit/rules/checks/execution.py`, before treating the finding as a
+                 `_KNOWN_TOOLS` in `audit/rules/checks/execution/exec_06.py`, before treating the finding as a
                  real documentation defect.
 Method           automated
 Look for         Fenced shell commands in README.md, AGENTS.md and CLAUDE.md; each one's head token
-                 against known tools/builtins, command-surface verbs, package scripts, Makefile targets,
-                 declared binaries, and real paths.
-Rubric           PASS: every documented command resolves, or no fenced shell command is documented at
-                 all.
+                 against known tools/builtins, command-surface verbs, package scripts, Makefile targets
+                 (plain, pattern and static pattern rules), declared binaries, and real paths.
+Rubric           PASS: every documented command resolves or is a make command not verified, or no fenced
+                 shell command is documented at all.
                  PARTIAL: not used by this check — any one unresolved command fails the whole check.
                  FAIL: at least one documented command's head token names no known tool, verb, script,
                  target, binary, or path.
@@ -255,7 +314,7 @@ Rubric           PASS: every documented command resolves, or no fenced shell com
                  UNKNOWN when: never — the extraction and resolution run unconditionally.
 Evidence to cite A `file` evidence item per unresolved command (up to 12), citing the doc file, line
                  number and the command text itself; for PASS, the count of documented commands that
-                 resolved.
+                 resolved, and each make command not verified with its doc file and line.
 Absence proof    A FAIL names every unresolved command verbatim with its doc file and line number (up to
                  8 in the summary, up to 12 as evidence), so "does not resolve" is checkable command by
                  command.

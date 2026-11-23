@@ -21,8 +21,8 @@
 | [0005](adrs/0005-module-layout-and-zipapp-distribution.md) | Module Layout and Zipapp Distribution | The package tree is the source; a zipapp is the distributable; nothing needs installing. |
 | [0006](adrs/0006-private-check-helpers-and-ignore-engine.md) | Private Check Helpers and the Ignore Engine | Checks share two private helpers, `audit/ignore.py` and `rules/checks/_common.py`; no new stage or pack. |
 | [0007](adrs/0007-json-report-render-contract.md) | The JSON Report Is the Render Contract; the Markdown Is a Template Over It | The JSON report (schema v2) is the contract; the Markdown report is a code template over it. |
-| [0008](adrs/0008-what-counts-as-the-repository.md) | What Counts as the Repository | Runners rank depth first; templates, examples and fixtures are set aside, and the report lists them. |
-| [0009](adrs/0009-nested-ignore-files-and-negation.md) | Nested Ignore Files and Negation | Four checks use a scoped matcher that honours nested `.gitignore` files and negation; the walk is unchanged. |
+| [0008](adrs/0008-what-counts-as-the-repository.md) | What Counts as the Repository | Only root manifests are runners; templates, examples and fixtures are set aside (not below a JVM source root), and the report lists them. |
+| [0009](adrs/0009-nested-ignore-files-and-negation.md) | Nested Ignore Files and Negation | The walk and four checks share a scoped matcher that honours nested `.gitignore` files, anchoring and negation; a tracked file is never skipped. |
 
 ## Key Documents
 

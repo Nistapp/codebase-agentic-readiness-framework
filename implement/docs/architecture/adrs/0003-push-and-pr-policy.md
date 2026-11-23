@@ -29,7 +29,7 @@ never pushes would break the one-pull-request-per-theme flow those runs depend o
 |---|---|
 | Always push and open a pull request | The agent would act with a push credential in repositories whose owner never said so, and the non-goals page would be false. |
 | Never push | Every playbook ending and the Stage 1 and Stage 4 steps would change, and each theme would need a manual push by a person. |
-| Opt-in, with a question when the key is absent | The recipe is built not to stop for questions in the middle of a theme; triage is the one place that asks. |
+| Opt-in, with a question when the key is absent | The push choice is one answer for the whole run, so triage asks it with the run's other preferences. A question at the end of a theme would stop each theme for a choice that triage records once. |
 
 ## Consequences
 

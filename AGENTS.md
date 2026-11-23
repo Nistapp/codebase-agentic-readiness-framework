@@ -30,14 +30,25 @@ make lint           # read-only lint
 make typecheck      # mypy, strict: audit/tools, implement/tools, the playbook templates, dev, greenfield/bootstrap,
                     # the engine build.py
 make test           # the engine's, the audit tools', the implement tools', the greenfield scaffolder's and the dev
-                    # checks' suites (at once on Linux)
+                    # checks' suites (on Linux at once, the slow three in LOCAL_SHARDS=4 shards each;
+                    # TEST_JOBS= runs them one by one and whole)
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
-                    # cross-check, recipe-lint, adr-lint, masters-check, eval-expected-check, workflow-lint (actionlint,
-                    # zizmor, check-jsonschema), spell (typos)
+                    # cross-check, recipe-lint, recipe-paths, adr-lint, masters-check, eval-expected-check,
+                    # workflow-lint (actionlint, zizmor, check-jsonschema), spell (typos)
 make security       # secrets scan, then the dependency audit (osv-scanner; needs Go and the network)
 make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin/dev..HEAD); CI runs it on each PR
+make gate           # check, security, docs-lint, commit-lint, self-audit, then coverage: every gate CI needs
 make update-masters # regenerate docs/reference/audit-master.md and implement-master.md (check runs masters-check)
+make golden GOLDEN_ARGS="record --out DIR"   # then "compare DIR": prove a change altered no output (not in check)
 ```
+
+Here `make security` also runs the secrets scan. This repository has no runtime dependencies, so the verb began
+as that scan and the dependency audit joined it later. A target's `security` stays a dependency gate only
+([`configure-quality-tools`](implement/playbooks/configure-quality-tools.md)).
+
+While you work, run only the tests of the code you change. Before you propose the change, run `make gate` once.
+A narrow run never replaces the gate: a change in one area can break a test in another suite. Details are in
+[`CONTRIBUTING.md`](CONTRIBUTING.md#the-gates).
 
 One test, without the whole suite. Run the engine's tests from `audit/engine/`:
 
@@ -53,10 +64,24 @@ python3 -m unittest discover -s implement/tools/tests
 python3 -m unittest discover -s greenfield/bootstrap/tests -k package_json
 ```
 
+Run one module of the dev checks:
+
+```bash
+python3 -m unittest discover -s dev/tests -p test_new_check.py
+```
+
+Run one shard of a suite with `make test-<suite>-local-<i>`. The `<suite>` is `engine`, `audit-tools` or `dev`. The `<i>`
+runs from 1 to `LOCAL_SHARDS` (default 4).
+
 This file is read by Claude Code, opencode, Codex, Gemini CLI, Cursor and any other harness that reads `AGENTS.md`.
 No vendor-specific instruction file exists beside it.
 
 - Run `make check` and `make security` before you propose a change. Do not run an ad-hoc substitute.
+  `make gate` runs both, plus coverage, the self-audit, the Markdown lint and the commit-subject check, in one command
+  (about 4 minutes on 16 cores). On Linux the first five run at once and `coverage` runs after them, because the
+  engine tests of `check` and of `coverage` build the same `audit/engine/dist/audit.pyz`. Each gate's output comes
+  in one piece, and the last line names every gate that failed. `make gate TEST_JOBS=` runs the gates one by one.
+  It does not run Python 3.11; CI does.
 - A misspelling fails `make spell` (in `make check`). Fix it, or run `make spell-fix` and review the diff. Add a word
   to `_typos.toml` only for a project term or a code token.
 - When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the
@@ -74,9 +99,12 @@ No vendor-specific instruction file exists beside it.
   Hooks do not replace the gate: CI runs `make check`, `make security` and `make docs-lint`.
 - `make coverage` runs the engine's, the audit tools', the implement tools' and the greenfield scaffolder's suites
   under coverage.py. It fails
-  below the floor in `.coveragerc` (`fail_under`). CI runs it in parts (`coverage-<suite>` per job, then
-  `coverage-combine` in the `coverage` job). Each suite runs as CI does (an empty `HOME` and `CI=true`), so a local
-  pass means a CI pass. The floor is debt that only goes up: raise it when coverage rises, never lower it to get green.
+  below the floor in `.coveragerc` (`fail_under`). On Linux it runs the suites at once, the engine's and the audit
+  tools' in `LOCAL_SHARDS` shards each, then combines the data files. `make coverage TEST_JOBS=` runs the four suites
+  one by one and whole, with the same total and the same missed lines. CI runs it in parts (`coverage-<suite>` per
+  job, then `coverage-combine` in the `coverage` job). Each suite runs as CI does (an empty `HOME` and `CI=true`), so
+  a local pass means a CI pass. The floor is debt that only goes up: when coverage rises, ask the owner to raise it. Never
+  lower it to get green.
 - Quality baseline: existing lint debt is counted in `.quality-baseline.json` (ruff, mypy, Markdown lint outside the
   ratchet) and the secrets in `.secrets.baseline`. No new violations: `make format-check`, `make typecheck` and
   `make docs-lint` compare the live count with the baseline and fail when it went up (a ratchet). A baseline only goes
@@ -95,12 +123,14 @@ No vendor-specific instruction file exists beside it.
 
 ## Code conventions
 
-These rules are written in full in the files linked. `audit/engine/AGENTS.md` §5 and §6 are the strictest.
+These rules are written in full in the files linked. `audit/engine/AGENTS.md`
+[§5](audit/engine/AGENTS.md#5-coding-standards) and [§6](audit/engine/AGENTS.md#6-testing-standards) are the
+strictest.
 
 - Naming: modules and functions are `snake_case`, as in PEP 8; a private helper starts with `_`. A check ID keeps
   the catalogue's `PACK-NN` form.
-- Layering: follow the Boundaries table below. The engine never imports `audit/tools/`, the audit folder never
-  imports `implement/`, and only `dev/` may import a dev package.
+- Layering: follow the [Boundaries](#boundaries) table below. The engine never imports `audit/tools/`, the audit
+  folder never imports `implement/`, and only `dev/` may import a dev package.
 - Errors and logging: a tool raises `UsageError` (exit 1) or `ValidationFailed` (exit 2), and a bug exits 3
   (`audit/tools/README.md`). The engine raises `AuditUsageError` for bad input. No code uses the `logging` module:
   diagnostics go to stderr, never to stdout.

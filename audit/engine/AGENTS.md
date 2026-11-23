@@ -50,15 +50,18 @@ Agents MUST respect the following structural rules.
 | `audit/cli.py` | Argument surface and exit codes only — no scan logic. |
 | `audit/target.py` | Target guard and git provenance capture. |
 | `audit/scan.py` | Bounded traversal, file classification, bounded content reads, grep. |
+| `audit/globs.py` | The one path-glob matcher: a glob from the root, matched folder by folder (`*` stays inside a name, `**` matches any number of folders). |
 | `audit/stack.py` | Ecosystem / package manager / CI / test-framework / hook detection. |
 | `audit/components.py` | Declared components (depth 1) plus candidate components. |
 | `audit/probes.py` | Tier-C runner: allow-list, timeouts, **capture-time** redaction. |
 | `audit/evaluate.py` | Verdicts, scoring, exit codes, the unattested list, provenance. |
 | `audit/findings.py` | Severity ordering, the finding model, the "An agent cannot X because Y" sentence form. |
-| `audit/rules/registry.py` | The check catalogue, framework anchors, `ruleset_hash()`. |
+| `audit/rules/registry.py` | The check catalogue, assembled from the families' `SPECS` in the order of `FAMILIES`; framework anchors; `ruleset_hash()`. |
+| `audit/rules/spec.py` | The check specification type (`CheckSpec`), `declare`, and the pack anchors. Imports no check module. |
 | `audit/rules/variants.py` | **The** instruction-variant table — one data structure, in code. |
 | `audit/rules/payloads.py` | Typed, `kind`-discriminated structured check payloads (ADR-0007). |
-| `audit/rules/checks/` | One module per check pack; each exposes an `IMPLEMENTATIONS` dict. |
+| `audit/rules/reads.py` | The read types and helpers, and `READS`: what each check reads (places, text, binding), keyed by check id, gathered from each check module's `reads()`. Data for the consistency map, never for a verdict: a check module imports it only inside `reads()`, so an audit run never loads it, and the ruleset hash leaves it out. |
+| `audit/rules/checks/` | One package per check pack, `<family>/<pack>_NN.py` per check plus `_shared.py`. Each family exposes `SPECS` and an `IMPLEMENTATIONS` dict. |
 | `audit/report/model.py` | **The** schema-v2 report model — the JSON render contract (ADR-0007). |
 | `audit/report/presentation.py` | The Markdown template (sections, columns, editorial wording), in code. |
 | `audit/report/md_render.py` | Generic section/table renderer over the report dict. |
@@ -89,10 +92,10 @@ Agents MUST respect the following structural rules.
 | Language | Python 3.11+ | Standard library only; `from __future__ import annotations`. |
 | Runtime | `python3` | No install step: `python3 -m audit <target>` from a fresh clone. |
 | Tests | stdlib `unittest` | `python3 -m unittest discover -s tests`. No pytest dependency. |
-| Dev tools | ruff, mypy, detect-secrets via `uvx` | Pinned in the root `Makefile` (§3.1). Never imported by `audit/` or `build.py`. |
+| Dev tools | ruff, mypy, detect-secrets via `uvx` | Pinned in `dev/tools/pyproject.toml`, never in the `Makefile` (ADR 0003). Never imported by `audit/` or `build.py`. |
 | Build | `zipapp` | `python3 build.py` → `dist/audit.pyz`; source tree is the artifact of record. |
-| Index | `codebase-memory-mcp` | Mandatory for structural queries (see §4). |
-| Docs | Diátaxis + [`../docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) | The shared style guide is canonical (see §8). |
+| Index | `codebase-memory-mcp` | Mandatory for structural queries (see [§4](#4-codebase-memory-mcp-integration)). |
+| Docs | Diátaxis + [`../docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) | The shared style guide is canonical (see [§8](#8-documentation-contract)). |
 
 ### 3.1 Standardized command surface
 
@@ -106,7 +109,7 @@ The framework's verbs are the contract. The runner is the **root `Makefile`** of
 | `lint` | `make lint` | ruff lint rules over `audit`, `implement`, `dev` and `greenfield/bootstrap`, read-only. |
 | `typecheck` | `make typecheck` | mypy strict, on `audit/tools`, `implement/tools`, `dev`, `greenfield/bootstrap` and this directory's `build.py`. The rest of the engine joins later through a ratchet. |
 | `test` | `make test` | `python3 -m unittest discover -s tests` in this directory, then the audit tools' suite in `audit/tools/tests`, the implement tools' in `implement/tools/tests`, the greenfield scaffolder's in `greenfield/bootstrap/tests`, then the dev checks' in `dev/tests`. |
-| `check` | `make check` | `format:check`, `typecheck`, `test`, `--verify-rules`, the schema cross-check (`crosscheck`), `recipe-lint` and `adr-lint`. |
+| `check` | `make check` | `format:check`, `typecheck`, `test`, `--verify-rules`, the schema cross-check (`crosscheck`), `recipe-lint`, `recipe-paths`, `adr-lint`, `masters-check`, `eval-expected-check`, `workflow-lint` and `spell`. |
 | `security` | `make security` | Secrets scan against the committed baseline, then osv-scanner on the dev tools' lockfiles. The engine itself has no dependencies to audit. |
 
 The dev tools (ruff, mypy, detect-secrets) are pinned in `dev/tools/pyproject.toml` and run through `uvx`. They
@@ -173,7 +176,9 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 - **Framework:** stdlib `unittest` (import from `unittest`, not `pytest`).
 - **Location:** a check pack's tests go in its package, `tests/packs/<pack>/` (`agt`, `cmd`, `exec`, `tool`, ...);
   cross-pack and pipeline tests (the fixture matrix, scan, report, CLI) and the `support` helpers stay in `tests/`;
-  fixtures under `tests/fixtures/`. A test module name is unique across the suite (CI's shards find a module by
+  fixtures under `tests/fixtures/`. A fixture's row in the fixture matrix goes in the table of its check's family,
+  `tests/packs/<family>/matrix.py`; a fixture of no one family goes in `tests/packs/cross_family/matrix.py`.
+  A test module name is unique across the suite (CI's shards find a module by
   name). Keep each folder at 50 files or fewer: the self-audit's `NAV-03` reads a larger one as a catch-all.
 - **Fixtures:** one directory per check id, each a minimal repository that fails **exactly one** check.
   The catalogue's § Adding a Check makes this a merge requirement: **no fixture, no check.**
@@ -185,7 +190,10 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
   entry-point contract (`main` callable with no arguments) must not be weakened.
 - **Pass rate:** 100% required. Never `.skip` or comment out a failing test; never relax an assertion to get
   green.
-- **Gate:** run `make check` (§3.1) from the repository root before proposing a change.
+- **Gate:** run `make check` and `make security` ([§3.1](#31-standardized-command-surface)) from the repository
+  root before proposing a change.
+- **Ruleset revision:** when two branches each add a revision, `make ruleset-renumber` renumbers yours after the
+  base's newest one (`RULESET_ARGS=check` lists them and changes nothing).
 
 ---
 
@@ -196,7 +204,8 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 > its original history is preserved there. Branches and commits follow the repository's own conventions; the
 > bullets below describe this tool's own conventions.
 
-- **Branching:** the repository's model applies (`RELEASE_PROCESS.md`, ADR 0002 in `docs/architecture/adrs/`).
+- **Branching:** the repository's model applies (`RELEASE_PROCESS.md`, the root
+  [ADR 0002](../../docs/architecture/adrs/0002-dev-integrates-main-releases.md)).
   `dev` is the integration branch; `main` takes pull requests from `dev` only. Work branches start from `dev` and are
   named `<type>/<topic>`, for example `feat/<slug>`, `fix/<slug>` or `refactor/<slug>`.
 - **Commits (Conventional Commits):** `<type>(<scope>): <description>` with types `feat`, `fix`, `refactor`,
@@ -210,7 +219,7 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 ## 8. Documentation Contract
 
 - **Single source of truth:** `docs/` is the sole canonical home for permanent knowledge. `artefacts/` is
-  transient scratch (see §4).
+  transient scratch (see [§4](#4-codebase-memory-mcp-integration)).
 - **Canonical rules:** the shared style guide, [`../docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md), holds the
   authoring rules. Link to it; do **not** restate its rules elsewhere, because restated rules drift.
 - **Doc router:** `docs/architecture/README.md` is the entry point and the ADR index.

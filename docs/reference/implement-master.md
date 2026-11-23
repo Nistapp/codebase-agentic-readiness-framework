@@ -118,7 +118,8 @@ manifest that dependency automation reads.
   locking: the point is to record what resolves today.
 - Do not add a root workspace manifest to a per-component repository unless the owner asks.
 - Do not edit workflow files without `ci.edits_authorised`.
-- Do not build images or start containers by hand: use the repository's scripts.
+- Do not build images or start containers by hand: use the repository's scripts, unless the person asks for that
+  exact action ([Hard rules](../../implement/SKILL.md#hard-rules)).
 - Do not install a version manager the owner did not approve.
 - Do not upgrade a tool while moving its version into a manifest.
 
@@ -139,10 +140,11 @@ lines, and every concern (lint, format, test, types, security) has one authorita
 - Do not untrack a path that a deploy path reads, or may read, without the owner's recorded yes.
 - Do not untrack a secret-bearing file here; that is the secrets theme's decision (rotation, history).
 - Do not untrack a lockfile, the Gradle wrapper or any hand-written file the ignore rule matches by accident:
-  fix the rule.
+  fix the rule. "`EXEC-02` Lockfile committed and consistent" needs the lockfile tracked.
 - Do not delete working-tree files (`git rm` without `--cached`) and do not rewrite history.
 - Do not delete, merge or rename a competing config (EXEC-07).
-- Do not start containers or the local stack by hand to test a reader.
+- Do not start containers or the local stack by hand to test a reader, unless the person asks for that exact
+  action ([Hard rules](../../implement/SKILL.md#hard-rules)).
 
 Full playbook: [`untrack-generated.md`](../../implement/playbooks/untrack-generated.md).
 
@@ -164,14 +166,15 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
 **What it never does:**
 
 - Do not print, quote, log or copy a value from any env, properties, realm, keystore or credentials file, and
-  do not open a `.env`-like file.
+  do not open a `.env`-like file. This echoes the hard rule [Never touch secrets](../../implement/SKILL.md#hard-rules).
 - Do not rotate a credential, remove one from history or run a history-rewriting command: report and stop.
 - Do not touch a tracked env file the owner keeps; do not add an ignore rule or `git rm --cached` for it.
 - Do not re-raise a finding the owner rejected or skipped; new observations go to the pull request body.
 - Do not template, edit or "clean" realm or identity-provider exports.
 - Do not install a scanner the owner has not approved.
 - Do not put shell builtins or script-internal names in the example file.
-- Do not start containers or the local stack by hand to test a change; use the repository's scripts.
+- Do not start containers or the local stack by hand to test a change; use the repository's scripts, unless the
+  person asks for that exact action ([Hard rules](../../implement/SKILL.md#hard-rules)).
 
 Full playbook: [`env-inventory-and-secrets.md`](../../implement/playbooks/env-inventory-and-secrets.md).
 
@@ -226,7 +229,8 @@ branch, so an agent learns it is on the wrong branch before it commits, not when
 - Do not advise `--no-verify` or add a bypass variable, in the branch guard either.
 - Do not re-propose a `skipped` commit-convention finding.
 - Do not pick a manager by what looks familiar or by what this framework uses: detect, then recommend by stack.
-- Do not duplicate the secret-scanner version: reuse the CI pin.
+- Do not duplicate the secret-scanner version: reuse the CI pin. A second inline copy is one more literal for
+  "`EXEC-08` Tool versions visible to dependency automation".
 
 Full playbook: [`add-hooks-and-commit-rules.md`](../../implement/playbooks/add-hooks-and-commit-rules.md).
 
@@ -260,7 +264,8 @@ floor needs the owner, and is recorded as described in [Continue on error](../..
 - No upgrade of a tool or runner only to get its native baseline format, without the owner.
 - No agent edit that raises a count or lowers a floor; no script that rewrites a baseline or floor by itself.
 - No new member of `check` for a ratchet; it goes in `format:check`.
-- Do not start or stop services outside the repository's own scripts.
+- Do not start or stop services outside the repository's own scripts, unless the person asks for that exact
+  action ([Hard rules](../../implement/SKILL.md#hard-rules)).
 
 Full playbook: [`add-baselines-and-ratchet.md`](../../implement/playbooks/add-baselines-and-ratchet.md).
 
@@ -278,7 +283,7 @@ not moved.
 | [`DOC-01` docs/ exists](audit-master.md#doc-01-docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home. A dense README section that the owner agrees to move gets a `docs/` page and an index row (Steps 10) |
 | [`DOC-02` docs/STYLE_GUIDE.md exists](audit-master.md#doc-02-docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` with the form rules and one line in the instruction file that names it. An existing guide gets the form rules only by the owner's choice (Steps 9) |
 | [`DOC-03` artefacts/ exists and is ignored](audit-master.md#doc-03-artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
-| [`DOC-04` ADR directory and index](audit-master.md#doc-04-adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
+| [`DOC-04` ADR directory and index](audit-master.md#doc-04-adr-directory-and-index) | Adds `docs/architecture/adrs/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
 | [`DOC-05` Docs are readable](audit-master.md#doc-05-docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. A prose check with a ratchet only when the owner picks one of three permissive licences for it (Inputs 6, Steps 8). Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
 | [`NAV-01` Declared component boundaries](audit-master.md#nav-01-declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | [`NAV-02` Obvious entry points](audit-master.md#nav-02-obvious-entry-points) | Verification only: names the entry points in the architecture page |
@@ -291,11 +296,14 @@ not moved.
 - Do not mass-reformat or mass-fix existing Markdown, and do not turn off a lint rule to make a count fall.
 - Do not create a second `docs/` or restructure the existing report folders.
 - Do not copy content, paths, names or values from a private repository or workspace into an open-source
-  repository's docs or ADRs, or from any target repository into the framework.
+  repository's docs or ADRs, or from any target repository into the framework. This echoes
+  the hard rule [Keep private content private](../../implement/SKILL.md#hard-rules).
 - Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
-  fill in".
+  fill in". The owner of this rule is rule 10 of the greenfield
+  [`ADR_POLICY.md`](../../greenfield/templates/docs/ADR_POLICY.md#rules).
 - Do not move, resize, delete or untrack files for NAV-03.
-- Do not put values from env files, credentials, realm exports or keystores in any page.
+- Do not put values from env files, credentials, realm exports or keystores in any page. Such a value also fails
+  "`SEC-02` No key-shaped strings in tracked files".
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
 - Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
   change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one
@@ -359,6 +367,8 @@ section, one commit at a time ([details](../../implement/playbooks/adapt-agents-
   them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
 - Do not edit the prohibitions section; that is [`add-deny-rules`](../../implement/playbooks/add-deny-rules.md).
+  It is the section that "`AGT-07` Do-not-do / deny rules present", "`CON-01` Allow/deny artifact present" and
+  "`CON-02` Test directories protected" read.
 - Do not edit code to make a rule true, and do not drop a rule because the code breaks it.
 - Do not create a harness configuration file to point at a second rules file.
 - Do not write a fact an earlier theme has not made true (a verb that does not resolve, a docs page that does not
@@ -370,7 +380,7 @@ section, one commit at a time ([details](../../implement/playbooks/adapt-agents-
 - Do not move or rewrite a conventions section in `AGENTS.md` or `CONTRIBUTING.md` unasked, copy a Git rule into the
   conventions, or copy a formatter or linter setting into them.
 - Do not copy content from a private repository or workspace into an open-source one, or from any target into the
-  framework.
+  framework. This echoes the hard rule [Keep private content private](../../implement/SKILL.md#hard-rules).
 
 Full playbook: [`adapt-agents-md.md`](../../implement/playbooks/adapt-agents-md.md).
 
@@ -402,7 +412,8 @@ contradict it.
 - Do not untrack, ignore or delete a file the owner has not confirmed is scratch, and do not change which env files
   are tracked; state the owner's decision instead.
 - Do not paste the CON-04 draft whole: an entry that matches nothing in the repository is noise.
-- Do not open, print or quote a secret store while listing the paths.
+- Do not open, print or quote a secret store while listing the paths. This echoes the hard
+  rule [Never touch secrets](../../implement/SKILL.md#hard-rules).
 
 Full playbook: [`add-deny-rules.md`](../../implement/playbooks/add-deny-rules.md).
 
@@ -444,7 +455,8 @@ action in the state, never an invented contact.
 - Do not apply a ruleset file (`gh api -X POST` or `PUT`); the owner does.
 - Do not invent a mailbox, a response time or a second reviewer.
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
-- Do not copy a private runbook, another repository's page, or its values into a repository's file.
+- Do not copy a private runbook, another repository's page, or its values into a repository's file. This echoes
+  the hard rule [Keep private content private](../../implement/SKILL.md#hard-rules).
 - Do not choose a licence.
 - Do not add a contributing item the owner has not accepted, or a rule the repository does not show. Do not write
   contributing text that does not come from `greenfield/templates/`.

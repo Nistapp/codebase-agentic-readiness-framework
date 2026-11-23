@@ -80,15 +80,15 @@ request, on every merge group of the `dev` merge queue and on every push to `dev
 jobs and fails unless each one succeeded. The jobs run on Ubuntu (issue #82 tracks macOS and Windows). The first five
 run the steps of `make check` at once; `dev/tests/test_ci_parity.py` fails when a step of `check` has no job. The
 engine's and the audit tools' suites run in shards (`TEST_SHARDS` and `SHARDED_SUITES` in the `Makefile`, split by
-`dev/test_shard.py`). On Python 3.14 the dev checks run in shards too (`TEST_SHARDED_SUITES`). The parity test also
+`dev/test_shard.py`). The dev checks run in shards too, on both Pythons (`TEST_SHARDED_SUITES`). The parity test also
 fails when a matrix misses a shard or a part misses a suite:
 
 | Job | What it runs |
 | --- | --- |
-| `static` | `make format-check typecheck verify-rules recipe-lint adr-lint masters-check eval-expected-check workflow-lint spell` |
+| `static` | `make format-check typecheck verify-rules recipe-lint recipe-paths adr-lint masters-check eval-expected-check workflow-lint spell` |
 | `crosscheck` | `make crosscheck` on Python 3.11 and 3.14 |
 | `test-coverage` | `make coverage-part`, one job per shard: a shard of the engine's and of the audit tools' suites, the implement tools in part 1 and the greenfield scaffolder in part 2, under coverage.py on Python 3.11; each part runs its targets at once |
-| `test-dev` | `make test-dev` on Python 3.11 |
+| `test-dev` | `make test-dev-shard`, one job per shard: a shard of the dev checks' suite on Python 3.11 |
 | `test-py314` | `make test-part`, one job per shard: every suite of `make test` and `verify-rules` on Python 3.14, with a shard of the engine's, the audit tools' and the dev checks' suites in each part; each part runs its targets at once |
 | `coverage` | `make coverage-combine SHARDED=1`: merges the data files (one per shard of a sharded suite) and fails below the floor in `.coveragerc` |
 | `security-secrets` | `make security-secrets`: the secrets scan, the first part of `make security`; no Go |

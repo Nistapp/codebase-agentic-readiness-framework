@@ -38,175 +38,46 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import support  # noqa: E402
 
 from audit.rules.registry import REGISTRY, scoreable  # noqa: E402
+from packs.agt.matrix import ROWS as AGT_ROWS  # noqa: E402
+from packs.base.matrix import ROWS as BASE_ROWS  # noqa: E402
+from packs.ci.matrix import ROWS as CI_ROWS  # noqa: E402
+from packs.cmd.matrix import ROWS as CMD_ROWS  # noqa: E402
+from packs.con.matrix import ROWS as CON_ROWS  # noqa: E402
+from packs.cross_family.matrix import ROWS as CROSS_FAMILY_ROWS  # noqa: E402
+from packs.doc_nav.matrix import ROWS as DOC_NAV_ROWS  # noqa: E402
+from packs.exec.matrix import ROWS as EXEC_ROWS  # noqa: E402
+from packs.hyg.matrix import ROWS as HYG_ROWS  # noqa: E402
+from packs.idx.matrix import ROWS as IDX_ROWS  # noqa: E402
+from packs.sec.matrix import ROWS as SEC_ROWS  # noqa: E402
+from packs.tool.matrix import ROWS as TOOL_ROWS  # noqa: E402
+from packs.tst.matrix import ROWS as TST_ROWS  # noqa: E402
 
 FIXTURES_DIR = support.FIXTURES_DIR
 
+#: The family tables, in the order the rows are listed in ``MATRIX``.
+FAMILY_TABLES = (
+    AGT_ROWS,
+    DOC_NAV_ROWS,
+    CMD_ROWS,
+    TOOL_ROWS,
+    CI_ROWS,
+    BASE_ROWS,
+    CON_ROWS,
+    EXEC_ROWS,
+    TST_ROWS,
+    SEC_ROWS,
+    IDX_ROWS,
+    HYG_ROWS,
+    CROSS_FAMILY_ROWS,
+)
+
 #: fixture directory -> {check id: expected verdict}. Every directory under tests/fixtures/ must
-#: appear here (``test_every_fixture_is_accounted_for``).
-MATRIX: dict[str, dict[str, str]] = {
-    # -- AGT (content contract + competing files + indirection) -------------------------------
-    "agt-01-missing": {"AGT-01": "FAIL", "AGT-08": "PASS", "CON-01": "UNKNOWN", "CON-02": "UNKNOWN"},
-    "agt-01-stub": {"AGT-01": "FAIL"},
-    "agt-01-mis-cased": {"AGT-01": "FAIL"},
-    "agt-01-shadowed": {"AGT-01": "PARTIAL"},
-    "agt-01-marker-words-in-prose": {"AGT-01": "PASS"},
-    "agt-02-uncovered": {"AGT-02": "PARTIAL"},
-    "agt-03-incomplete": {"AGT-03": "PARTIAL"},
-    "agt-04-missing": {"AGT-04": "FAIL"},
-    "agt-05-verbs-named-not-resolved": {"AGT-05": "PARTIAL"},
-    "agt-05-ok": {"AGT-05": "PASS"},
-    "agt-06-thin": {"AGT-06": "PARTIAL"},
-    "agt-07-missing-deny": {"AGT-07": "PARTIAL"},
-    "agt-08-competitor": {"AGT-08": "FAIL"},
-    "agt-09-no-release": {"AGT-09": "PARTIAL"},
-    "agt-09-ruleset-branch-unnamed": {"AGT-09": "PARTIAL"},
-    "agt-12-no-rules": {"AGT-09": "PASS", "AGT-12": "FAIL"},
-    "agt-13-no-conventions": {"AGT-12": "PASS", "AGT-13": "FAIL"},
-    "agt-10-deferred": {"AGT-10": "FAIL"},
-    # -- DOC / NAV ----------------------------------------------------------------------------
-    "doc-01-empty": {"DOC-01": "PARTIAL"},
-    "doc-02-no-style-guide": {"DOC-02": "FAIL"},
-    "doc-03-tracked-artefacts": {"DOC-03": "FAIL"},
-    "ignore-ok-nested-gitignore": {"DOC-03": "PASS", "CON-03": "PASS"},
-    "doc-04-adr-unindexed": {"DOC-04": "PARTIAL"},
-    "doc-04-adr-tombstone": {"DOC-04": "PARTIAL"},
-    "doc-05-long-sentences": {"DOC-01": "PASS", "DOC-02": "PASS", "DOC-04": "PASS", "DOC-05": "FAIL"},
-    "doc-nav-ok": {
-        "DOC-01": "PASS",
-        "DOC-02": "PASS",
-        "DOC-03": "PASS",
-        "DOC-04": "PASS",
-        "DOC-05": "PASS",
-        "NAV-01": "PASS",
-        "NAV-02": "PASS",
-        "NAV-03": "PASS",
-    },
-    "nav-01-no-manifest": {"NAV-01": "UNKNOWN"},
-    "nav-02-no-entry": {"NAV-02": "FAIL"},
-    "nav-03-red-flags": {"NAV-03": "PARTIAL"},
-    # -- CMD ----------------------------------------------------------------------------------
-    "cmd-01-missing-verb": {"CMD-01": "FAIL"},
-    "cmd-02-weak-check": {"CMD-02": "FAIL"},
-    "cmd-03-divergent": {"CMD-03": "FAIL"},
-    "cmd-04-write-in-check": {"CMD-04": "FAIL"},
-    "cmd-ok-npm": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
-    "cmd-ok-root-make-nested-template": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
-    "cmd-ok-make": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
-    "cmd-ok-make-prereqs": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
-    "cmd-ok-make-alias": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
-    "cmd-01-make-parse-error": {"CMD-01": "FAIL", "CMD-02": "UNKNOWN", "CMD-03": "UNKNOWN", "CMD-04": "UNKNOWN"},
-    "cmd-ok-pyproject-poe": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
-    "cmd-ok-gradle": {"CMD-01": "PASS", "CMD-02": "UNKNOWN", "CMD-03": "PASS", "CMD-04": "PASS"},
-    "cmd-ok-maven": {"CMD-01": "PASS", "CMD-02": "UNKNOWN", "CMD-03": "PASS", "CMD-04": "PASS"},
-    "cmd-01-maven-no-formatter": {"CMD-01": "FAIL", "CMD-02": "UNKNOWN", "CMD-03": "PASS", "CMD-04": "PASS"},
-    # -- TOOL ---------------------------------------------------------------------------------
-    "tool-01-no-formatter": {"TOOL-01": "FAIL"},
-    "tool-02-no-linter": {"TOOL-02": "FAIL"},
-    "tool-03-nonstrict-ts": {"TOOL-03": "PARTIAL"},
-    "tool-04-no-audit-verb": {"TOOL-04": "FAIL"},
-    "tool-04-make-security-no-audit": {"TOOL-04": "PARTIAL"},
-    "tool-04-local-only-audit": {"TOOL-04": "PARTIAL"},
-    "tool-05-unwired-hooks": {"TOOL-05": "PARTIAL"},
-    "tool-06-no-commit-rule": {"TOOL-06": "FAIL"},
-    "tool-06-local-only-commit-rule": {"TOOL-06": "PARTIAL"},
-    "tool-06-ci-only-commit-rule": {"TOOL-06": "PARTIAL"},
-    "tool-07-no-branch-guard": {"TOOL-05": "PASS", "TOOL-07": "FAIL"},
-    "tool-07-guard-no-exit": {"TOOL-05": "PASS", "TOOL-07": "PARTIAL"},
-    "tool-ok-node": {
-        "TOOL-01": "PASS",
-        "TOOL-02": "PASS",
-        "TOOL-03": "PASS",
-        "TOOL-04": "PASS",
-        "TOOL-05": "PASS",
-        "TOOL-06": "PASS",
-    },
-    # -- CI -----------------------------------------------------------------------------------
-    "ci-01-no-pr-trigger": {"CI-01": "PARTIAL"},
-    "ci-02-parity-break": {"CI-02": "FAIL"},
-    "ci-03-ci-only-step": {"CI-03": "FAIL"},
-    "ci-05-no-workflow-lint": {"CI-05": "FAIL"},
-    "ci-05-ci-only-lint": {"CI-05": "PARTIAL"},
-    "ci-ok-gh": {"CI-01": "PASS", "CI-02": "PASS", "CI-03": "PASS", "CI-05": "PASS"},
-    # -- BASE ---------------------------------------------------------------------------------
-    "base-01-no-baseline": {"BASE-01": "FAIL"},
-    "base-02-no-count": {"BASE-02": "PARTIAL"},
-    "base-03-no-ratchet": {"BASE-03": "FAIL"},
-    "base-04-no-coverage-floor": {"BASE-04": "FAIL"},
-    "base-ok": {"BASE-01": "PASS", "BASE-02": "PASS", "BASE-03": "PASS", "BASE-04": "PASS"},
-    # -- CON ----------------------------------------------------------------------------------
-    "con-01-names-existing-paths": {"CON-01": "PASS", "CON-02": "UNKNOWN"},
-    "con-01-names-missing-paths": {"CON-01": "PARTIAL", "CON-02": "UNKNOWN"},
-    "con-01-names-no-path": {"CON-01": "FAIL", "CON-02": "UNKNOWN"},
-    "con-02-unprotected-tests": {"CON-01": "PASS", "CON-02": "FAIL"},
-    "con-02-protected": {"CON-01": "PASS", "CON-02": "PASS"},
-    "con-02-partly-protected": {"CON-02": "PARTIAL"},
-    "con-02-no-test-directory": {"CON-02": "UNKNOWN"},
-    "con-02-no-prohibitions-section": {"CON-01": "UNKNOWN", "CON-02": "UNKNOWN"},
-    "con-02-specs-are-not-tests": {"CON-02": "PASS"},
-    "con-03-artefacts-not-ignored": {"CON-03": "FAIL"},
-    # -- EXEC ---------------------------------------------------------------------------------
-    "exec-01-unpinned": {"EXEC-01": "FAIL"},
-    "exec-01-nested-go-unpinned": {"EXEC-01": "FAIL"},
-    "exec-01-sibling-module-unpinned": {"EXEC-01": "PARTIAL"},
-    "exec-01-python-source-only": {"EXEC-01": "FAIL", "EXEC-02": "UNKNOWN"},
-    "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
-    "exec-02-nested-lockfile": {"EXEC-02": "PARTIAL"},
-    "exec-03-no-setup": {"EXEC-03": "FAIL"},
-    "exec-04-missing-env": {"EXEC-04": "FAIL"},
-    "exec-05-generated": {"EXEC-05": "FAIL"},
-    "exec-06-broken-command": {"EXEC-06": "FAIL"},
-    "exec-07-dual-lint": {"EXEC-07": "FAIL"},
-    "exec-07-dual-python-types": {"EXEC-07": "FAIL"},
-    "exec-08-inline-version": {"EXEC-08": "FAIL"},
-    "exec-08-duplicate-pin": {"EXEC-08": "PARTIAL"},
-    "exec-ok": {
-        "EXEC-01": "PASS",
-        "EXEC-02": "PASS",
-        "EXEC-03": "PASS",
-        "EXEC-04": "PASS",
-        "EXEC-05": "PASS",
-        "EXEC-06": "PASS",
-        "EXEC-07": "PASS",
-    },
-    # -- TST ----------------------------------------------------------------------------------
-    "tst-01-no-suite": {"TST-01": "PARTIAL"},
-    "tst-03-skip-markers": {"TST-03": "PASS"},
-    "tst-04-no-fastpath": {"TST-04": "FAIL"},
-    "tst-05-no-coverage": {"TST-05": "FAIL"},
-    # -- SEC ----------------------------------------------------------------------------------
-    "sec-01-tracked-env": {"SEC-01": "FAIL"},
-    "sec-01-excluded-env": {"SEC-01": "FAIL"},
-    "sec-02-key-shaped": {"SEC-02": "FAIL"},
-    "sec-03-thin-ignore": {"SEC-03": "FAIL"},
-    "sec-03-ok-negated-exception": {"SEC-03": "PASS"},
-    "sec-01-ok": {"SEC-01": "PASS", "SEC-02": "PASS", "SEC-03": "PASS"},
-    "sec-02-expression-assignment": {"SEC-02": "PASS"},
-    "sec-02-env-reference": {"SEC-02": "PASS"},
-    # -- IDX (machine-local; run with an isolated HOME and an absent index store) --------------
-    "idx-01-no-mcp-config": {"IDX-01": "FAIL"},
-    "idx-02-no-index": {"IDX-02": "UNKNOWN", "IDX-03": "UNKNOWN"},
-    # -- HYG (informational, reported never scored) -------------------------------------------
-    "hyg-01-placeholder-readme": {"HYG-01": "FAIL", "HYG-10": "FAIL"},
-    "hyg-09-uncovered-ecosystem": {"HYG-09": "PARTIAL"},
-    "hyg-09-target-branch-trap": {"HYG-09": "PARTIAL"},
-    "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
-    "hyg-11-no-source-branch-check": {"HYG-11": "PARTIAL"},
-    "hyg-13-thin-contributing": {"HYG-05": "PASS", "HYG-13": "FAIL"},
-    "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN", "HYG-13": "UNKNOWN"},
-    # -- the AGT-content positive fixture -----------------------------------------------------
-    "governed-minimal": {
-        "AGT-01": "PASS",
-        "AGT-02": "PASS",
-        "AGT-03": "PASS",
-        "AGT-04": "PASS",
-        "AGT-06": "PASS",
-        "AGT-07": "PASS",
-        "AGT-09": "PASS",
-        "AGT-10": "PASS",
-        "AGT-12": "PASS",
-        "AGT-13": "PASS",
-    },
-}
+#: appear here (``test_every_fixture_is_accounted_for``). The rows live in one table per family,
+#: ``tests/packs/<family>/matrix.py``; ``packs/cross_family/matrix.py`` holds the fixtures that belong to no single
+#: family (carried data, layout and stack fixtures, ``governed-minimal``). A fixture's row goes in one table only.
+MATRIX: dict[str, dict[str, str]] = {}
+for _table in FAMILY_TABLES:
+    MATRIX.update(_table)
 
 #: Fixtures whose target reads git's tracked set; they are copied into a fresh git repository.
 NEEDS_GIT = frozenset(
@@ -215,13 +86,32 @@ NEEDS_GIT = frozenset(
         "ignore-ok-nested-gitignore",
         "exec-02-no-lockfile",
         "exec-02-nested-lockfile",
+        "exec-02-lockfile-no-manifest",
+        # The fixture's own ignore file hides the stray file from this repository too, so the stray file is
+        # committed here with `git add -f`; the fresh copy's `add -A` leaves it untracked, as the fixture needs.
+        "exec-04-anchored-ignored-dir",
+        "exec-04-nested-ignored-dir",
+        "layout-app-per-folder",
         "exec-05-generated",
+        "exec-05-committed-dist",
+        "exec-05-build-script",
         "exec-ok",
         "sec-01-ok",
         "sec-01-tracked-env",
         "sec-01-excluded-env",
+        "sec-01-tracked-ignored-env",
+        "sec-03-tracked-ignored-key",
         "sec-02-key-shaped",
         "con-03-artefacts-not-ignored",
+        "stack-dotnet",
+        "stack-dotnet-locked",
+        "stack-gradle-wrapper-readme",
+        "stack-just-inline-version",
+        "stack-maven-wrapper-readme",
+        "stack-php-composer",
+        "stack-python-uv-inline-version",
+        "stack-ruby-bundler",
+        "stack-rust-cargo",
     }
 )
 
@@ -230,7 +120,10 @@ FORCE_ADD: dict[str, str] = {
     "doc-03-tracked-artefacts": "artefacts/notes.md",
     "sec-01-tracked-env": ".env",
     "sec-01-excluded-env": "vendor-samples/.env",
+    "sec-01-tracked-ignored-env": "config/prod.env",
+    "sec-03-tracked-ignored-key": "server.key",
     "con-03-artefacts-not-ignored": "artefacts/notes.md",
+    "exec-05-committed-dist": "build/x.class",
 }
 
 #: Fixtures whose verdict depends on machine-local state; run with an isolated HOME and store.
@@ -312,6 +205,12 @@ class FixtureMatrixTests(unittest.TestCase):
         declared = set(MATRIX) | set(NOT_IN_MATRIX)
         self.assertEqual(actual - declared, set(), "fixture directories with no explicit matrix row")
         self.assertEqual(declared - actual, set(), "matrix rows naming a fixture that does not exist")
+
+    def test_no_fixture_has_a_row_in_two_family_tables(self):
+        names = [name for table in FAMILY_TABLES for name in table]
+        duplicated = sorted({name for name in names if names.count(name) > 1})
+        self.assertEqual(duplicated, [], "fixture rows in more than one family table")
+        self.assertEqual(len(names), len(MATRIX))
 
     def test_each_fixture_reports_its_documented_verdict_and_names_every_finding_once(self):
         for name in sorted(MATRIX):

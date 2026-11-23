@@ -51,6 +51,9 @@ python3 -m audit <target> --format both --out ./audit-out/<name>   # writes <nam
 # verdicts that do not depend on this machine: read nothing under $HOME (the IDX checks)
 python3 -m audit <target> --no-user-config --out ./audit-out/<name>
 
+# a report to commit or publish: write "." as provenance.target, not the local absolute path
+python3 -m audit <target> --target-label . --out ./audit-out/<name>
+
 # add executed probes, explicitly and with a time budget
 python3 -m audit <target> --run-gates --allow-probe check --allow-probe test --timeout 600
 
@@ -68,12 +71,16 @@ Full walkthrough: [How to run an audit](docs/how-to/run-an-audit.md).
 
 The engine decides what counts as the repository ([ADR-0008](docs/architecture/adrs/0008-what-counts-as-the-repository.md)):
 a root manifest outranks a nested one, and files under a directory named `templates`, `examples`, `fixtures`,
-`samples`, `testdata` or `scaffold` (singular forms too) are carried data that no check reads. The report lists them
-in `inventory.set_aside`. `--exclude` is therefore no longer needed for template, example or fixture directories; it
+`samples`, `testdata` or `scaffold` (singular forms too) are carried data that no check reads. Below a JVM source root
+(`src/main/java/`, `src/test/kotlin/` and the like) such a folder is a package and is read. The report lists them in
+`inventory.set_aside`. `--exclude` is therefore no longer needed for template, example or fixture directories; it
 stays for anything else you want left out (`artefacts/**`, a vendored tree).
 
-The checks that ask whether a path is ignored (`DOC-03`, `CON-03`, `SEC-01`, `SEC-03`) read every nested `.gitignore`,
-scoped to its directory, and honour `!` negation ([ADR-0009](docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)).
+The walk reads every nested `.gitignore`, scoped to its directory, as do `DOC-03`, `CON-03`, `SEC-01` and `SEC-03`.
+All of them honour anchoring, `**` and `!` negation
+([ADR-0009](docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)). A git-ignored, untracked folder (build
+output, a cache, an agent worktree) is not read, and the report names it in `inventory.ignored_dirs`. A file git
+tracks is read even when an ignore rule covers it.
 
 ---
 
@@ -106,8 +113,10 @@ audit/                     the tool: standard library only, no install step
   findings.py              finding model, severity ordering, sentence form
   rules/
     variants.py            THE instruction-variant table (one data structure, in code)
-    registry.py            check catalogue + framework anchors + ruleset hash
-    checks/                one module per check family; idx.py, agt.py, execution.py, cmd.py, sec.py, doc.py, nav.py, tool.py, ci.py, tst.py, base.py, con.py and hyg.py are implemented
+    spec.py                the check specification type and declare()
+    registry.py            check catalogue (joined from the families) + framework anchors + ruleset hash
+    reads.py               what each check reads, gathered from the check modules' reads()
+    checks/                one package per check family, one module per check (doc/doc_01.py, ...)
   report/                  report model (schema v2), Markdown template, writer
 tools/build.py             python3 tools/build.py  ->  dist/audit.pyz
 tests/                     stdlib unittest suite + fixtures

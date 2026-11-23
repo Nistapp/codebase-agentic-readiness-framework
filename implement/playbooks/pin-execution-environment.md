@@ -26,10 +26,11 @@ manifest that dependency automation reads.
 - Preferences this playbook reads, when present: `layout.command_runner` (per component or one root runner; a
   per-component preference forbids a root workspace manifest), `ci.edits_authorised` (whether workflow files may
   be changed), `format.mass_reformat`, `extra.*` entries that name a pin the owner already chose (for example a
-  JDK toolchain block). A step that conflicts with one stops and asks.
+  JDK toolchain block). A step that conflicts with one stops and asks
+  ([state contract](../state.md#skip-defer-and-preferences)).
 - No earlier theme is needed. Run it before any scanner step that reads a lockfile
   ([`configure-quality-tools`](configure-quality-tools.md) blocks `security` until the lockfile exists), and
-  before the CI theme, which copies these pins into workflows.
+  before the CI theme ([`add-ci-parity`](add-ci-parity.md)), which copies these pins into workflows.
 - The integration branch builds today. Take a baseline first (step 1): a lockfile is only safe if it changes no
   resolved version.
 
@@ -67,17 +68,17 @@ manifest that dependency automation reads.
    |---|---|---|
    | `java { toolchain { languageVersion = JavaLanguageVersion.of(N) } }` (recommended) | Built in; the build no longer depends on `JAVA_HOME`; CI and local runs use the same JDK | Gradle fails if no matching JDK is installed, unless a resolver plugin is added |
    | Toolchain block + `org.gradle.toolchains.foojay-resolver-convention` (1.0.0, 2025-05-19) in `settings.gradle` | Downloads the missing JDK automatically | Network fetch of a JDK during a build; one more plugin in `settings.gradle`; owner approves it first |
-   | `.sdkmanrc` or `.tool-versions` only | Cheap hint for developers | Not read by Gradle or the engine; does not pin CI |
+   | `.sdkmanrc` or `.tool-versions` only | Cheap hint for developers | Not read by Gradle; the engine reads a `.tool-versions` `java` line, not `.sdkmanrc`; does not pin CI |
 
 5. **Lock width (Gradle).** Recommend `dependencyLocking { lockAllConfigurations() }` and one `gradle.lockfile`:
    built into Gradle, read by Dependabot and by OSV-Scanner. Locking only `runtimeClasspath` and
    `compileClasspath` gives a smaller file but leaves test and plugin classpaths free to drift, so EXEC-02 reads
    only partly met. A version catalog alone is not a lock. Record the choice as a preference.
 6. **Monorepo or several components with no root manifest.** Per-component lockfiles are accepted when the owner chose a
-   per-component layout (`layout.command_runner`). The playbook then verifies each component and records the item
-   `partial` with the reason; it does not add a root workspace manifest unless the owner asks, because that changes
-   install paths and image builds. The engine reads only the root manifest, so a nested lockfile reads `PARTIAL` by
-   design ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
+   per-component layout (`layout.command_runner`). The playbook then verifies each component. It adds no root
+   workspace manifest unless the owner asks, because that changes install paths and image builds. The engine
+   compares each lockfile with the manifest in its own folder, so a tracked component lockfile in step with its
+   manifest reads `PASS` ([EXEC-02](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
 7. **Where tool versions go (EXEC-08).** List each literal the audit cited (tool, version, file, line) and confirm
    the versions stay as they are: this step moves a version, it never upgrades one. The place follows the stack
    profile; offer the owner the matching option:
@@ -104,20 +105,23 @@ manifest that dependency automation reads.
 3. **Pin the package manager** where the ecosystem has a field for it (`packageManager` in `package.json`;
    the Gradle wrapper for Gradle). Keep the version you already use.
 4. **Lock the dependencies.** Generate the lockfile with the tool's own command, from the pinned toolchain, and
-   commit it with the manifest. Never hand-edit a lockfile.
+   commit it with the manifest. Never hand-edit a lockfile. Keep the tool's own lockfile name.
+   "`NAV-03` Structural red flags" leaves only those names out of its size count.
 5. **Compare.** Re-run the step 1 reports. The resolved versions must be identical. A difference is a defect in
    this change (a wrong toolchain, a floating version, a forced version the lock did not honour): fix the cause
    before committing, never record it as debt.
 6. **Cross-check every other place that names a version** (found in Inputs step 1): CI workflows, `Dockerfile*`
    `FROM` lines, compose images, documented prerequisites. Make each agree with the pin, or read it from the pin
    (`node-version-file: .nvmrc`, `java-version-file`). Edit workflow files only when `ci.edits_authorised` allows;
-   otherwise list the mismatches as debt and stop short of the edit. The CI theme repeats this check.
+   otherwise list the mismatches as debt and stop short of the edit. The CI theme
+   ([`add-ci-parity`](add-ci-parity.md)) repeats this check.
 7. **Keep claims true.** A comment or document that says "versions are locked" must be true after this change or
    be corrected: `dependabot.yml` headers and `AGENTS.md` lines are typical. A claim that is stale for a reason
    other than this playbook is recorded and left to the `AGENTS.md` theme, **except** a false claim about the
    lockfiles or the pin this playbook just made true or checked (for example "component X has no tracked
    lockfile" when it has one): correct that line in its own small commit once the owner agrees, and look the
-   line up by text, not by the finding's line number (earlier themes move lines).
+   line up by text, not by the finding's line number (earlier themes move lines). Keep a path and its rule word
+   on one line, as "`AGT-06` Architectural boundaries declared" reads them.
 8. **Tell the scanner theme.** If a scanner reads the lockfile (OSV-Scanner reads `gradle.lockfile` and
    `package-lock.json`), note in the item that the lockfile now exists, so `configure-quality-tools` can unblock
    its `security` verb.
@@ -131,6 +135,17 @@ manifest that dependency automation reads.
     Make sure `dependabot.yml` (or the Renovate config) has an entry for the manifest's ecosystem and directory
     ([`add-repo-hygiene`](add-repo-hygiene.md), HYG-09). Edit a workflow only when `ci.edits_authorised` allows;
     otherwise list its literals as debt. A repeated copy of a pin (EXEC-08 `PARTIAL`) is removed the same way.
+    Four more reads need care:
+    - A new tool manifest needs a toolchain pin that reaches it, such as `engines.node` or `requires-python`.
+      Else "`EXEC-01` Toolchain pinned / wrapper committed" reads it as an unpinned module.
+    - Give a tool manifest no script named like a verb. "`CMD-01` Seven verbs resolvable on one runner" reads
+      the scripts of the shallowest `package.json`.
+    - Where a workflow or hook line ran the tool, call the verb there or keep the tool's name on the line
+      (`go tool actionlint`, `uv run zizmor`). "`TOOL-04` Dependency / security scan verb", "`TOOL-06` Commit
+      convention enforced" and "`CI-05` Workflow files are linted" find the tool by its name. "`CI-02`
+      Local↔CI parity" maps the line to a verb.
+    - Copy the form of the existing update entries, with no `target-branch` beside `ignore` or `groups`.
+      "`HYG-09` Dependency update automation configured" reads that pair as a defect.
 
 ### Gradle
 
@@ -145,10 +160,14 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#execution-determinism).
   a rule moved.
 - Every dependency bump from now on regenerates the lockfile (`--write-locks`, or `--update-locks <group:name>`).
   Say so in the instruction file next to the build verbs.
-- The engine cannot see `dependencyLocking`, so EXEC-02 reads `UNKNOWN` for an unlocked Gradle build and may not
-  read the locked one as `PASS` either. Verify by reading `build.gradle` and `gradle.lockfile` directly and
-  record the engine's limit in the item.
-- Invoke only through the wrapper (`./gradlew`).
+- The engine reads only whether a `gradle.lockfile` exists and is tracked. It does not read `dependencyLocking`,
+  and it cannot compare the lock with `build.gradle`. So "`EXEC-02` Lockfile committed and consistent" reads
+  `FAIL` for an unlocked Gradle build, which has no lockfile. A tracked root `gradle.lockfile` reads `PARTIAL`
+  at best (consistency unverified), never `PASS`. Verify by reading `build.gradle` and `gradle.lockfile`
+  directly, then record the finding as [engine-limit debt](#continue-on-error).
+- Invoke only through the wrapper (`./gradlew`). Then "`EXEC-06` Documented commands resolve" finds the wrapper
+  for each documented Gradle command. The rule is in
+  [`spec/command-surface.md`](../../spec/command-surface.md#spelling-per-runner).
 
 ### Node (npm, pnpm, yarn)
 
@@ -170,8 +189,52 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#exe
   (`cache-dependency-path` for the component's lockfile).
 - A second Dockerfile for the same app (a dev image) may already name the target major while the finding text
   still says an old one: copy every value from the files and list only the places that really differ.
-- Docker images build only through the repository's own scripts, never by hand. Align the Dockerfile `FROM`
-  and any dev Dockerfile with the pin.
+- Docker images build only through the repository's own scripts, never by hand, unless the person asks for that
+  exact action ([Hard rules](../SKILL.md#hard-rules)). Align the Dockerfile `FROM` and any dev Dockerfile with
+  the pin.
+
+### .NET (NuGet)
+
+- The SDK pin is `global.json` (`sdk.version`, with a `rollForward` policy the owner chooses).
+- NuGet writes `packages.lock.json` only when a project sets `RestorePackagesWithLockFile` to `true`. Set it once
+  in `Directory.Build.props` at the root, or in each project. Run `dotnet restore` and commit every
+  `packages.lock.json` it writes, one beside each project.
+- CI restores with `dotnet restore --locked-mode`, so a restore that would change a lock fails.
+- The engine compares only a root `packages.lock.json` with the project files in the root folder. A lock beside
+  each project of a solution is tracked but not compared, so "`EXEC-02` Lockfile committed and consistent" reads
+  `PARTIAL`
+  ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
+
+### PHP (Composer)
+
+- The PHP pin is a `.php-version` file, a `php` line in `.tool-versions`, or a key in `composer.json`.
+  "`EXEC-01` Toolchain pinned / wrapper committed" reads `config.platform.php` first, then `require.php`.
+  `config.platform.php` makes Composer resolve as if that PHP ran; `require.php` only refuses an install outside
+  the range.
+- Each `composer.json` is its own unit: a parent `composer.json` does not pin a nested Composer project. Pin
+  each one in its own `composer.json`, or put a `.php-version` in its folder or a parent folder. A project no
+  pin reaches reads `PARTIAL`.
+- The lockfile is `composer.lock`. Keep a tracked one if `composer install` passes. With none, run
+  `composer install` once, and commit each `composer.lock` it writes, one beside each `composer.json`.
+- CI installs with `composer install`, never `composer update`, so it installs what the lock records.
+- The engine reads only whether each `composer.lock` exists and is tracked. It does not compare the lock with
+  `composer.json`, so "`EXEC-02` Lockfile committed and consistent" reads `PARTIAL` at best (consistency
+  unverified). Verify by running `composer install`, then `git status --porcelain`. Then record the finding as
+  [engine-limit debt](#continue-on-error).
+
+### Ruby (Bundler)
+
+- The Ruby pin is a `.ruby-version` file or a `ruby` line in `.tool-versions`. "`EXEC-01` Toolchain pinned /
+  wrapper committed" does not read the `ruby` line of a `Gemfile` or the `RUBY VERSION` of `Gemfile.lock`.
+  Commit one of the two pin files.
+- The lockfile is `Gemfile.lock`. Keep a tracked one if `bundle install` passes. With none, run
+  `bundle install` once and commit the `Gemfile.lock` it writes.
+- CI installs with Bundler's `frozen` setting (`BUNDLE_FROZEN=true`), so an install that would change the lock
+  fails.
+- The engine reads only whether each `Gemfile.lock` exists and is tracked. It does not compare the lock with the
+  `Gemfile`, so "`EXEC-02` Lockfile committed and consistent" reads `PARTIAL` at best (consistency unverified).
+  Verify by running `bundle install`, then `git status --porcelain`. Then record the finding as
+  [engine-limit debt](#continue-on-error).
 
 ## Commits
 
@@ -180,7 +243,7 @@ Steps 1, 5, 8 and 9 make no commit.
 | # | Commit | Checks | Kind |
 |---|---|---|---|
 | 1 | Toolchain pin: `.nvmrc` and `engines.node`, or the Gradle toolchain block | `EXEC-01` | config |
-| 2 | Package-manager pin, `packageManager` (Node only) | `EXEC-01` | config |
+| 2 | Package-manager pin, `packageManager` (Node only) | `EXEC-08` | config |
 | 3 | Lockfile from the tool's own command, with the `dependencyLocking` block on Gradle (only when none is tracked, or by owner choice) | `EXEC-02` | bulk |
 | 4 | Instruction-file line: a dependency bump regenerates the lockfile (Gradle only) | `EXEC-02` | hand |
 | 5 | Stack start-up script installs with `npm ci` (only when it runs a bare install) | `EXEC-02` | hand |
@@ -196,9 +259,15 @@ Steps 1, 5, 8 and 9 make no commit.
 - A lockfile that changes a resolved version is not debt: fix the cause before committing.
 - A mismatch in a file the owner has not authorised editing (CI, a Dockerfile in another team's folder) is
   debt: count the mismatched places, record them with `--debt`, mark the item `partial`, and list each place
-  in the note. There is nothing to ratchet; the CI theme closes it.
-- Per-component lockfiles with no root manifest, by the owner's layout choice: `partial` with the reason
-  "lockfiles per component by owner choice; engine reads the root only". Not a defect.
+  in the note. There is nothing to ratchet; the CI theme
+  ([`add-ci-parity`](add-ci-parity.md)) closes it.
+- Some "`EXEC-02` Lockfile committed and consistent" `PARTIAL` findings are an engine limit. Their statement
+  says "`<lockfile>` is tracked, but the engine does not compare `php` lockfiles" (or `ruby`, `jvm`). No edit
+  turns one into `PASS`. Run the verification its ecosystem section gives. When it is clean, mark the item
+  `partial` with `--debt "what=engine cannot compare this lockfile with its manifest,count=1"`. The note names
+  the lockfile and quotes the verification result. Report-only is the wiring: there is no count to ratchet. A
+  failed verification is no debt: fix the lockfile first. An `EXEC-02` `PARTIAL` with any other reason is not
+  covered here.
 - A component whose build fails on the pinned major: record `blocked` with the error and the owner's options
   (a different major, an upgrade of the failing dependency). Never pin a version the build cannot use.
 
@@ -212,8 +281,9 @@ Steps 1, 5, 8 and 9 make no commit.
 | EXEC-08 | Launcher run; `grep` each cited line | No literal tool version in a command, workflow or hook; each tool is in a manifest with a lockfile; `PASS` |
 
 Also run the repository's own gate (`./gradlew build`, `npm run build` per component) once on the pinned
-toolchain, and read the CI run on the branch: it must be green. The engine's re-audit can still read EXEC-02 as
-`UNKNOWN` (Gradle) or `PARTIAL` (nested lockfile): record that as an engine limit with the evidence above.
+toolchain. Read the CI run on the branch too: it must be green. The engine's re-audit still reads EXEC-02 as
+`PARTIAL` for a Gradle, Composer or Bundler lockfile, whose consistency it does not read. Record that as
+[engine-limit debt](#continue-on-error) with the evidence above.
 
 ## Rollback
 
@@ -232,7 +302,8 @@ dependency version changed, so no runtime change needs undoing.
   locking: the point is to record what resolves today.
 - Do not add a root workspace manifest to a per-component repository unless the owner asks.
 - Do not edit workflow files without `ci.edits_authorised`.
-- Do not build images or start containers by hand: use the repository's scripts.
+- Do not build images or start containers by hand: use the repository's scripts, unless the person asks for that
+  exact action ([Hard rules](../SKILL.md#hard-rules)).
 - Do not install a version manager the owner did not approve.
 - Do not upgrade a tool while moving its version into a manifest.
 
@@ -247,6 +318,9 @@ python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace
   --verification-result "<resolved versions identical; gradle.lockfile tracked>"
 python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --debt "what=version mismatch in CI,count=2" --note "<places, why not edited>"
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
+  --debt "what=engine cannot compare this lockfile with its manifest,count=1" \
+  --note "<lockfile>: composer install, then git status --porcelain: clean"
 python3 implement/tools/progress.py pref set tools.node_major <value> --reason "<owner's words>" \
   --by owner --workspace <workspace> --phase <phase>
 ```

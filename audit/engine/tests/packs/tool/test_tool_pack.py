@@ -156,13 +156,28 @@ class ToolInlineTests(unittest.TestCase):
         for check in TOOL_CHECKS:
             self.assertIn(verdicts[check], ("UNKNOWN", "PASS"), f"{check} guessed")
 
-    def test_evidence_cites_a_nested_manifests_real_path_not_a_hardcoded_basename(self):
-        """A monorepo whose only ``package.json`` is nested has no manifest at the literal name
-        ``"package.json"``; TOOL-01's FAIL evidence must cite a path that actually exists."""
+    def test_a_nested_only_maven_build_is_no_runner_and_no_evidence(self):
+        """``./mvnw`` reads the root build only, so a nested ``pom.xml`` is not cited, nor the literal name."""
+        report = self._scan({"packages/app/pom.xml": "<project></project>\n"})
+        self.assertEqual(support.verdicts(report)["TOOL-01"], "FAIL")
+        evidence_paths = {e["path"] for f in report["findings"] if f["check"] == "TOOL-01" for e in f["evidence"]}
+        self.assertNotIn("packages/app/pom.xml", evidence_paths)
+        self.assertNotIn("pom.xml", evidence_paths)
+
+    def test_a_nested_only_gradle_build_is_no_runner_and_no_evidence(self):
+        """``./gradlew`` reads the root build only, so a nested ``build.gradle`` is not cited as a runner."""
+        report = self._scan({"packages/app/build.gradle": "plugins { id 'java' }\n"})
+        self.assertEqual(support.verdicts(report)["TOOL-01"], "FAIL")
+        evidence_paths = {e["path"] for f in report["findings"] if f["check"] == "TOOL-01" for e in f["evidence"]}
+        self.assertNotIn("packages/app/build.gradle", evidence_paths)
+        self.assertNotIn("build.gradle", evidence_paths)
+
+    def test_a_nested_only_package_json_is_no_runner_and_no_evidence(self):
+        """``npm`` reads the root ``package.json`` only, so a nested one is not cited as a runner."""
         report = self._scan({"packages/app/package.json": '{"name": "app", "scripts": {}}'})
         self.assertEqual(support.verdicts(report)["TOOL-01"], "FAIL")
         evidence_paths = {e["path"] for f in report["findings"] if f["check"] == "TOOL-01" for e in f["evidence"]}
-        self.assertIn("packages/app/package.json", evidence_paths)
+        self.assertNotIn("packages/app/package.json", evidence_paths)
         self.assertNotIn("package.json", evidence_paths)
 
 

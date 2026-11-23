@@ -26,7 +26,8 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
 - Preferences this playbook reads, when present: `extra.t3` (what the owner already chose for a tracked key
   file), `layout.command_runner` (per-app layout means one example file per app), `ci.edits_authorised`,
   `scanner.choice` (a dependency scanner is not a secret scanner), `format.mass_reformat`.
-- No earlier theme is needed. If the command-surface theme already named the `security` verb, reuse it in the
+- No earlier theme is needed. If the command-surface theme
+  ([T1 Command surface and quality tools](../SKILL.md#themes)) already named the `security` verb, reuse it in the
   scanner step; do not create a second one.
 - **Hard rules, every step:** never print, quote, log or copy a value from any env, properties, realm,
   keystore or credentials file, not in a commit message, a status file or a summary. Count lines, list key
@@ -42,29 +43,35 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    | Option | Pros | Cons |
    |---|---|---|
    | One `.env.example` at the root | The engine reads it with no configuration; one place | Not a dotenv the code loads when the variables are CI or repository variables: it is a documentation file |
-   | `scripts/ci/env.example` beside the scripts and their README | Sits next to the code that reads the variables; the engine accepts the `env.example` basename | A reader at the root does not find it; two homes if the app also needs a local example |
+   | `scripts/ci/env.example` beside the scripts and their README | Sits next to the code that reads the variables | Covers only the scripts in its folder and below; a reader at the root does not find it |
    | One example file per app and per service (follows a per-app `layout.command_runner`) | Matches the layout; each app's variables stay with the app | Several files to keep aligned; step 5 adds a cross-check |
 
-   Recommend the second for CI and script variables, the third when the repository is per-app. Record the choice
-   as a preference. Ask also whether optional framework overrides (for example `QUARKUS_*`) are listed; the
-   default is yes, marked optional, names only.
-2. **Tracked secret-bearing files.** For each path from step 3, show the owner the path and the reason it was
-   flagged (never its content) and ask: untrack, keep as a documented exception, or skip. Only the owner can
-   say a tracked local-development file holds throwaway values or must stay for developers' setup. A keep or a
-   skip is recorded in the owner's words; a skip is final.
+   "`EXEC-04` Env-var inventory complete" reads four names at any depth: `.env.example`, `.env.sample`,
+   `.env.template` and `env.example`. An example file covers the files in its own folder and below it, so a root
+   file covers every name, and `api/.env.example` covers only what `api/` reads. Recommend the first. Offer the
+   second or the third when the owner wants each file beside the code that reads it. Record the choice as a
+   preference. Ask also whether optional framework overrides (for example `QUARKUS_*`) are listed; the default is
+   yes, marked optional, names only.
+2. **Tracked secret-bearing files.** Take each path from [Steps](#generic) step 3. Show the owner the path and the
+   reason it was flagged, never its content. Ask: untrack, keep as a documented exception, or skip. Only the owner can say
+   a tracked local-development file holds throwaway values or must stay for developers' setup. A keep or a skip is
+   recorded in the owner's words; a skip is final.
 3. **Scanner.** Detect what the repository already runs (a script that CI calls, a `.gitleaks.toml`, a
    `.secrets.baseline`, a pre-commit entry). If one exists, use it and add no tool (the tool is the owner's
-   choice). Only a repository with none gets this table, with a recommendation:
+   choice). A second scanner config would fail "`EXEC-07` No competing configs for one concern". Only a
+   repository with none gets this table, with a recommendation:
 
    | Tool | Last release | Pros | Cons |
    |---|---|---|---|
    | gitleaks (MIT) | v8.30.1, 2026-03-21; repo active 2026-10 | Single binary; fast; history and working-tree scans; config file; large user base | Pattern based, so entropy-only secrets are missed; false positives need an allowlist |
    | trufflehog (AGPL-3.0) | v3.99.7, 2026-10-24 | Verifies some hits against the live service; many detectors | AGPL licence; verification makes network calls with a found credential, which an owner may not want |
-   | detect-secrets (Apache-2.0) | v1.5.0, 2024-05-06; repo last pushed 2026-04 | Baseline file ratchets existing debt; plugin model | Python dependency; no release in over two years; slower on large trees |
+
+   Dropped: detect-secrets (v1.5.0, 2024-05-06; no stable release in over two years). A repository that already
+   runs it keeps it.
 
    Currency checked 2026-10-30 (GitHub releases API, PyPI). Re-check it when the playbook is applied: it
-   dates. Adding a local scanner step to the command surface belongs to the command-surface and CI themes:
-   note it, do not do it here.
+   dates. The [tool currency](../tool-choice.md#tool-currency) rule applies. Adding a local scanner step to the
+   command surface belongs to the command-surface and CI themes: note it, do not do it here.
 4. **Realm, vault or identity-provider exports** that contain a secret field (for example a Keycloak realm
    JSON). These are owner-review only: list the paths and the count of secret-field keys per file; ask nothing
    about values; do not edit or template them.
@@ -101,6 +108,9 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    that names it, and do not rotate or rewrite history. If the file is read by a stack script or a compose
    file, find the reader first and say what breaks; verify through the repository's own script, never by
    starting containers by hand. A kept file stays as it is (no edit, no ignore rule changed for it).
+   In a doc that names an untracked file, change only the path. An `AGENTS.md` line that forbids committing secrets
+   keeps its prohibition word and its concern word. "`AGT-07` Do-not-do / deny rules present" reads both on one
+   line. A fenced command that named the file must still resolve, for "`EXEC-06` Documented commands resolve".
 4. **Write the example file(s)** (Inputs step 1). In a per-app repository write one file per app plus one for
    the script areas (CI, deploy, identity-provider scripts), each with its own false-positive header. Extend an
    existing example file: add the names it lacks, mark a declared name the code never reads `# legacy` (do not
@@ -108,6 +118,9 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    Names only: `NAME=` with a one-line comment (what reads it, required or optional, a placeholder format
    such as `<aws-role-arn>`; low-entropy, never a real-looking value).
    Optional variables are commented out or marked `# optional`. Do not copy a value from any real file.
+   A nested example file names every variable read in its folder and below. A variable read in two folders goes
+   in an example file that covers both (Inputs 1). Each one counts for "`EXEC-04` Env-var
+   inventory complete" for the files it covers.
 5. **Cross-check.** Every name in the inventory is in an example file or is on the false-positive list with a
    reason; every name in an example file is read somewhere (a stale name is removed or marked legacy). In a
    per-app layout, check each app's file against its own reads.
@@ -116,6 +129,9 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
       public certificate, a test fixture) gets a named `!` exception with a comment, never a silent gap.
    2. Add the missing shapes from the check's own suggestion list (the audit's SEC-03 output names them): SSH
       private keys, PKCS#12, PFX, keystore, `.crt`, `.cer`, the AWS credentials folder. Append, do not reorder.
+      Git applies the last matching rule, so a new order can change what "`SEC-01` .env untracked and ignored"
+      sees. The same holds for "`DOC-03` artefacts/ exists and is ignored" and "`CON-03` artefacts/ excluded from
+      index and agent reads".
       `*.cer` and `*.crt` share one caveat: a future public certificate needs a named `!` line. Verify with
       `git check-ignore -q` on one sample path per shape, including one under a directory a negation re-includes.
    3. Read each existing `!` line: if it re-includes a secret shape, report it to the owner (do not remove it).
@@ -126,7 +142,10 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
       tracked until `git rm --cached`.
 7. **SEC-02.** Run the scanner the repository already has (Inputs step 3). Record hit counts by path and line,
    never the line. A hit is a candidate for the owner, not an edit. Test fixtures with obviously fake tokens
-   are listed as such and recorded in the scanner's allowlist only if the owner agrees.
+   are listed as such and recorded in the scanner's allowlist only if the owner agrees. Write each entry with the
+   scanner's own command, for the file and line as they stand at that commit. "`SEC-02` No key-shaped strings in
+   tracked files" accepts an allowlisted hit only on its listed line. A later edit above it means a regenerated
+   allowlist.
 8. **Realm and identity exports** (Inputs step 4): write the path list and counts into the state note and
    the pull request body, for the owner. No change to the files.
 9. **Docs.** Add the example file(s) to the instruction file's variables paragraph and to the CI README, if either
@@ -169,7 +188,8 @@ files. Repository variables and secrets are not in the repo: the example file is
 | 5 | Fake-token fixtures in the scanner's allowlist (only when the owner agrees) | `SEC-02` | config |
 | 6 | Pointers to the example file in the instruction file, CI README and deploy doc | `EXEC-04` | hand |
 
-A path that step 6.4 newly lists goes back to step 3: its untracking is one more commit like 1, after 4.
+A path that [Steps](#generic) step 6.4 newly lists goes back to step 3: its untracking is one more commit like
+commit 1 in the table above, after commit 4.
 
 ## Continue on error
 
@@ -177,8 +197,8 @@ A path that step 6.4 newly lists goes back to step 3: its untracking is one more
   The existing CI scan stays as the guard against new ones; a repository with no scan gets a report-only step
   noted for the CI theme.
 - A tracked secret-bearing file the owner keeps: a recorded exception (`skipped` with the owner's words, or the
-  item `partial` with the path named). It stays as it is; the check keeps reading FAIL in re-audit and the
-  note says why.
+  item `partial` with `--debt "what=tracked secret-bearing files kept,count=N"` and each path in the note). It
+  stays as it is; the check keeps reading FAIL in re-audit and the note says why.
 - A variable whose owner or requiredness cannot be told from the code: listed as `unknown` in the table, asked
   once, never guessed.
 - An ignore shape that would hide an intentional tracked file: add the named `!` exception rather than skip the
@@ -204,14 +224,15 @@ undoing.
 ## Do-not-do
 
 - Do not print, quote, log or copy a value from any env, properties, realm, keystore or credentials file, and
-  do not open a `.env`-like file.
+  do not open a `.env`-like file. This echoes the hard rule [Never touch secrets](../SKILL.md#hard-rules).
 - Do not rotate a credential, remove one from history or run a history-rewriting command: report and stop.
 - Do not touch a tracked env file the owner keeps; do not add an ignore rule or `git rm --cached` for it.
 - Do not re-raise a finding the owner rejected or skipped; new observations go to the pull request body.
 - Do not template, edit or "clean" realm or identity-provider exports.
 - Do not install a scanner the owner has not approved.
 - Do not put shell builtins or script-internal names in the example file.
-- Do not start containers or the local stack by hand to test a change; use the repository's scripts.
+- Do not start containers or the local stack by hand to test a change; use the repository's scripts, unless the
+  person asks for that exact action ([Hard rules](../SKILL.md#hard-rules)).
 
 ## State updates
 

@@ -8,8 +8,7 @@ the audit bundle installed beside it.
 
 Builds for real, into a temporary directory — there is no fixture to fake this against, since the whole
 point is copying this repository's own files; a build that can run only against a double would not prove the
-real one works. One pass runs `build.py` for real too (network-free, stdlib-only), so this test is slower
-than most in this suite but still seconds, not minutes.
+real one works. So this test is slower than most in this suite, but still seconds, not minutes.
 """
 
 from __future__ import annotations
@@ -18,10 +17,13 @@ import io
 import json
 import os
 import re
+import shutil
+import stat
 import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -79,7 +81,7 @@ class BuildSkillsTests(unittest.TestCase):
             self.assertEqual(prompts, set(bs.AUDIT_PROMPT_FILES))
 
             ref_schema = {p.name for p in (bundle_dir / "references" / "schema").iterdir()}
-            self.assertEqual(ref_schema, set(bs.SCHEMA_FILES))
+            self.assertEqual(ref_schema, set(bs.SCHEMA_DOC_FILES))
 
             for name in bs.TOOL_FILES:
                 self.assertTrue((bundle_dir / "scripts" / "tools" / name).is_file(), name)
@@ -88,7 +90,8 @@ class BuildSkillsTests(unittest.TestCase):
             self.assertTrue((bundle_dir / "scripts" / "catalogue.json").is_file())
             self.assertTrue((bundle_dir / "scripts" / "engine" / "audit" / "__main__.py").is_file())
             self.assertFalse((bundle_dir / "scripts" / "deterministic-audit").exists())
-            self.assertTrue((bundle_dir / "scripts" / "audit.pyz").is_file())
+            # The release attaches audit.pyz on its own; the bundle carries the engine tree only.
+            self.assertEqual(list(bundle_dir.rglob("*.pyz")), [])
 
     def test_skill_md_links_the_shared_prompt_inside_the_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -225,11 +228,19 @@ class AuditBundleLinkTests(unittest.TestCase):
             for prefix in SOURCE_TOOL_PREFIXES:
                 self.assertNotIn(prefix, text, file.relative_to(self.bundle))
 
-    def test_both_schema_doc_copies_are_rewritten_for_their_place(self) -> None:
+    def test_the_one_schema_doc_copy_links_the_schema_files_the_tools_read(self) -> None:
         references = (self.bundle / "references" / "schema" / "SCHEMA.md").read_text(encoding="utf-8")
-        scripts = (self.bundle / "scripts" / "schema" / "SCHEMA.md").read_text(encoding="utf-8")
         self.assertIn("](../../scripts/tools/facts.py)", references)
-        self.assertIn("](../tools/facts.py)", scripts)
+        self.assertIn("](../../scripts/schema/audit-report.schema.json)", references)
+        self.assertIn("](../../scripts/schema/catalogue.schema.json)", references)
+        self.assertFalse((self.bundle / "scripts" / "schema" / "SCHEMA.md").exists())
+        skill = (self.bundle / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("](scripts/schema/audit-intake.schema.json)", skill)
+
+    def test_no_schema_file_is_carried_twice_or_unread(self) -> None:
+        names = [p.name for p in self.bundle.rglob("*.schema.json")]
+        self.assertEqual(sorted(names), sorted(bs.SCHEMA_FILES))
+        self.assertNotIn("eval-expected.schema.json", names)
 
 
 def links_outside_fences(text: str) -> list[str]:
@@ -280,7 +291,7 @@ class ImplementBundleTests(unittest.TestCase):
             "references/spec/command-surface.md",
             "references/spec/decisions/0002-lint-in-the-gate.md",
             "references/schema/SCHEMA.md",
-            "references/schema/readiness-state.schema.json",
+            "scripts/schema/readiness-state.schema.json",
             "references/tools-cli.md",
             "scripts/catalogue.json",
             "scripts/tools/engine.py",
@@ -292,6 +303,7 @@ class ImplementBundleTests(unittest.TestCase):
             self.assertTrue((self.bundle / "scripts" / "tools" / name).is_file(), name)
         script_schema = {p.name for p in (self.bundle / "scripts" / "schema").iterdir()}
         self.assertEqual(script_schema, set(bs.IMPLEMENT_SCHEMA_FILES))
+        self.assertEqual(sorted(p.name for p in self.bundle.rglob("*.schema.json")), sorted(bs.IMPLEMENT_SCHEMA_FILES))
         source_playbooks = {p.name for p in (bs.IMPLEMENT / "playbooks").glob("*.md")}
         bundle_playbooks = {p.name for p in (self.bundle / "references" / "playbooks").glob("*.md")}
         self.assertEqual(bundle_playbooks, source_playbooks)
@@ -404,6 +416,219 @@ class ImplementBundleRunsTests(unittest.TestCase):
             for bundle in envelope["data"]["bundles"]:
                 on_disk = sum(1 for p in Path(bundle["bundle"]).rglob("*") if p.is_file())
                 self.assertEqual(bundle["files"], on_disk)
+
+
+def tree_bytes(root: Path) -> dict[str, bytes]:
+    """Every file under `root`, by its POSIX path relative to `root`, with its bytes."""
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+
+
+class ArchiveTests(unittest.TestCase):
+    """`--archive DIR --tag TAG`: the release zips are byte-reproducible and unpack to the bundle folders."""
+
+    TAG = "v9.8.7"
+    _tmp: tempfile.TemporaryDirectory[str]
+    tmp: Path
+    envelope: dict[str, Any]
+    zips: dict[str, bytes]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.tmp = Path(cls._tmp.name)
+        code, envelope, err = call(
+            ["--out-dir", str(cls.tmp / "skills"), "--archive", str(cls.tmp / "first"), "--tag", cls.TAG]
+        )
+        assert code == 0, err
+        cls.envelope = envelope
+        cls.zips = {
+            name: (cls.tmp / "first" / bs.archive_name(name, cls.TAG)).read_bytes()
+            for name in (bs.BUNDLE_NAME, bs.IMPLEMENT_BUNDLE_NAME)
+        }
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._tmp.cleanup()
+
+    def test_handler_reports_each_archive_under_its_release_name(self) -> None:
+        archives = [Path(b["archive"]).name for b in self.envelope["data"]["bundles"]]
+        self.assertEqual(
+            archives, [f"agentic-readiness-audit-{self.TAG}.zip", f"agentic-readiness-implement-{self.TAG}.zip"]
+        )
+
+    def test_a_second_build_gives_the_same_bytes(self) -> None:
+        argv = ["--out-dir", str(self.tmp / "skills2"), "--archive", str(self.tmp / "second"), "--tag", self.TAG]
+        code, _, err = call(argv)
+        self.assertEqual(code, 0, err)
+        for name, first in self.zips.items():
+            second = (self.tmp / "second" / bs.archive_name(name, self.TAG)).read_bytes()
+            self.assertEqual(first, second, name)
+
+    def test_touching_every_mtime_and_mode_in_a_bundle_changes_no_byte(self) -> None:
+        # A copy of each bundle with every mtime moved and every file's mode narrowed, as another host or umask would
+        # leave it: the zip of it is still the first build's, byte for byte.
+        later = 2_000_000_000
+        for name, first in self.zips.items():
+            bundle = self.tmp / "touched" / name
+            shutil.copytree(self.tmp / "skills" / name, bundle)
+            for path in [*bundle.rglob("*"), bundle]:
+                if path.is_file():
+                    path.chmod(0o600)
+                os.utime(path, (later, later))
+            again = bs.write_archive(bundle, self.tmp / "touched" / bs.archive_name(name, self.TAG)).read_bytes()
+            self.assertEqual(first, again, name)
+
+    def test_entries_are_sorted_with_fixed_timestamp_and_permissions(self) -> None:
+        for name, data in self.zips.items():
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                infos = zf.infolist()
+            names = [i.filename for i in infos]
+            self.assertEqual(names[0], f"{name}/")
+            self.assertEqual(names, sorted(names, key=lambda n: n.rstrip("/").split("/")), name)
+            self.assertTrue(all(n.startswith(f"{name}/") for n in names), name)
+            for info in infos:
+                self.assertEqual(info.date_time, bs.ARCHIVE_DATE_TIME, info.filename)
+                self.assertEqual(info.create_system, 3, info.filename)
+                self.assertEqual(info.extra, b"", info.filename)
+                mode = info.external_attr >> 16
+                if info.is_dir():
+                    self.assertEqual(mode, stat.S_IFDIR | 0o755, info.filename)
+                    self.assertEqual(info.compress_type, zipfile.ZIP_STORED, info.filename)
+                else:
+                    self.assertEqual(mode, stat.S_IFREG | 0o644, info.filename)
+                    self.assertEqual(info.compress_type, zipfile.ZIP_DEFLATED, info.filename)
+
+    def test_each_zip_unpacks_to_the_bundle_folder(self) -> None:
+        for name, data in self.zips.items():
+            out = self.tmp / "unpacked" / name
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                zf.extractall(out)
+            self.assertEqual(tree_bytes(out / name), tree_bytes(self.tmp / "skills" / name), name)
+
+    def test_archive_ignores_creation_order_mtimes_and_permissions_but_keeps_the_exec_bit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            built = []
+            variants = (
+                ("a", ("b.txt", "a.txt"), 1_000_000_000, 0o600),
+                ("b", ("a.txt", "b.txt"), 1_700_000_000, 0o664),
+            )
+            for label, order, when, file_mode in variants:
+                bundle = Path(tmp) / label / "bundle"
+                (bundle / "sub").mkdir(parents=True)
+                for file in order:
+                    (bundle / file).write_text(file, encoding="utf-8")
+                    (bundle / file).chmod(file_mode)
+                tool = bundle / "sub" / "run.sh"
+                tool.write_text("#!/bin/sh\n", encoding="utf-8")
+                tool.chmod(0o700)
+                for path in [*bundle.rglob("*"), bundle]:
+                    os.utime(path, (when, when))
+                built.append(bs.write_archive(bundle, Path(tmp) / label / "bundle.zip").read_bytes())
+            self.assertEqual(built[0], built[1])
+            with zipfile.ZipFile(io.BytesIO(built[0])) as zf:
+                self.assertEqual(
+                    [i.filename for i in zf.infolist()],
+                    ["bundle/", "bundle/a.txt", "bundle/b.txt", "bundle/sub/", "bundle/sub/run.sh"],
+                )
+                self.assertEqual(zf.getinfo("bundle/sub/run.sh").external_attr >> 16, stat.S_IFREG | 0o755)
+                self.assertEqual(zf.getinfo("bundle/a.txt").external_attr >> 16, stat.S_IFREG | 0o644)
+
+    def test_archive_and_tag_go_together(self) -> None:
+        for argv in (["--archive", str(self.tmp / "x")], ["--tag", self.TAG]):
+            code, envelope, _ = call(argv)
+            self.assertEqual(code, 1, argv)
+            self.assertFalse(envelope["ok"])
+
+    def test_a_tag_that_is_not_one_file_name_part_is_refused(self) -> None:
+        for tag in ("../v1", "v1/x", ".hidden", ""):
+            code, _, _ = call(["--archive", str(self.tmp / "x"), "--tag", tag])
+            self.assertEqual(code, 1, tag)
+        self.assertFalse((self.tmp / "x").exists())
+
+
+class ManifestTests(unittest.TestCase):
+    """`dev/skill-bundles.json` is the one list of shipped files; the loader refuses a malformed one."""
+
+    def _load(self, data: str) -> dict[str, Any]:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "skill-bundles.json"
+            path.write_text(data, encoding="utf-8")
+            return bs.load_manifest(path)
+
+    def test_the_manifest_is_stable_sorted_json(self) -> None:
+        text = bs.BUNDLES_FILE.read_text(encoding="utf-8")
+        self.assertEqual(text, json.dumps(json.loads(text), indent=2, sort_keys=True, ensure_ascii=False) + "\n")
+
+    def test_the_constants_come_from_the_manifest(self) -> None:
+        manifest = bs.load_manifest()
+        self.assertEqual(bs.BUNDLE_NAME, manifest["audit"]["name"])
+        self.assertEqual(list(bs.TOOL_FILES), manifest["audit"]["tool_files"])
+        self.assertEqual(
+            list(bs.IMPLEMENT_REFERENCES),
+            [(e["source"], e["place"]) for e in manifest["implement"]["references"]],
+        )
+
+    def _shipped_sources(self) -> set[str]:
+        """Every repository-relative source the manifest names, apart from whole-folder references."""
+        manifest = bs.load_manifest()
+        audit, implement = manifest["audit"], manifest["implement"]
+        shipped = {f"audit/tools/{n}" for n in audit["tool_files"] + implement["shared_tool_files"]}
+        shipped |= {f"implement/tools/{n}" for n in implement["own_tool_files"]}
+        shipped |= {f"audit/schema/{n}" for n in audit["schema_files"] + implement["schema_files"]}
+        shipped |= {f"implement/playbooks/templates/{n}" for n in implement["template_files"]}
+        for bundle in (audit, implement):
+            shipped |= {e["source"] for e in bundle["references"]}
+        return shipped
+
+    def test_every_path_the_manifest_names_exists(self) -> None:
+        manifest = bs.load_manifest()
+        paths = self._shipped_sources() | set(manifest["excluded"]) | set(manifest["checked_folders"])
+        paths |= {"audit/catalogue.json", "audit/engine/audit"}
+        missing = sorted(p for p in paths if not (bs.REPO / p).exists())
+        self.assertEqual(missing, [])
+
+    def test_no_checked_folder_holds_a_file_the_manifest_leaves_out(self) -> None:
+        manifest = bs.load_manifest()
+        known = self._shipped_sources() | set(manifest["excluded"])
+        unlisted = []
+        for folder in manifest["checked_folders"]:
+            for file in sorted((bs.REPO / folder).iterdir()):
+                relative = file.relative_to(bs.REPO).as_posix()
+                if file.is_file() and relative not in known:
+                    unlisted.append(relative)
+        self.assertEqual(unlisted, [], "name each file in skill-bundles.json: ship it, or list it under excluded")
+
+    def test_an_excluded_file_is_not_also_shipped(self) -> None:
+        manifest = bs.load_manifest()
+        self.assertEqual(sorted(set(manifest["excluded"]) & self._shipped_sources()), [])
+
+    def test_unreadable_json_is_a_tool_error(self) -> None:
+        with self.assertRaises(_common.ToolError):
+            self._load("{not json")
+
+    def test_a_bundle_without_a_name_is_refused(self) -> None:
+        with self.assertRaises(_common.ToolError):
+            self._load('{"audit": {}, "implement": {"name": "x"}}')
+
+    def test_a_reference_with_an_unknown_kind_is_refused(self) -> None:
+        bundle = {"name": "x", "references": [{"source": "a.md", "place": "a.md", "kind": "zip"}]}
+        with self.assertRaises(_common.ToolError):
+            bs._reference_entries(bundle, "audit")
+
+    def test_the_engine_rewrite_names_the_audit_bundle_and_comes_first(self) -> None:
+        self.assertEqual(
+            bs.COMMAND_REWRITES[0],
+            ("python3 audit/tools/engine.py", f"python3 ../{bs.BUNDLE_NAME}/scripts/tools/engine.py"),
+        )
+        self.assertEqual(bs.AUDIT_COMMAND_REWRITES, (("python3 audit/tools/", "python3 scripts/tools/"),))
+
+    def test_command_rewrites_must_be_from_to_pairs(self) -> None:
+        with self.assertRaises(_common.ToolError):
+            bs._rewrites({"command_rewrites": [{"from": "a"}]}, "audit")
+
+    def test_a_list_of_names_must_hold_strings(self) -> None:
+        with self.assertRaises(_common.ToolError):
+            bs._string_list(["a", 1], "audit.tool_files")
 
 
 if __name__ == "__main__":

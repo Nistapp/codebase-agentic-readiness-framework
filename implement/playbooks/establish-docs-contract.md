@@ -17,7 +17,7 @@ not moved.
 | DOC-01 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-01--docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home. A dense README section that the owner agrees to move gets a `docs/` page and an index row (Steps 10) |
 | DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` with the form rules and one line in the instruction file that names it. An existing guide gets the form rules only by the owner's choice (Steps 9) |
 | DOC-03 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-03--artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
-| DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
+| DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/architecture/adrs/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
 | DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. A prose check with a ratchet only when the owner picks one of three permissive licences for it (Inputs 6, Steps 8). Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
 | NAV-01 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-01--declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | NAV-02 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-02--obvious-entry-points) | Verification only: names the entry points in the architecture page |
@@ -86,10 +86,14 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    search or storage engine, an authentication or tenant-selection mechanism, a branch model.
 4. **Architecture overview scope.** Default: modules or apps, entry points, data stores, one authentication or
    request flow, from the code index of this repository only.
-5. **Instruction-file line.** One line names `docs/STYLE_GUIDE.md`, `docs/adr/`, the ADR policy page and
-   `docs/architecture/`. It goes in the section `agents_md.pointer_section` names. Without that preference, ask
-   the owner where it goes and record the answer with `pref set agents_md.pointer_section`.
+5. **Instruction-file line.** One line names `docs/STYLE_GUIDE.md`, `docs/architecture/adrs/`, the ADR policy
+   page and `docs/architecture/`. It goes in the section `agents_md.pointer_section` names. Without that
+   preference, ask the owner where it goes and record the answer with `pref set agents_md.pointer_section`.
    The AGENTS.md theme (T7) reorganises the file later; tell it in the status that the line exists.
+   Write the line as a plain list of pages, with no rule word such as must, never or only. With one, "`AGT-06`
+   Architectural boundaries declared" reads it as a boundary rule. Never write "read ... first" on it either:
+   "`AGT-10` Instruction indirection resolved" reads that as a deferral. Keep the line out of the prohibitions
+   section, whose code spans "`CON-01` Allow/deny artifact present" reads.
 6. **Prose check (DOC-05).** The framework has a stdlib Python template that checks the style guide's rules and can
    fail above a count: [`templates/docs_prose_check.py`](templates/docs_prose_check.py). It is code under the
    framework's own licence, and a copy never carries that licence. So flag the option, and offer two answers as a
@@ -126,16 +130,16 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    untracked data on disk, so count with `git ls-files`.
 2. **Docs index (DOC-01).** If `docs/README.md` (or `index.md`) does not exist, write it: one paragraph on what
    `docs/` holds, a list of the pages with one line each, and the places to look for decisions
-   (`docs/adr/`) and the map (`docs/architecture/`). A frozen report folder from the first audit is listed in
-   one line as "frozen first-audit report, not current"; it is not moved, edited or restructured. Use flat
-   `docs/` plus `docs/architecture/` and `docs/adr/`; do not impose a Diátaxis folder tree on a handful of
-   files.
+   (`docs/architecture/adrs/`) and the map (`docs/architecture/`). A frozen report folder from the first audit is
+   listed in one line as "frozen first-audit report, not current"; it is not moved, edited or restructured. Use
+   flat `docs/` plus `docs/architecture/` and `docs/architecture/adrs/`; do not impose a Diátaxis folder tree on a
+   handful of files.
 3. **Style guide (DOC-02).** Write `docs/STYLE_GUIDE.md`, one page: where permanent knowledge lives and where
    scratch lives, heading and table rules, line length (match the lint config), Mermaid in fenced blocks and
    validated before saving, relative links, "no values from env files, credentials or keystores", "cite code by
-   path", "decisions go in `docs/adr/`". Link to the lint config instead of restating its rules. Add the
-   instruction-file line (Inputs 5) once the pages it names exist; [Commits](#commits) row 8 orders it. The check
-   reads the literal string `STYLE_GUIDE.md`.
+   path", "decisions go in `docs/architecture/adrs/`". Link to the lint config instead of restating its rules. Add
+   the instruction-file line (Inputs 5) once the pages it names exist; [Commits](#commits) row 8 orders it. The
+   check reads the literal string `STYLE_GUIDE.md`.
 
    **Plain language and diagrams (DOC-05).** Add two sections to the style guide. The template is the greenfield
    style guide: [§ 8 Plain Language](../../greenfield/templates/docs/STYLE_GUIDE.md#8-plain-language) and
@@ -147,7 +151,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    - Keep the "before" example inside `<!-- prose-check off -->` and `<!-- prose-check on -->`, or the check counts
      it.
    - With a non-English `docs.language`, the owner supplies the rules in that language. `DOC-05` then reads
-     `UNKNOWN`; record the item `partial`.
+     `UNKNOWN`; record the item `partial` with
+     `--debt "what=style rules the check cannot read (<language>),count=1"`.
    - Every page this theme writes follows the rules: the index, the style guide, the ADR policy page, the ADRs and
      the architecture page. Re-run the engine before the theme closes: `DOC-05` cites no line on those pages.
 
@@ -158,7 +163,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    Adapt them to the target's heading style and docs layout. Keep the rule that the setup command and the
    single-test command stay in a root file, because `EXEC-03` and `TST-04` read them there. A guide that already
    exists gets these sections only through step 9.
-4. **ADRs (DOC-04).** Create `docs/adr/` with four parts:
+4. **ADRs (DOC-04).** Create `docs/architecture/adrs/` with four parts:
    - `README.md`, the index: a table of number, title and a one-line summary, linking every file by its path.
    - `0000-template.md`, copied from the greenfield
      [`adr-template.md`](../../greenfield/templates/docs/templates/adr-template.md):
@@ -185,16 +190,17 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    flow. Add one Mermaid diagram, checked with the `mermaid-validator` MCP before saving. Cite files by path.
    Add `docs/architecture/README.md` only if the folder holds more than one page. For a component whose source
    is private, describe the dependency in one sentence with no path.
-6. **NAV-03 census.** Count, from the tracked file list (`git ls-files`), the four categories the check counts:
-   files over 512 KB, catch-all directories (`utils`, `misc`, `common`, `helpers` and similar with many files),
-   binary files, minified assets. The engine's counts can include on-disk or generated files that git does not
-   track, so re-measure by tracked paths and use the tracked list as the census. Write the paths in a "Repository
-   notes" section of the architecture page, each tagged: generated, by design (a lock file, public images), or
-   needs a decision. Do not move, untrack, resize or delete anything. Untracked runtime data directories are a
-   separate, owner-recorded item (an `extra.*` preference) and are mentioned, not changed.
+6. **NAV-03 census.** Count, from the tracked file list (`git ls-files`), the four categories the check counts: files
+   over 512 KB, catch-all directories (`utils`, `misc`, `common`, `helpers` and similar with many files), binary files,
+   minified assets. A lockfile is not a large file: the engine leaves it out. The engine's counts can include on-disk or
+   generated files that git does not track, so re-measure by tracked paths and use the tracked list as the census. Write
+   the paths in a "Repository notes" section of the architecture page, each tagged: generated, by design (a lock file,
+   public images), or needs a decision. Do not move, untrack, resize or delete anything. Untracked runtime data
+   directories are a separate, owner-recorded item (an `extra.*` preference) and are mentioned, not changed.
 7. **Scratch (DOC-03).** If an `artefacts/` (or `artifacts/`) directory exists, confirm it is ignored and that
    `git ls-files artefacts` prints nothing. Add the ignore rule and `git rm --cached` only what is tracked
-   there, and only after the owner confirms those files are scratch. If no scratch directory exists, the check
+   there, and only after the owner confirms those files are scratch. "`CON-03` artefacts/ excluded from index and
+   agent reads" reads the same rule and the tracked files under it. If no scratch directory exists, the check
    passes and nothing is created.
 8. **Docs lint (needs `ci.edits_authorised`).**
    1. Write the lint config. Tune the rules to how the repository is already written (line length, allowed
@@ -202,14 +208,19 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       key is silently ignored): where a folder needs different rules, use a nested config file in that folder.
       Template folders that must start with a non-heading line (rule MD041) are the usual case.
    2. Add the lint as a **ratchet**: the gating command lints a path list that only grows (the new docs plus any
-      file that is already clean); a second command reports on every Markdown file and never fails. Record the
+      file that is already clean); a second command reports on every Markdown file and never fails. Neither
+      command carries `--fix`: "`CMD-04` Write verbs separated from read-only verbs" fails on a writer under a
+      read-only verb. Record the
       baseline count from step 1 (final value after the last render, see step 1) on the docs item it belongs to
       (`set-status F-nnn partial --debt "what=markdown lint violations,count=N,baseline=<lint script>"`), and keep
       the script's `BASELINE` constant and a `docs.lint_ratchet` preference equal to it. When no docs item is open,
       record the count in the `docs.lint_ratchet` preference and in the pull request, under "How it was checked".
    3. Add a separate CI job, path-filtered to changed Markdown, that runs the linter and renders every Mermaid
       block with `mmdc` (`--no-sandbox` in CI, cache the npm and Puppeteer directories keyed by the pinned
-      versions). Pin both versions exactly; never use an unpinned `npx`. If the repository already has Node,
+      versions). Pin both versions exactly; never use an unpinned `npx`. Put each pin in a manifest, such as the
+      `devDependencies` of a root or tools `package.json`. The runner commands and the job (item 5 too) run each
+      tool by name, never as `name@version`. So "`EXEC-08` Tool versions visible to
+      dependency automation" finds every version in a manifest. If the repository already has Node,
       reuse the pinned `setup-node` step it uses elsewhere (same SHA and major version); otherwise leave setup out
       until a verified SHA exists. In a private repository, check out with `fetch-depth: 0` and diff the two
       commits locally: a `git fetch` fails there because `persist-credentials: false` leaves no token. Run the
@@ -218,7 +229,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       new job that must be green needs adding to it, which is the owner's call.
    4. If `lychee` was chosen: relative links only, report-only at first.
    5. **Prose check (only with `docs.prose_check=template`).** Copy the template to the place and name the
-      repository uses for its scripts (D18), for example `scripts/docs_prose_check.py`. Replace its SPDX line with
+      repository uses for its scripts, for example `scripts/docs_prose_check.py`. Replace its SPDX line with
       the licence the owner picked (`docs.prose_check_licence`). Keep the copyright line: the template's author keeps
       the copyright, and the owner gets the licence. Remove nothing else. Where the repository keeps a list of
       third-party code (a `THIRD_PARTY_NOTICES` file or similar), add the copy to it.
@@ -236,7 +247,12 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       - if the explanation pages live elsewhere (for example `docs/architecture/`), pass `--diagram-dir` once per
         folder;
       - both runs go in the docs CI job from item 3. Use `--format github` there, so issues show on the pull request.
-        A third run with no limit and no `--min-severity` shows the notices too, as advice.
+        A third run with no limit and no `--min-severity` shows the notices too, as advice;
+      - keep both `--max-issues` numbers out of the root runner files (`package.json`, `Makefile`, `pyproject.toml`,
+        `Taskfile.yml`). Put them in a small script
+        that the runner command calls, beside the copy. "`BASE-02` Current violation counts measured" reads a
+        `max-issues` number in those files as a code-quality budget. "`BASE-03` No-new-violations mechanism" then
+        builds on that budget, so both could pass for the docs alone.
 
       Record the baseline (warnings) as debt on the `DOC-05` item, and in the `docs.prose_ratchet` preference.
 9. **Style guide that already exists (`docs.style_guide_update`).** Run this step only when `docs/STYLE_GUIDE.md`
@@ -274,8 +290,9 @@ They stay here so a repository that has one has a procedure, and so the re-audit
        - Design and behaviour go to an explanation page, from the greenfield
          [`architecture-doc-template.md`](../../greenfield/templates/docs/templates/architecture-doc-template.md).
 
-       Place the page in the target's own docs layout and name it as the target names its pages (D18). Do not impose
-       a folder tree.
+       Place the page in the target's own docs layout and name it as the target names its pages. Do not impose
+       a folder tree. A page named like a conventions file, or `docs/CONTRIBUTING.md`, is also read by "`AGT-13`
+       Coding conventions written"; step 5 catches a changed verdict.
     2. **Audit before.** On a clean tree, run the engine and keep the report path:
        `python3 audit/tools/engine.py <worktree> --out-dir <dir outside the target> --no-user-config`. Use the same
        command for every run in this step. The after report of one section is the before report of the next.
@@ -286,18 +303,23 @@ They stay here so a repository that has one has a procedure, and so the re-audit
        `python3 implement/tools/compare_reports.py <before report> <after report>`. Read the "Checks that moved"
        table. Expected: `None.`
     5. **Stop on a changed verdict.** Any row in that table stops the step. Revert the commit, or fix it in a new
-       commit and audit again, before the next section.
+       commit and audit again, before the next section. A verdict can stay while its evidence changes. So also
+       compare the `summary` of three checks in the two JSON reports. They read README prose: "`HYG-01` README
+       present and non-placeholder", "`BASE-03` No-new-violations mechanism" and "`BASE-04` Coverage floor
+       configured". A changed summary stops the step too.
     6. **Check the commands by hand.** The comparison cannot catch one loss. `EXEC-06` documented commands resolve reads
        fenced commands in `README.md`, `AGENTS.md` and `CLAUDE.md` only. A command that moves to `docs/` leaves that
        scope. The `EXEC-06` verdict does not change, so the before-and-after audit shows nothing. Before each commit,
-       list the fenced commands in the section. Tell the owner which commands now sit outside the check, in the pull
-       request under "What changed".
+       list the fenced commands in the section. Check by hand that the first word of each still resolves. It is a
+       verb, a script that exists, or a tool on the path. Tell the owner which commands now sit outside the check, in the
+       pull request under "What changed".
 
     Rules:
     - Keep the setup command and the single-test command in a root file: `README.md`, `AGENTS.md` or `CONTRIBUTING.md`.
       `EXEC-03` non-interactive setup path reads fenced commands in `README.md`, `AGENTS.md`, `CLAUDE.md` and
       `CONTRIBUTING.md`. `TST-04` fast path documented reads the single-test command in the same four files. Neither
-      reads `docs/`.
+      reads `docs/`. Prefer `README.md` or `AGENTS.md`: "`EXEC-06` Documented commands resolve" reads fenced commands
+      there, but not in `CONTRIBUTING.md`.
     - A fact in the section stays as written. If the section has a gap or a doubt, ask the owner. Rewording is not
       moving.
     - The new page follows the style guide: form follows content, and the plain language rules of step 3.
@@ -329,8 +351,8 @@ Docs first, then the lint config, then the wiring. The instruction-file line wai
 | 2 | Style guide, `docs/STYLE_GUIDE.md` | `DOC-02` | hand |
 | 3 | Plain language and Diagrams sections in the style guide (only for DOC-05) | `DOC-05` | hand |
 | 4 | Form rules section appended to an existing style guide (only with `docs.style_guide_update=yes`) | `DOC-02` | hand |
-| 5 | Decision log: `docs/adr/` index, template, ADR policy page, first records | `DOC-04` | hand |
-| 6 | Architecture overview with its diagram | `NAV-01`, `NAV-02`, `NAV-04` | hand |
+| 5 | Decision log: `docs/architecture/adrs/` index, template, ADR policy page, first records | `DOC-04` | hand |
+| 6 | Architecture overview with its diagram | `NAV-02`, `NAV-04` | hand |
 | 7 | Repository notes section: the NAV-03 census | `NAV-03` | hand |
 | 8 | Instruction-file line naming the docs pages | `DOC-02`, `DOC-04` | hand |
 | 9 | Ignore rule for the scratch directory (only when one exists and lacks it) | `DOC-03` | config |
@@ -362,8 +384,9 @@ so the lint and prose baselines (rows 13 and 18) count the new pages.
 - A page the theme edits anyway (for example the docs index) joins the clean path list only when it passes the
   rules. Until then it stays in the debt count.
 - NAV-03 census paths: recorded in the architecture page and the state note; the check keeps reading `PARTIAL`
-  because the engine counts, it does not judge. Mark the item `partial` with that reason, or `skipped` if the
-  owner calls it by design.
+  because the engine counts, it does not judge. Mark the item `partial` with
+  `--debt "what=NAV-03 census paths,count=N"` and that reason in the note, or `skipped` if the owner calls it by
+  design.
 - An ADR the owner has not reviewed: listed in the pull request under "What was not done", or in the status note,
   as waiting for the owner. The owner edits, deletes or merges it.
 - A docs job the merge gate cannot yet require: left advisory, noted for the CI theme.
@@ -385,7 +408,7 @@ so the lint and prose baselines (rows 13 and 18) count the new pages.
 | README split | After each section commit: `python3 implement/tools/compare_reports.py <before report> <after report>`; `git show --stat` | Only with `docs.split_readme=yes`. "Checks that moved" says `None.`. The commit adds one page and its `docs/README.md` row, and leaves a link table in the README. `EXEC-03` and `TST-04` still find their commands in a root file. `no`: no diff, and the preference recorded |
 | DOC-05 | `grep -n -i 'plain language\|diagram' docs/STYLE_GUIDE.md`; the engine's DOC-05 | Both sections present; no cited line on a page this theme wrote; `PASS`, or `partial` with the counts as debt |
 | DOC-03 | `git ls-files artefacts artifacts` and `git check-ignore -v artefacts/x` | No scratch directory, or nothing tracked and the rule matches |
-| DOC-04 | List `docs/adr/`; read `docs/adr/README.md`; `grep -n -i 'adr' <instruction file>` | At least one numbered file; the index links every numbered file by path, the template included; the ADR policy page exists and the instruction file names it |
+| DOC-04 | List `docs/architecture/adrs/`; read `docs/architecture/adrs/README.md`; `grep -n -i 'adr' <instruction file>` | At least one numbered file; the index links every numbered file by path, the template included; the ADR policy page exists and the instruction file names it |
 | NAV-01 | Read the components table in the overview | Every declared component listed with its manifest path |
 | NAV-02 | Read the entry-points list | Each entry point is a real path (check with `test -f`) |
 | NAV-03 | The "Repository notes" section | Every counted path is listed with a tag; nothing moved (`git status` shows only docs and config) |
@@ -409,11 +432,14 @@ both with owner consent. `git revert` returns them.
 - Do not mass-reformat or mass-fix existing Markdown, and do not turn off a lint rule to make a count fall.
 - Do not create a second `docs/` or restructure the existing report folders.
 - Do not copy content, paths, names or values from a private repository or workspace into an open-source
-  repository's docs or ADRs, or from any target repository into the framework.
+  repository's docs or ADRs, or from any target repository into the framework. This echoes
+  the hard rule [Keep private content private](../SKILL.md#hard-rules).
 - Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
-  fill in".
+  fill in". The owner of this rule is rule 10 of the greenfield
+  [`ADR_POLICY.md`](../../greenfield/templates/docs/ADR_POLICY.md#rules).
 - Do not move, resize, delete or untrack files for NAV-03.
-- Do not put values from env files, credentials, realm exports or keystores in any page.
+- Do not put values from env files, credentials, realm exports or keystores in any page. Such a value also fails
+  "`SEC-02` No key-shaped strings in tracked files".
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
 - Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
   change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one

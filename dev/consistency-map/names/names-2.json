@@ -1,0 +1,2153 @@
+[
+  {
+    "checks": [
+      "AGT-13"
+    ],
+    "constants": [
+      "audit.rules.checks.agt:_CONVENTIONS_SECTION_FILES"
+    ],
+    "match": "exact",
+    "meaning": "For `AGT-13` Coding conventions written, a matching file is read as a conventions file or for a conventions section.",
+    "pattern": ".github/CONTRIBUTING.md"
+  },
+  {
+    "checks": [
+      "HYG-04"
+    ],
+    "match": "exact",
+    "meaning": "For `HYG-04` Issue templates present, a matching file counts as an issue template.",
+    "pattern": ".github/ISSUE_TEMPLATE.md"
+  },
+  {
+    "checks": [
+      "HYG-04"
+    ],
+    "match": "glob",
+    "meaning": "For `HYG-04` Issue templates present, a matching file counts as an issue template.",
+    "pattern": ".github/ISSUE_TEMPLATE/*"
+  },
+  {
+    "checks": [
+      "HYG-09"
+    ],
+    "constants": [
+      "audit.rules.checks.hyg:_DEPENDENCY_AUTOMATION"
+    ],
+    "match": "substring",
+    "meaning": "For `HYG-09` Dependency update automation configured, a matching file counts as dependency-update automation.",
+    "pattern": ".github/dependabot.yaml"
+  },
+  {
+    "checks": [
+      "HYG-09"
+    ],
+    "constants": [
+      "audit.rules.checks.hyg:_DEPENDENCY_AUTOMATION"
+    ],
+    "match": "substring",
+    "meaning": "For `HYG-09` Dependency update automation configured, a matching file counts as dependency-update automation.",
+    "pattern": ".github/dependabot.yml"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "glob",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".github/instructions/**/*.instructions.md"
+  },
+  {
+    "checks": [
+      "EXEC-08"
+    ],
+    "constants": [
+      "audit.rules.checks.execution:_RENOVATE_FILES"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-08` Tool versions visible to dependency automation, a matching file is read for tool versions that dependency automation can see.",
+    "pattern": ".github/renovate.json"
+  },
+  {
+    "checks": [
+      "HYG-09"
+    ],
+    "constants": [
+      "audit.rules.checks.hyg:_DEPENDENCY_AUTOMATION"
+    ],
+    "match": "substring",
+    "meaning": "For `HYG-09` Dependency update automation configured, a matching file counts as dependency-update automation.",
+    "pattern": ".github/renovate.json"
+  },
+  {
+    "checks": [
+      "AGT-09",
+      "HYG-11",
+      "TOOL-07"
+    ],
+    "constants": [
+      "audit.rules.checks._common:RULESET_GLOBS"
+    ],
+    "match": "glob",
+    "meaning": "A GitHub ruleset export is read as declared branch rules by `HYG-11` Branch protection declared as code, `AGT-09` and `TOOL-07`.",
+    "pattern": ".github/rulesets/**/*.json"
+  },
+  {
+    "checks": [
+      "AGT-09",
+      "HYG-11",
+      "TOOL-07"
+    ],
+    "match": "exact",
+    "meaning": "For `HYG-11` Branch protection declared as code, a matching file counts as a branch-protection record or declaration; 2 other listed checks read it too.",
+    "pattern": ".github/settings.yml"
+  },
+  {
+    "checks": [
+      "BASE-03",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "EXEC-08",
+      "HYG-11",
+      "TOOL-04",
+      "TOOL-06"
+    ],
+    "match": "glob",
+    "meaning": "For `HYG-11` Branch protection declared as code, a matching file counts as a branch-protection record or declaration; 8 other listed checks read it too.",
+    "pattern": ".github/workflows/*.yaml"
+  },
+  {
+    "checks": [
+      "BASE-03",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "EXEC-08",
+      "HYG-11",
+      "TOOL-04",
+      "TOOL-06"
+    ],
+    "match": "glob",
+    "meaning": "For `HYG-11` Branch protection declared as code, a matching file counts as a branch-protection record or declaration; 8 other listed checks read it too.",
+    "pattern": ".github/workflows/*.yml"
+  },
+  {
+    "checks": [
+      "CON-03",
+      "DOC-03",
+      "SEC-01",
+      "SEC-03"
+    ],
+    "constants": [
+      "audit.ignore:IGNORE_FILE_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": ".gitignore is an ignore file: the scan skips what its rules ignore, and `SEC-03` Ignore patterns cover secret shapes, `SEC-01`, `DOC-03` and `CON-03` read its rules (a nested .gitignore scopes its folder).",
+    "pattern": ".gitignore"
+  },
+  {
+    "checks": [
+      "BASE-03",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "EXEC-08",
+      "HYG-11",
+      "TOOL-04",
+      "TOOL-06"
+    ],
+    "constants": [
+      "audit.rules.checks.execution:_INLINE_SURFACE_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `HYG-11` Branch protection declared as code, a matching file counts as a branch-protection record or declaration; 8 other listed checks read it too.",
+    "pattern": ".gitlab-ci.yml"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_COUNTING_CONFIG_GLOBS"
+    ],
+    "match": "base-name",
+    "meaning": "For `BASE-01` Baseline artifact exists, a matching file counts as a baseline artifact or counting tool; 2 other listed checks read it too.",
+    "pattern": ".gitleaks.toml"
+  },
+  {
+    "checks": [
+      "EXEC-07",
+      "SEC-02"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete; 1 other listed check read it too.",
+    "pattern": ".gitleaks.toml"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_BASELINE_GLOBS"
+    ],
+    "match": "base-name",
+    "meaning": "For `BASE-01` Baseline artifact exists, a matching file counts as a baseline artifact or counting tool; 2 other listed checks read it too.",
+    "pattern": ".gitleaksignore"
+  },
+  {
+    "checks": [
+      "SEC-02"
+    ],
+    "match": "exact",
+    "meaning": "For `SEC-02` No key-shaped strings in tracked files, a matching file is the secret allowlist read at the root.",
+    "pattern": ".gitleaksignore"
+  },
+  {
+    "checks": [
+      "TOOL-02"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_LINTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-02` Linter configured, a matching file counts as linter configuration.",
+    "pattern": ".golangci.toml"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "TOOL-02"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_COUNTING_CONFIG_GLOBS",
+      "audit.rules.checks.tool:_LINTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-02` Linter configured, a matching file counts as linter configuration; 3 other listed checks read it too.",
+    "pattern": ".golangci.yaml"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".golangci.yaml"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "TOOL-02"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_COUNTING_CONFIG_GLOBS",
+      "audit.rules.checks.tool:_LINTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-02` Linter configured, a matching file counts as linter configuration; 3 other listed checks read it too.",
+    "pattern": ".golangci.yml"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".golangci.yml"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".goosehints"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "BASE-04",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "CMD-01",
+      "CMD-02",
+      "CMD-03",
+      "CMD-04",
+      "CON-01",
+      "CON-02",
+      "CON-03",
+      "CON-04",
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-04",
+      "DOC-05",
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-03",
+      "EXEC-04",
+      "EXEC-05",
+      "EXEC-06",
+      "EXEC-07",
+      "EXEC-08",
+      "HYG-01",
+      "HYG-02",
+      "HYG-03",
+      "HYG-04",
+      "HYG-05",
+      "HYG-06",
+      "HYG-07",
+      "HYG-08",
+      "HYG-09",
+      "HYG-10",
+      "HYG-11",
+      "HYG-13",
+      "IDX-01",
+      "IDX-02",
+      "IDX-03",
+      "NAV-01",
+      "NAV-02",
+      "NAV-03",
+      "NAV-04",
+      "NAV-05",
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "TOOL-06",
+      "TOOL-07",
+      "TST-01",
+      "TST-02",
+      "TST-03",
+      "TST-04",
+      "TST-05"
+    ],
+    "match": "glob",
+    "meaning": "A file under a folder named .gradle is never walked by the scan, so no check sees it.",
+    "pattern": ".gradle/*"
+  },
+  {
+    "checks": [
+      "EXEC-08",
+      "TOOL-05",
+      "TOOL-07"
+    ],
+    "match": "glob",
+    "meaning": "For `TOOL-07` Local guard against commits to a protected branch, a matching file is read for a guard against commits to a protected branch; 2 other listed checks read it too.",
+    "pattern": ".husky/*"
+  },
+  {
+    "checks": [
+      "TOOL-06"
+    ],
+    "match": "substring",
+    "meaning": "For `TOOL-06` Commit convention enforced, a matching file counts as a commit-convention rule.",
+    "pattern": ".husky/commit-msg"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "BASE-04",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "CMD-01",
+      "CMD-02",
+      "CMD-03",
+      "CMD-04",
+      "CON-01",
+      "CON-02",
+      "CON-03",
+      "CON-04",
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-04",
+      "DOC-05",
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-03",
+      "EXEC-04",
+      "EXEC-05",
+      "EXEC-06",
+      "EXEC-07",
+      "EXEC-08",
+      "HYG-01",
+      "HYG-02",
+      "HYG-03",
+      "HYG-04",
+      "HYG-05",
+      "HYG-06",
+      "HYG-07",
+      "HYG-08",
+      "HYG-09",
+      "HYG-10",
+      "HYG-11",
+      "HYG-13",
+      "IDX-01",
+      "IDX-02",
+      "IDX-03",
+      "NAV-01",
+      "NAV-02",
+      "NAV-03",
+      "NAV-04",
+      "NAV-05",
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "TOOL-06",
+      "TOOL-07",
+      "TST-01",
+      "TST-02",
+      "TST-03",
+      "TST-04",
+      "TST-05"
+    ],
+    "match": "glob",
+    "meaning": "A file under a folder named .idea is never walked by the scan, so no check sees it.",
+    "pattern": ".idea/*"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "glob",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".junie/rules/*.md"
+  },
+  {
+    "checks": [
+      "EXEC-08"
+    ],
+    "constants": [
+      "audit.rules.checks.execution:_INLINE_SURFACE_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-08` Tool versions visible to dependency automation, a matching file is read for tool versions that dependency automation can see.",
+    "pattern": ".justfile"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "glob",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".kiro/steering/**/*.md"
+  },
+  {
+    "checks": [
+      "EXEC-08"
+    ],
+    "constants": [
+      "audit.rules.checks.execution:_INLINE_SURFACE_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-08` Tool versions visible to dependency automation, a matching file is read for tool versions that dependency automation can see.",
+    "pattern": ".lefthook.yaml"
+  },
+  {
+    "checks": [
+      "EXEC-08"
+    ],
+    "constants": [
+      "audit.rules.checks.execution:_INLINE_SURFACE_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-08` Tool versions visible to dependency automation, a matching file is read for tool versions that dependency automation can see.",
+    "pattern": ".lefthook.yml"
+  },
+  {
+    "checks": [
+      "EXEC-05"
+    ],
+    "constants": [
+      "audit.scan:_GENERATED_HINTS"
+    ],
+    "ignore_case": true,
+    "match": "substring",
+    "meaning": "A path holding .lock.gen is classed as generated by the scan, so `EXEC-05` No generated artifacts committed in-tree needs a generated header when it is tracked.",
+    "pattern": ".lock.gen"
+  },
+  {
+    "checks": [
+      "IDX-01"
+    ],
+    "constants": [
+      "audit.rules.checks.idx:_PROJECT_CONFIGS"
+    ],
+    "match": "base-name",
+    "meaning": "For `IDX-01` codebase-memory-mcp registered for this repository, a matching file is read for the codebase-memory-mcp server entry.",
+    "pattern": ".mcp.json"
+  },
+  {
+    "checks": [
+      "EXEC-05"
+    ],
+    "constants": [
+      "audit.scan:_GENERATED_HINTS"
+    ],
+    "ignore_case": true,
+    "match": "substring",
+    "meaning": "A path holding .min.css is classed as generated by the scan, so `EXEC-05` No generated artifacts committed in-tree needs a generated header when it is tracked.",
+    "pattern": ".min.css"
+  },
+  {
+    "checks": [
+      "EXEC-05"
+    ],
+    "constants": [
+      "audit.scan:_GENERATED_HINTS"
+    ],
+    "ignore_case": true,
+    "match": "substring",
+    "meaning": "A path holding .min.js is classed as generated by the scan, so `EXEC-05` No generated artifacts committed in-tree needs a generated header when it is tracked.",
+    "pattern": ".min.js"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "glob",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".mocharc.*"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_BASELINE_GLOBS"
+    ],
+    "match": "base-name",
+    "meaning": "For `BASE-01` Baseline artifact exists, a matching file counts as a baseline artifact or counting tool; 2 other listed checks read it too.",
+    "pattern": ".mypy-baseline*"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "TOOL-03"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_COUNTING_CONFIG_GLOBS"
+    ],
+    "match": "base-name",
+    "meaning": "For `BASE-01` Baseline artifact exists, a matching file counts as a baseline artifact or counting tool; 3 other listed checks read it too.",
+    "pattern": ".mypy.ini"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "constants": [
+      "audit.rules.checks.execution:_MYPY_FILES"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".mypy.ini"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "BASE-04",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "CMD-01",
+      "CMD-02",
+      "CMD-03",
+      "CMD-04",
+      "CON-01",
+      "CON-02",
+      "CON-03",
+      "CON-04",
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-04",
+      "DOC-05",
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-03",
+      "EXEC-04",
+      "EXEC-05",
+      "EXEC-06",
+      "EXEC-07",
+      "EXEC-08",
+      "HYG-01",
+      "HYG-02",
+      "HYG-03",
+      "HYG-04",
+      "HYG-05",
+      "HYG-06",
+      "HYG-07",
+      "HYG-08",
+      "HYG-09",
+      "HYG-10",
+      "HYG-11",
+      "HYG-13",
+      "IDX-01",
+      "IDX-02",
+      "IDX-03",
+      "NAV-01",
+      "NAV-02",
+      "NAV-03",
+      "NAV-04",
+      "NAV-05",
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "TOOL-06",
+      "TOOL-07",
+      "TST-01",
+      "TST-02",
+      "TST-03",
+      "TST-04",
+      "TST-05"
+    ],
+    "match": "glob",
+    "meaning": "A file under a folder named .mypy_cache is never walked by the scan, so no check sees it.",
+    "pattern": ".mypy_cache/*"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "BASE-04",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "CMD-01",
+      "CMD-02",
+      "CMD-03",
+      "CMD-04",
+      "CON-01",
+      "CON-02",
+      "CON-03",
+      "CON-04",
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-04",
+      "DOC-05",
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-03",
+      "EXEC-04",
+      "EXEC-05",
+      "EXEC-06",
+      "EXEC-07",
+      "EXEC-08",
+      "HYG-01",
+      "HYG-02",
+      "HYG-03",
+      "HYG-04",
+      "HYG-05",
+      "HYG-06",
+      "HYG-07",
+      "HYG-08",
+      "HYG-09",
+      "HYG-10",
+      "HYG-11",
+      "HYG-13",
+      "IDX-01",
+      "IDX-02",
+      "IDX-03",
+      "NAV-01",
+      "NAV-02",
+      "NAV-03",
+      "NAV-04",
+      "NAV-05",
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "TOOL-06",
+      "TOOL-07",
+      "TST-01",
+      "TST-02",
+      "TST-03",
+      "TST-04",
+      "TST-05"
+    ],
+    "match": "glob",
+    "meaning": "A file under a folder named .next is never walked by the scan, so no check sees it.",
+    "pattern": ".next/*"
+  },
+  {
+    "checks": [
+      "EXEC-01"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-01` Toolchain pinned / wrapper committed, a matching file counts as a toolchain pin.",
+    "pattern": ".node-version"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "BASE-04",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "CMD-01",
+      "CMD-02",
+      "CMD-03",
+      "CMD-04",
+      "CON-01",
+      "CON-02",
+      "CON-03",
+      "CON-04",
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-04",
+      "DOC-05",
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-03",
+      "EXEC-04",
+      "EXEC-05",
+      "EXEC-06",
+      "EXEC-07",
+      "EXEC-08",
+      "HYG-01",
+      "HYG-02",
+      "HYG-03",
+      "HYG-04",
+      "HYG-05",
+      "HYG-06",
+      "HYG-07",
+      "HYG-08",
+      "HYG-09",
+      "HYG-10",
+      "HYG-11",
+      "HYG-13",
+      "IDX-01",
+      "IDX-02",
+      "IDX-03",
+      "NAV-01",
+      "NAV-02",
+      "NAV-03",
+      "NAV-04",
+      "NAV-05",
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "TOOL-06",
+      "TOOL-07",
+      "TST-01",
+      "TST-02",
+      "TST-03",
+      "TST-04",
+      "TST-05"
+    ],
+    "match": "glob",
+    "meaning": "A file under a folder named .nuxt is never walked by the scan, so no check sees it.",
+    "pattern": ".nuxt/*"
+  },
+  {
+    "checks": [
+      "EXEC-01"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-01` Toolchain pinned / wrapper committed, a matching file counts as a toolchain pin.",
+    "pattern": ".nvmrc"
+  },
+  {
+    "checks": [
+      "TST-05"
+    ],
+    "constants": [
+      "audit.rules.checks.tst:_COVERAGE_FILES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TST-05` Coverage configuration present, a matching file counts as coverage configuration.",
+    "pattern": ".nycrc"
+  },
+  {
+    "checks": [
+      "TST-05"
+    ],
+    "constants": [
+      "audit.rules.checks.tst:_COVERAGE_FILES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TST-05` Coverage configuration present, a matching file counts as coverage configuration.",
+    "pattern": ".nycrc.json"
+  },
+  {
+    "checks": [
+      "TST-05"
+    ],
+    "constants": [
+      "audit.rules.checks.tst:_COVERAGE_FILES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TST-05` Coverage configuration present, a matching file counts as coverage configuration.",
+    "pattern": ".nycrc.yaml"
+  },
+  {
+    "checks": [
+      "TST-05"
+    ],
+    "constants": [
+      "audit.rules.checks.tst:_COVERAGE_FILES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TST-05` Coverage configuration present, a matching file counts as coverage configuration.",
+    "pattern": ".nycrc.yml"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08",
+      "CON-03"
+    ],
+    "match": "glob",
+    "meaning": "A file under the root .opencode/ is harness state: `CON-03` requires it ignored and untracked, and `AGT-01` and `AGT-08` never count it as an instruction file.",
+    "pattern": ".opencode/*"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".oxlintrc.json"
+  },
+  {
+    "checks": [
+      "EXEC-05"
+    ],
+    "constants": [
+      "audit.scan:_GENERATED_HINTS"
+    ],
+    "ignore_case": true,
+    "match": "substring",
+    "meaning": "A path holding .pb.go is classed as generated by the scan, so `EXEC-05` No generated artifacts committed in-tree needs a generated header when it is tracked.",
+    "pattern": ".pb.go"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".php-cs-fixer.dist.php"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".php-cs-fixer.php"
+  },
+  {
+    "checks": [
+      "EXEC-01"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-01` Toolchain pinned / wrapper committed, a matching file counts as a toolchain pin.",
+    "pattern": ".php-version"
+  },
+  {
+    "checks": [
+      "TOOL-02"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_LINTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-02` Linter configured, a matching file counts as linter configuration.",
+    "pattern": ".phpcs.xml"
+  },
+  {
+    "checks": [
+      "TOOL-05",
+      "TOOL-07"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_WIRED_HOOK_FILES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-07` Local guard against commits to a protected branch, a matching file is read for a guard against commits to a protected branch; 1 other listed check read it too.",
+    "pattern": ".pre-commit-config.yaml"
+  },
+  {
+    "checks": [
+      "TOOL-06"
+    ],
+    "match": "exact",
+    "meaning": "For `TOOL-06` Commit convention enforced, a matching file counts as a commit-convention rule.",
+    "pattern": ".pre-commit-config.yaml"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".prettierrc"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".prettierrc"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "glob",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".prettierrc.*"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".prettierrc.cjs"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".prettierrc.js"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".prettierrc.json"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".prettierrc.json5"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".prettierrc.mjs"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".prettierrc.toml"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".prettierrc.yaml"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".prettierrc.yml"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "TOOL-02"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_COUNTING_CONFIG_GLOBS",
+      "audit.rules.checks.tool:_LINTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-02` Linter configured, a matching file counts as linter configuration; 3 other listed checks read it too.",
+    "pattern": ".pylintrc"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".pylintrc"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "BASE-04",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "CMD-01",
+      "CMD-02",
+      "CMD-03",
+      "CMD-04",
+      "CON-01",
+      "CON-02",
+      "CON-03",
+      "CON-04",
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-04",
+      "DOC-05",
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-03",
+      "EXEC-04",
+      "EXEC-05",
+      "EXEC-06",
+      "EXEC-07",
+      "EXEC-08",
+      "HYG-01",
+      "HYG-02",
+      "HYG-03",
+      "HYG-04",
+      "HYG-05",
+      "HYG-06",
+      "HYG-07",
+      "HYG-08",
+      "HYG-09",
+      "HYG-10",
+      "HYG-11",
+      "HYG-13",
+      "IDX-01",
+      "IDX-02",
+      "IDX-03",
+      "NAV-01",
+      "NAV-02",
+      "NAV-03",
+      "NAV-04",
+      "NAV-05",
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "TOOL-06",
+      "TOOL-07",
+      "TST-01",
+      "TST-02",
+      "TST-03",
+      "TST-04",
+      "TST-05"
+    ],
+    "match": "glob",
+    "meaning": "A file under a folder named .pytest_cache is never walked by the scan, so no check sees it.",
+    "pattern": ".pytest_cache/*"
+  },
+  {
+    "checks": [
+      "EXEC-01"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-01` Toolchain pinned / wrapper committed, a matching file counts as a toolchain pin.",
+    "pattern": ".python-version"
+  },
+  {
+    "checks": [
+      "CI-05",
+      "HYG-09"
+    ],
+    "constants": [
+      "audit.rules.checks.ci:_NOT_A_SURFACE",
+      "audit.rules.checks.hyg:_DEPENDENCY_AUTOMATION"
+    ],
+    "match": "base-name",
+    "meaning": "For `HYG-09` Dependency update automation configured, a matching file counts as dependency-update automation; 1 other listed check read it too.",
+    "pattern": ".renovaterc"
+  },
+  {
+    "checks": [
+      "EXEC-08"
+    ],
+    "constants": [
+      "audit.rules.checks.execution:_RENOVATE_FILES"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-08` Tool versions visible to dependency automation, a matching file is read for tool versions that dependency automation can see.",
+    "pattern": ".renovaterc"
+  },
+  {
+    "checks": [
+      "CI-05",
+      "HYG-09"
+    ],
+    "constants": [
+      "audit.rules.checks.ci:_NOT_A_SURFACE",
+      "audit.rules.checks.hyg:_DEPENDENCY_AUTOMATION"
+    ],
+    "match": "base-name",
+    "meaning": "For `HYG-09` Dependency update automation configured, a matching file counts as dependency-update automation; 1 other listed check read it too.",
+    "pattern": ".renovaterc.json"
+  },
+  {
+    "checks": [
+      "EXEC-08"
+    ],
+    "constants": [
+      "audit.rules.checks.execution:_RENOVATE_FILES"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-08` Tool versions visible to dependency automation, a matching file is read for tool versions that dependency automation can see.",
+    "pattern": ".renovaterc.json"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "glob",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".roo/rules-*/**"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "glob",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".roo/rules/**"
+  },
+  {
+    "checks": [
+      "CON-03",
+      "DOC-03",
+      "SEC-01",
+      "SEC-03"
+    ],
+    "constants": [
+      "audit.ignore:IGNORE_FILE_NAMES"
+    ],
+    "match": "exact",
+    "meaning": ".rooignore is an ignore file: the scan skips what its rules ignore, and `SEC-03` Ignore patterns cover secret shapes, `SEC-01`, `DOC-03` and `CON-03` read its rules (root only).",
+    "pattern": ".rooignore"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".roorules"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "glob",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".roorules-*"
+  },
+  {
+    "checks": [
+      "TOOL-02"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_LINTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-02` Linter configured, a matching file counts as linter configuration.",
+    "pattern": ".rubocop.yml"
+  },
+  {
+    "checks": [
+      "EXEC-01"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-01` Toolchain pinned / wrapper committed, a matching file counts as a toolchain pin.",
+    "pattern": ".ruby-version"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_BASELINE_GLOBS"
+    ],
+    "match": "base-name",
+    "meaning": "For `BASE-01` Baseline artifact exists, a matching file counts as a baseline artifact or counting tool; 2 other listed checks read it too.",
+    "pattern": ".ruff-baseline*"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "TOOL-01",
+      "TOOL-02"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_COUNTING_CONFIG_GLOBS",
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES",
+      "audit.rules.checks.tool:_LINTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration; 4 other listed checks read it too.",
+    "pattern": ".ruff.toml"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".ruff.toml"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "BASE-04",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "CMD-01",
+      "CMD-02",
+      "CMD-03",
+      "CMD-04",
+      "CON-01",
+      "CON-02",
+      "CON-03",
+      "CON-04",
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-04",
+      "DOC-05",
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-03",
+      "EXEC-04",
+      "EXEC-05",
+      "EXEC-06",
+      "EXEC-07",
+      "EXEC-08",
+      "HYG-01",
+      "HYG-02",
+      "HYG-03",
+      "HYG-04",
+      "HYG-05",
+      "HYG-06",
+      "HYG-07",
+      "HYG-08",
+      "HYG-09",
+      "HYG-10",
+      "HYG-11",
+      "HYG-13",
+      "IDX-01",
+      "IDX-02",
+      "IDX-03",
+      "NAV-01",
+      "NAV-02",
+      "NAV-03",
+      "NAV-04",
+      "NAV-05",
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "TOOL-06",
+      "TOOL-07",
+      "TST-01",
+      "TST-02",
+      "TST-03",
+      "TST-04",
+      "TST-05"
+    ],
+    "match": "glob",
+    "meaning": "A file under a folder named .ruff_cache is never walked by the scan, so no check sees it.",
+    "pattern": ".ruff_cache/*"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".rules"
+  },
+  {
+    "checks": [
+      "TOOL-01"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_FORMATTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-01` Formatter configured, a matching file counts as formatter configuration.",
+    "pattern": ".rustfmt.toml"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".rustfmt.toml"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_BASELINE_GLOBS"
+    ],
+    "match": "base-name",
+    "meaning": "For `BASE-01` Baseline artifact exists, a matching file counts as a baseline artifact or counting tool; 2 other listed checks read it too.",
+    "pattern": ".secrets.baseline"
+  },
+  {
+    "checks": [
+      "SEC-02"
+    ],
+    "match": "exact",
+    "meaning": "For `SEC-02` No key-shaped strings in tracked files, a matching file is the secret allowlist read at the root.",
+    "pattern": ".secrets.baseline"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_COUNTING_CONFIG_GLOBS"
+    ],
+    "match": "base-name",
+    "meaning": "For `BASE-01` Baseline artifact exists, a matching file counts as a baseline artifact or counting tool; 2 other listed checks read it too.",
+    "pattern": ".semgrep.yaml"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_COUNTING_CONFIG_GLOBS"
+    ],
+    "match": "base-name",
+    "meaning": "For `BASE-01` Baseline artifact exists, a matching file counts as a baseline artifact or counting tool; 2 other listed checks read it too.",
+    "pattern": ".semgrep.yml"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".semgrep.yml"
+  },
+  {
+    "checks": [
+      "BASE-01",
+      "BASE-02",
+      "BASE-03"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_BASELINE_GLOBS",
+      "audit.rules.checks.base:_COUNTING_CONFIG_GLOBS"
+    ],
+    "match": "base-name",
+    "meaning": "For `BASE-01` Baseline artifact exists, a matching file counts as a baseline artifact or counting tool; 2 other listed checks read it too.",
+    "pattern": ".snyk"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".snyk"
+  },
+  {
+    "checks": [
+      "TST-01",
+      "TST-03",
+      "TST-04"
+    ],
+    "constants": [
+      "audit.scan:_TEST_HINTS"
+    ],
+    "ignore_case": true,
+    "match": "substring",
+    "meaning": "A path holding .spec. is classed as a test by the scan, so `TST-01` Test verb exists, suite non-empty counts it toward the suite (with a source suffix).",
+    "pattern": ".spec."
+  },
+  {
+    "checks": [
+      "TOOL-02"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_LINTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-02` Linter configured, a matching file counts as linter configuration.",
+    "pattern": ".stylelintrc"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "exact",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".stylelintrc"
+  },
+  {
+    "checks": [
+      "EXEC-07"
+    ],
+    "match": "glob",
+    "meaning": "For `EXEC-07` No competing configs for one concern, a matching file counts as a root config for one concern, so two of them compete.",
+    "pattern": ".stylelintrc.*"
+  },
+  {
+    "checks": [
+      "TOOL-02"
+    ],
+    "constants": [
+      "audit.rules.checks.tool:_LINTER_CONFIG_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `TOOL-02` Linter configured, a matching file counts as linter configuration.",
+    "pattern": ".stylelintrc.json"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "BASE-04",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "CMD-01",
+      "CMD-02",
+      "CMD-03",
+      "CMD-04",
+      "CON-01",
+      "CON-02",
+      "CON-03",
+      "CON-04",
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-04",
+      "DOC-05",
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-03",
+      "EXEC-04",
+      "EXEC-05",
+      "EXEC-06",
+      "EXEC-07",
+      "EXEC-08",
+      "HYG-01",
+      "HYG-02",
+      "HYG-03",
+      "HYG-04",
+      "HYG-05",
+      "HYG-06",
+      "HYG-07",
+      "HYG-08",
+      "HYG-09",
+      "HYG-10",
+      "HYG-11",
+      "HYG-13",
+      "IDX-01",
+      "IDX-02",
+      "IDX-03",
+      "NAV-01",
+      "NAV-02",
+      "NAV-03",
+      "NAV-04",
+      "NAV-05",
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "TOOL-06",
+      "TOOL-07",
+      "TST-01",
+      "TST-02",
+      "TST-03",
+      "TST-04",
+      "TST-05"
+    ],
+    "match": "glob",
+    "meaning": "A file under a folder named .terraform is never walked by the scan, so no check sees it.",
+    "pattern": ".terraform/*"
+  },
+  {
+    "checks": [
+      "TST-01",
+      "TST-03",
+      "TST-04"
+    ],
+    "constants": [
+      "audit.scan:_TEST_HINTS"
+    ],
+    "ignore_case": true,
+    "match": "substring",
+    "meaning": "A path holding .test. is classed as a test by the scan, so `TST-01` Test verb exists, suite non-empty counts it toward the suite (with a source suffix).",
+    "pattern": ".test."
+  },
+  {
+    "checks": [
+      "EXEC-01"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-01` Toolchain pinned / wrapper committed, a matching file counts as a toolchain pin.",
+    "pattern": ".tool-versions"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "BASE-04",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "CMD-01",
+      "CMD-02",
+      "CMD-03",
+      "CMD-04",
+      "CON-01",
+      "CON-02",
+      "CON-03",
+      "CON-04",
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-04",
+      "DOC-05",
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-03",
+      "EXEC-04",
+      "EXEC-05",
+      "EXEC-06",
+      "EXEC-07",
+      "EXEC-08",
+      "HYG-01",
+      "HYG-02",
+      "HYG-03",
+      "HYG-04",
+      "HYG-05",
+      "HYG-06",
+      "HYG-07",
+      "HYG-08",
+      "HYG-09",
+      "HYG-10",
+      "HYG-11",
+      "HYG-13",
+      "IDX-01",
+      "IDX-02",
+      "IDX-03",
+      "NAV-01",
+      "NAV-02",
+      "NAV-03",
+      "NAV-04",
+      "NAV-05",
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "TOOL-06",
+      "TOOL-07",
+      "TST-01",
+      "TST-02",
+      "TST-03",
+      "TST-04",
+      "TST-05"
+    ],
+    "match": "glob",
+    "meaning": "A file under a folder named .tox is never walked by the scan, so no check sees it.",
+    "pattern": ".tox/*"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "glob",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".trae/rules/**/*.md"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-02",
+      "BASE-03",
+      "BASE-04",
+      "CI-01",
+      "CI-02",
+      "CI-03",
+      "CI-05",
+      "CMD-01",
+      "CMD-02",
+      "CMD-03",
+      "CMD-04",
+      "CON-01",
+      "CON-02",
+      "CON-03",
+      "CON-04",
+      "DOC-01",
+      "DOC-02",
+      "DOC-03",
+      "DOC-04",
+      "DOC-05",
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-03",
+      "EXEC-04",
+      "EXEC-05",
+      "EXEC-06",
+      "EXEC-07",
+      "EXEC-08",
+      "HYG-01",
+      "HYG-02",
+      "HYG-03",
+      "HYG-04",
+      "HYG-05",
+      "HYG-06",
+      "HYG-07",
+      "HYG-08",
+      "HYG-09",
+      "HYG-10",
+      "HYG-11",
+      "HYG-13",
+      "IDX-01",
+      "IDX-02",
+      "IDX-03",
+      "NAV-01",
+      "NAV-02",
+      "NAV-03",
+      "NAV-04",
+      "NAV-05",
+      "SEC-01",
+      "SEC-02",
+      "SEC-03",
+      "TOOL-01",
+      "TOOL-02",
+      "TOOL-03",
+      "TOOL-04",
+      "TOOL-05",
+      "TOOL-06",
+      "TOOL-07",
+      "TST-01",
+      "TST-02",
+      "TST-03",
+      "TST-04",
+      "TST-05"
+    ],
+    "match": "glob",
+    "meaning": "A file under a folder named .venv is never walked by the scan, so no check sees it.",
+    "pattern": ".venv/*"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".voidrules"
+  },
+  {
+    "checks": [
+      "IDX-01"
+    ],
+    "constants": [
+      "audit.rules.checks.idx:_PROJECT_CONFIGS"
+    ],
+    "match": "substring",
+    "meaning": "For `IDX-01` codebase-memory-mcp registered for this repository, a matching file is read for the codebase-memory-mcp server entry.",
+    "pattern": ".vscode/mcp.json"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "glob",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".windsurf/rules/**/*.md"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": ".windsurfrules"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": "AGENT.md"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": "AGENTS.local.md"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-02",
+      "AGT-08",
+      "TST-04"
+    ],
+    "constants": [
+      "audit.rules.checks.tst:_FASTPATH_DOCS",
+      "audit.rules.variants:CANONICAL_PATHS"
+    ],
+    "match": "base-name",
+    "meaning": "The canonical instruction file in any folder: `AGT-01` Instruction file present finds it, a nested one covers its component for `AGT-02`, and `TST-04` finds it at any depth but reads the root copy.",
+    "pattern": "AGENTS.md"
+  },
+  {
+    "checks": [
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-03",
+      "BASE-04",
+      "CON-01",
+      "CON-02",
+      "DOC-02",
+      "EXEC-03",
+      "EXEC-06"
+    ],
+    "constants": [
+      "audit.rules.checks.agt:_CONVENTIONS_SECTION_FILES",
+      "audit.rules.checks.base:_DOCS",
+      "audit.rules.checks.execution:_DOC_FILES"
+    ],
+    "match": "exact",
+    "meaning": "The root AGENTS.md is the entry instruction file that most AGT checks, `DOC-02`, `CON-01`, `CON-02`, `EXEC-03`, `EXEC-06` and the BASE checks read for their phrases and sections.",
+    "pattern": "AGENTS.md"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": "AGENTS.override.md"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": "AmazonQ.md"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": "CLAUDE.local.md"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08",
+      "TST-04"
+    ],
+    "constants": [
+      "audit.rules.checks.tst:_FASTPATH_DOCS"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 2 other listed checks read it too.",
+    "pattern": "CLAUDE.md"
+  },
+  {
+    "checks": [
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "BASE-01",
+      "BASE-03",
+      "BASE-04",
+      "CON-01",
+      "CON-02",
+      "DOC-02",
+      "EXEC-03",
+      "EXEC-06"
+    ],
+    "constants": [
+      "audit.rules.checks.base:_DOCS",
+      "audit.rules.checks.execution:_DOC_FILES"
+    ],
+    "match": "exact",
+    "meaning": "The root CLAUDE.md is the entry instruction file when no root AGENTS.md has text, read by the same checks as the root AGENTS.md.",
+    "pattern": "CLAUDE.md"
+  },
+  {
+    "checks": [
+      "HYG-02"
+    ],
+    "match": "base-name",
+    "meaning": "For `HYG-02` CODEOWNERS present, a matching file counts as CODEOWNERS.",
+    "pattern": "CODEOWNERS"
+  },
+  {
+    "checks": [
+      "TST-04"
+    ],
+    "constants": [
+      "audit.rules.checks.tst:_FASTPATH_DOCS"
+    ],
+    "match": "base-name",
+    "meaning": "For `TST-04` Fast path documented, a matching file is read for a fast-path test command.",
+    "pattern": "CONTRIBUTING.md"
+  },
+  {
+    "checks": [
+      "AGT-13",
+      "BASE-03",
+      "BASE-04",
+      "EXEC-03"
+    ],
+    "constants": [
+      "audit.rules.checks.agt:_CONVENTIONS_SECTION_FILES",
+      "audit.rules.checks.execution:_DOC_FILES"
+    ],
+    "match": "exact",
+    "meaning": "For `AGT-13` Coding conventions written, a matching file is read as a conventions file or for a conventions section; 3 other listed checks read it too.",
+    "pattern": "CONTRIBUTING.md"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "CONVENTIONS.md is an Aider instruction file for `AGT-08` No competing instruction files only when .aider.conf.yml exists somewhere; it is also a conventions file for `AGT-13`.",
+    "pattern": "CONVENTIONS.md"
+  },
+  {
+    "checks": [
+      "AGT-01",
+      "AGT-08"
+    ],
+    "match": "base-name",
+    "meaning": "For `AGT-08` No competing instruction files, and the reach matrix is stated, a matching file counts as an instruction file, a competitor unless it is the canonical one; 1 other listed check read it too.",
+    "pattern": "CRUSH.md"
+  },
+  {
+    "checks": [
+      "CI-05",
+      "EXEC-02",
+      "NAV-03"
+    ],
+    "constants": [
+      "audit.rules.checks.ci:_NOT_A_SURFACE",
+      "audit.stack:LOCKFILE_NAMES"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
+    "pattern": "Cargo.lock"
+  },
+  {
+    "checks": [
+      "EXEC-08",
+      "NAV-01"
+    ],
+    "match": "base-name",
+    "meaning": "For `EXEC-08` Tool versions visible to dependency automation, a matching file is read for tool versions that dependency automation can see; 1 other listed check read it too.",
+    "pattern": "Cargo.toml"
+  }
+]

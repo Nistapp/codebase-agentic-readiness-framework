@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 #
-# Run a recipe headlessly with Claude Code, unattended, and record what it cost (DP §11, review R-07).
+# Run a recipe headlessly with Claude Code, unattended, and record what it cost.
+# The evaluation design is in docs/explanation/contributor-deep-dive/05-evaluation.md.
 #
 #   run-claude.sh [--recipe audit|implement] [--answers <file>] [--model <model>] [--max-budget-usd <n>]
 #                 <target> <out-dir> [<repo-label>]
@@ -12,7 +13,10 @@
 # already exist. <repo-label> defaults to <target>'s directory name. An intake file,
 # <out-dir>/audit-intake.<repo-label>.json, must already exist with "eval_mode": true and a fixed
 # "confirmation_policy" ("accept-all" or "defer-all"): Stage 0 of the recipe then never has to ask a question,
-# which is what makes the run unattended rather than scripted past a real refusal (review R-07).
+# which is what makes the run unattended rather than scripted past a real refusal. The agent works
+# from a temporary copy of the recipe that `audit_eval.py framework` makes (audit/, docs/ and spec/, without dev/,
+# the tests and the eval pages), so it cannot read what is asserted; the copy is removed when the script exits. It
+# runs with no MCP servers, no user-level settings and no saved session, as in the implement mode.
 #
 # --recipe implement runs the implement recipe on one eval scenario that `implement_eval.py materialise` laid out
 # (IR13). <target> is then that scenario's root, and this script refuses to run unless the root is contained: it
@@ -34,8 +38,8 @@
 # Writes, in <out-dir>:
 #   <repo-label>.harness-run.<stamp>.json         harness, recipe, model, started_at, duration_s, cost/tokens
 #                                                  (best-effort, whatever the harness reports), and the exit code.
-#   <repo-label>.harness-transcript.<stamp>.jsonl  the harness's raw output: one JSON line (audit) or the
-#                                                  stream-json events (implement), unparsed.
+#   <repo-label>.harness-transcript.<stamp>.jsonl  the harness's raw output: the stream-json events, unparsed
+#                                                  (both recipes), so every tool call is on record.
 #   <repo-label>.harness-stderr.<stamp>.log        the harness's stderr.
 #
 # Needs: claude (Claude Code) on PATH, already logged in; git and python3. Nothing is installed. No network call
@@ -71,7 +75,6 @@ OUT_DIR=$(cd "${POSITIONAL[1]}" && pwd -P)
 REPO_LABEL="${POSITIONAL[2]:-$(basename "$TARGET")}"
 
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-FRAMEWORK=$(cd "$HERE/../.." && pwd)
 
 EXTRA=()
 [ -n "$MODEL" ] && EXTRA+=(--model "$MODEL")
@@ -84,15 +87,21 @@ fail() {
 
 if [ "$RECIPE" = audit ]; then
   [ -z "$ANSWERS" ] || fail "--answers is for --recipe implement"
-  KICKOFF="$FRAMEWORK/audit/prompts/kickoff.md"
-  [ -f "$KICKOFF" ] || fail "cannot find the kickoff prompt at $KICKOFF"
   INTAKE="$OUT_DIR/audit-intake.$REPO_LABEL.json"
   [ -f "$INTAKE" ] || fail "no intake file at $INTAKE; write one with eval_mode: true before running headless"
+  # The agent runs from a copy without dev/, so it cannot read the assertions (audit_eval.py framework).
+  COPY_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/audit-eval-framework.XXXXXX")
+  trap 'rm -rf "$COPY_ROOT"' EXIT
+  python3 "$HERE/audit_eval.py" framework "$COPY_ROOT/framework" >/dev/null || fail "could not copy the recipe"
+  WORKDIR="$COPY_ROOT/framework"
+  KICKOFF="$WORKDIR/audit/prompts/kickoff.md"
+  [ -f "$KICKOFF" ] || fail "cannot find the kickoff prompt at $KICKOFF"
   PROMPT=$(sed "s#<path to the repository>#$TARGET#" "$KICKOFF")
   PROMPT="$PROMPT
 Use the intake file at $INTAKE. Write every output file into $OUT_DIR."
-  WORKDIR="$PWD"
-  CLAUDE_ARGS=(--add-dir "$TARGET" --add-dir "$OUT_DIR" --output-format json)
+  # stream-json keeps every tool call on record, for audit_eval.py's assertions (AU1, AU2).
+  CLAUDE_ARGS=(--add-dir "$TARGET" --add-dir "$OUT_DIR" --output-format stream-json --verbose --strict-mcp-config
+    --setting-sources project --no-session-persistence)
 else
   ROOT="$TARGET"
   TMP_BASE=$(cd "${TMPDIR:-/tmp}" && pwd -P)

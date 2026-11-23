@@ -1,0 +1,245 @@
+{
+  "audit": {
+    "command_rewrites": [
+      {
+        "from": "python3 audit/tools/",
+        "to": "python3 scripts/tools/"
+      }
+    ],
+    "name": "agentic-readiness-audit",
+    "references": [
+      {
+        "kind": "skill",
+        "place": "SKILL.md",
+        "source": "audit/SKILL.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/checks",
+        "source": "audit/checks"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/stacks",
+        "source": "audit/stacks"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/prompts/talking-to-the-user.md",
+        "source": "audit/prompts/talking-to-the-user.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/schema/SCHEMA.md",
+        "source": "audit/schema/SCHEMA.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/schema/LICENSING.md",
+        "source": "audit/schema/LICENSING.md"
+      },
+      {
+        "kind": "sections",
+        "place": "references/tools-cli.md",
+        "sections": [
+          "Every tool",
+          "engine.py",
+          "validate_report.py",
+          "report.py",
+          "render_report.py",
+          "facts.py"
+        ],
+        "source": "docs/reference/tools-cli.md"
+      }
+    ],
+    "schema_files": [
+      "audit-intake.schema.json",
+      "audit-report.schema.json",
+      "catalogue.schema.json",
+      "facts.schema.json"
+    ],
+    "source_name": "audit",
+    "tool_files": [
+      "facts.py",
+      "engine.py",
+      "report.py",
+      "validate_report.py",
+      "render_report.py",
+      "_common.py",
+      "_engine_adapter.py",
+      "_jsonschema_subset.py",
+      "_render_attention.py",
+      "_render_evidence.py",
+      "_render_facts.py",
+      "_render_sections.py",
+      "_render_terms.py",
+      "_render_text.py",
+      "_report_checks.py",
+      "_report_decisions.py",
+      "_report_draft.py",
+      "_report_findings.py",
+      "_report_import.py",
+      "_report_status.py",
+      "_summary.py"
+    ]
+  },
+  "checked_folders": [
+    "audit/prompts",
+    "audit/schema",
+    "audit/tools",
+    "implement/playbooks/templates",
+    "implement/tools"
+  ],
+  "excluded": [
+    "audit/prompts/kickoff.md",
+    "audit/schema/eval-expected.schema.json",
+    "audit/tools/CATALOGUE.md",
+    "audit/tools/README.md"
+  ],
+  "implement": {
+    "command_rewrites": [
+      {
+        "from": "python3 audit/tools/engine.py",
+        "to": "python3 ../{audit_bundle}/scripts/tools/engine.py"
+      },
+      {
+        "from": "python3 audit/tools/",
+        "to": "python3 scripts/tools/"
+      },
+      {
+        "from": "python3 implement/tools/",
+        "to": "python3 scripts/tools/"
+      }
+    ],
+    "name": "agentic-readiness-implement",
+    "own_tool_files": [
+      "progress.py",
+      "_progress_cmd_pref.py",
+      "_progress_cmd_refs.py",
+      "_progress_cmd_status.py",
+      "_progress_cmd_theme.py",
+      "_progress_next.py",
+      "_progress_refs.py",
+      "_progress_render.py",
+      "_progress_state.py",
+      "_progress_themes.py",
+      "_progress_transitions.py",
+      "check_drift.py",
+      "compare_reports.py",
+      "check_regressions.py",
+      "check_gates.py",
+      "_audit_tools_path.py"
+    ],
+    "references": [
+      {
+        "kind": "skill",
+        "place": "SKILL.md",
+        "source": "implement/SKILL.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/state.md",
+        "source": "implement/state.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/tool-choice.md",
+        "source": "implement/tool-choice.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/theme-checks.md",
+        "source": "implement/theme-checks.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/playbooks",
+        "source": "implement/playbooks"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/prompts",
+        "source": "implement/prompts"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/prompts/talking-to-the-user.md",
+        "source": "audit/prompts/talking-to-the-user.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/checks",
+        "source": "audit/checks"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/stacks",
+        "source": "audit/stacks"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/adrs/0003-push-and-pr-policy.md",
+        "source": "implement/docs/architecture/adrs/0003-push-and-pr-policy.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/adr-policy/ADR_POLICY.md",
+        "source": "greenfield/templates/docs/ADR_POLICY.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/adr-policy/adr-template.md",
+        "source": "greenfield/templates/docs/templates/adr-template.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/spec/command-surface.md",
+        "source": "spec/command-surface.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/spec/decisions/0001-constraint-artifact.md",
+        "source": "spec/decisions/0001-constraint-artifact.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/spec/decisions/0002-lint-in-the-gate.md",
+        "source": "spec/decisions/0002-lint-in-the-gate.md"
+      },
+      {
+        "kind": "markdown",
+        "place": "references/schema/SCHEMA.md",
+        "source": "audit/schema/SCHEMA.md"
+      },
+      {
+        "kind": "sections",
+        "place": "references/tools-cli.md",
+        "sections": [
+          "Every tool",
+          "validate_report.py",
+          "progress.py",
+          "check_drift.py",
+          "compare_reports.py",
+          "check_regressions.py",
+          "check_gates.py"
+        ],
+        "source": "docs/reference/tools-cli.md"
+      }
+    ],
+    "schema_files": [
+      "audit-report.schema.json",
+      "catalogue.schema.json",
+      "readiness-state.schema.json"
+    ],
+    "shared_tool_files": [
+      "validate_report.py",
+      "_common.py",
+      "_jsonschema_subset.py",
+      "_summary.py"
+    ],
+    "source_name": "implement",
+    "template_files": [
+      "docs_prose_check.py"
+    ]
+  }
+}

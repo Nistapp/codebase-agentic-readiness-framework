@@ -4,10 +4,12 @@
 > **Purpose:** This file tells AI coding agents how to work in **[Project Name]**. It holds only what an agent
 > cannot infer from the code: the commands, the boundaries, the rules for documents and releases, and the
 > prohibitions. Keep it that way: no overview, no tech-stack table, no rule a linter already enforces. Keep it
-> under 400 lines.
+> under 400 lines. Put each new prohibition in section 6, and state the rules of sections 1 to 5 in positive
+> form. Sections 1, 2 and 3 already hold two prohibition lines each. The audit reads a section with three such
+> lines as a list of prohibitions.
 
-This file is read by opencode, Codex and Cursor. Claude Code reads it only through a `CLAUDE.md` that imports
-`@AGENTS.md`.
+This file is read by Claude Code, opencode, Codex and Cursor. Claude Code reads it when the repository has no
+`CLAUDE.md`; where one exists, that `CLAUDE.md` imports `@AGENTS.md`.
 
 ---
 
@@ -110,7 +112,7 @@ long form, with report layouts and decision requests, is
 
 5.3 **Bottom line first:** put the answer, the result or the decision you need in the first two lines.
 
-5.4 **Plain language:** short sentences (at most 25 words), active voice, one term per meaning.
+5.4 **Plain language:** short sentences (at most 25 words; 20 in a step), active voice, one term per meaning.
 
 5.5 **Form:** choose the form from the content: numbered rules, tables, diagrams or alerts
 (`docs/STYLE_GUIDE.md` §3.1).

@@ -1,5 +1,5 @@
 {
-  "_comment": "Quality baseline: one full-tree violation count per tool. A baseline only goes down; raising a count needs the owner. Compared by dev/quality_baseline.py from make format-check, typecheck and docs-lint. The coverage floor lives in .coveragerc (fail_under). <pin> is the version in dev/tools/pyproject.toml or dev/tools/package.json.",
+  "_comment": "Quality baseline: one full-tree violation count per tool. A baseline only goes down; raising a count needs the owner. Compared by dev/quality_baseline.py from make format-check, typecheck and docs-lint, and the skip-marker count by dev/skip_census.py from make self-audit. The coverage floor lives in .coveragerc (fail_under). <pin> is the version in dev/tools/pyproject.toml or dev/tools/package.json.",
   "measured": "2026-11-08",
   "counts": {
     "ruff": {
@@ -15,10 +15,16 @@
       "verb": "make typecheck"
     },
     "markdownlint": {
-      "count": 620,
+      "count": 618,
       "what": "markdownlint-cli2 issues over every tracked Markdown file (the DOCS_LINT_PATHS ratchet is a subset and clean)",
       "command": "git ls-files -z '*.md' | xargs -0 npx markdownlint-cli2@<pin>",
       "verb": "make docs-lint"
+    },
+    "skips": {
+      "count": 12,
+      "what": "skip markers (skip, skipIf, skipUnless, expectedFailure decorators, skipTest calls, raise SkipTest) in the five test trees, fixtures excluded",
+      "command": "python3 dev/skip_census.py check",
+      "verb": "make self-audit"
     }
   }
 }

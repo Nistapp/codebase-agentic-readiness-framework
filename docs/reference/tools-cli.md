@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all ten rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all ten rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, `compare_reports.py`, `check_regressions.py`, and `check_gates.py`.
 
 ---
 
@@ -20,6 +20,8 @@
 | [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state, in the workspace beside the audit report | Live |
 | [`check_drift.py`](#check_driftpy) | Lists the audit findings whose cited files changed between the audited commit and `HEAD` | Live |
 | [`compare_reports.py`](#compare_reportspy) | Compares two audit reports: which checks and findings moved, and which moves the readiness state explains | Live |
+| [`check_regressions.py`](#check_regressionspy) | Compares two engine reports of one theme worktree: lost passes, regressions, other moves and evidence changes | Live |
+| [`check_gates.py`](#check_gatespy) | Reads a theme's diff for a weakened gate or a dependency the owner did not approve | Live |
 
 ## Every tool
 
@@ -59,12 +61,12 @@ python3 audit/tools/engine.py --describe
 |---|---|
 | `<target>` | The repository to scan. It must exist and be a directory. The engine only reads it. |
 | `--out-dir DIR` | Where the report goes. It is created if it does not exist, and it must be outside the target. Default: the current directory, which is refused when it is inside the target. |
-| `--repo-label LABEL` | The label in the file name: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). |
+| `--repo-label LABEL` | The label in the file name: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). The audit recipe passes the label `report.py init` chose, so the engine report and the draft share one label. |
 | `--phase N` | The phase recorded in the report's provenance. The engine implements phase 1 only, so a higher value changes nothing else; the engine's default is 1. |
 | `--exclude GLOB` | An extra path pattern to leave out of the audit, matched against the whole path from the target's root, so `vendor-samples/*` covers every file under that directory. It applies to the checks that read git's tracked files as well as to the walk. May be repeated. |
 | `--max-files N` | A hard cap on the files the engine inspects. |
 | `--run-gates`, `--allow-probe VERB`, `--timeout SECONDS` | Let the engine run the target's own commands. Nothing runs unless `--run-gates` is given and every verb is named in an `--allow-probe`. `--timeout` is the limit per command. |
-| `--emit-baseline` | Forwarded to the engine's own `--emit-baseline` (D51): also writes `do-not-do.draft.md` beside the report, the CON-04 remediation draft. |
+| `--emit-baseline` | Forwarded to the engine's own `--emit-baseline` (why: the [`CON-04` Pitfalls](../../audit/checks/08-constraints.md#con-04--draft-allowdeny-emitted)): also writes `do-not-do.draft.md` beside the report, the CON-04 remediation draft. |
 | `--no-user-config` | Forwarded to the engine: read no user-level configuration (`$HOME`, XDG), so the `IDX` verdicts do not depend on the machine. The report's `provenance.user_config` says what was read. |
 | `--list-checks` | Print the engine's checks and exit. It takes no other argument. |
 
@@ -120,7 +122,7 @@ python3 audit/tools/validate_report.py --describe
 | Argument | Meaning |
 |---|---|
 | `<report>` | The report to check: a JSON file of at most 32 MiB. |
-| `--target <repo>` | The audited repository. With it the tool also looks for each cited `file` path and warns about the ones that are missing (rule 12). It asks git whether the commit in `provenance.target.git_sha` holds the path, or looks in the working tree when no commit is recorded. It never writes to the target. |
+| `--target <repo>` | The audited repository. With it the tool also looks for each cited `file` path and warns about the ones that are missing (rule 12). It asks git whether the commit in `provenance.target.git_sha` holds the path, or looks in the working tree when no commit is recorded. For each `lines` range the agent cited, it also warns when the range runs past the end of the file, or when the `quote` is not in those lines. It never writes to the target. |
 
 **Outputs**
 
@@ -161,7 +163,7 @@ The tool checks in three stages. The first reads `schema_version`. A report with
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. The draft's path may be a link: the draft it points to is changed, and the link stays a link. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../audit/tools/report.py).
 
-The subcommands are `init`, `import-engine`, `add-check`, `add-finding`, `set-disposition`, `set-stack-profile`, `status` and `finalise`.
+The subcommands are `init`, `import-engine`, `run-engine`, `add-check`, `add-finding`, `set-disposition`, `set-stack-profile`, `status` and `finalise`.
 
 Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step. The tool
 reads and validates the draft, makes the change, recomputes the summary and validates the result. Only then does it
@@ -175,6 +177,7 @@ changed.
 ```text
 python3 audit/tools/report.py init <intake>
 python3 audit/tools/report.py import-engine <draft> <engine report>
+python3 audit/tools/report.py run-engine <draft> --out-dir DIR
 python3 audit/tools/report.py add-check <draft> --from FILE|-
 python3 audit/tools/report.py add-finding <draft> --from FILE|-
 python3 audit/tools/report.py set-disposition <draft> --via VIA
@@ -236,7 +239,7 @@ The draft starts with no checks, no findings and a summary computed from them. T
 
 ### import-engine
 
-Brings the engine's report into a draft: its checks and findings, the stack and components it detected, its file counts, the probes it ran and its unattested items. The report is the JSON that [`engine.py`](#enginepy) wrote. The rules of the conversion are in [Engine schema v2 mapping](../../audit/schema/SCHEMA.md#engine-schema-v2-mapping). The conversion is [`convert`](../../audit/tools/_engine_adapter.py#L726-L739), a pure function of the engine's report, and [`apply_import`](../../audit/tools/report.py#L585-L645) applies its result to the draft in one validated step, as every other change is applied.
+Brings the engine's report into a draft: its checks and findings, the stack and components it detected, its file counts, the probes it ran and its unattested items. The report is the JSON that [`engine.py`](#enginepy) wrote. The rules of the conversion are in [Engine schema v2 mapping](../../audit/schema/SCHEMA.md#engine-schema-v2-mapping). The conversion is [`convert`](../../audit/tools/_engine_adapter.py#L726-L739), a pure function of the engine's report, and [`apply_import`](../../audit/tools/_report_import.py#L77-L137) applies its result to the draft in one validated step, as every other change is applied.
 
 ```text
 python3 audit/tools/report.py import-engine <draft> <engine report>
@@ -313,6 +316,43 @@ Nothing the engine said is dropped without a warning, except a placeholder and a
 | `this draft already holds an engine report (ruleset H)` | Start a new draft with `init`. |
 | `the draft already records X` | The draft holds a check the engine reports. Start a new draft. |
 | `the change would leave the draft invalid, so nothing was written` | `data.errors` names the rule and the place, for example an engine finding more severe than its check (rule 7). |
+
+### run-engine
+
+Runs [`engine.py`](#enginepy) with the flags the draft's intake recorded, then imports the report it wrote, as
+[`import-engine`](#import-engine) does. It is Stage 2, steps 1 and 2 of the [audit recipe](../../audit/SKILL.md) in
+one call.
+
+```text
+python3 audit/tools/report.py run-engine <draft> --out-dir DIR
+```
+
+| Argument | Meaning |
+|---|---|
+| `<draft>` | The draft to change. It must not hold an engine report yet. |
+| `--out-dir DIR` | Where the engine's report and `do-not-do.draft.md` go. Required. It must be outside the target; `engine.py` refuses one inside. |
+
+The engine gets the draft's target and label, and these flags:
+
+- `--no-user-config` and `--emit-baseline`, always;
+- `--exclude` for each path in `run_context.excluded`;
+- `--run-gates`, `--allow-probe` for each verb in `run_context.probes.allowed`, and `--timeout` with
+  `run_context.probes.timeout_s`, only when at least one verb is allowed.
+
+A final report, or a draft that already holds an engine report, is refused before the engine runs. So no engine
+report is written for nothing.
+
+**Outputs.** `data` is the `data` of `import-engine`, with `engine_run` first: the `data` of `engine.py` (`report`,
+`label`, `stamp`, `target`, `baseline_draft` and `engine`). The warnings of both come in that order.
+
+**Exit codes.** Each code means:
+
+| Code | When |
+|---|---|
+| `0` | The engine ran, and its report was imported. |
+| `1` | A bad argument, a missing `--out-dir`, or a missing or final draft. Or `--out-dir` is inside the target, the engine refused the run, or `import-engine` gives exit 1. |
+| `2` | The draft is not valid, already holds an engine report, or the import failed validation, as for `import-engine`. The engine's report stays in `--out-dir`. |
+| `3` | The engine failed, or an internal error. The draft is not changed. |
 
 ### Fragments
 
@@ -509,12 +549,19 @@ eval-mode run records it the same way.
 Says where an audit stands: which families of checks are done, which are not, and which findings still wait for a decision. It is what to run first when a session resumes after a crash or after the agent's context ran out, because the draft holds everything and the tool reads it. It reads the draft and writes nothing, and it does not wait for the lock.
 
 ```text
-python3 audit/tools/report.py status <draft>
+python3 audit/tools/report.py status <draft> [--all] [--severity BLOCKER|DEGRADER|COSMETIC]
 ```
+
+| Option | Meaning |
+|---|---|
+| `--all` | List every pending finding, not the first 8. The 40-line limit then does not hold. The list is still cut at the byte budget of every tool's output, and `pending_omitted` says how many were left out. |
+| `--severity S` | List only the pending findings of severity `S`. The counts still cover every finding. |
+
+The output is a JSON envelope already, so there is no `--json` option.
 
 The draft may be final: `status` then reports it and says it is already final. A draft that fails validation is exit 2, with the errors.
 
-**Outputs.** The envelope is at most **40 lines** on stdout, so a report of 70 checks costs a few hundred tokens and not a page. `data` holds:
+**Outputs.** Without `--all`, the envelope has at most **40 lines**, so a report of 70 checks costs a few hundred tokens and not a page. `data` holds:
 
 | Key | Meaning |
 |---|---|
@@ -525,8 +572,26 @@ The draft may be final: `status` then reports it and says it is already final. A
 | `families_remaining` | For each family with a check not yet recorded, the IDs of those checks. |
 | `findings`, `findings_pending`, `blockers_pending` | The findings, those waiting for a decision, and the `BLOCKER` ones among them. |
 | `ready_to_finalise`, `blocking` | Whether `finalise` has nothing to stop it, and if not, why in a sentence: an eval-mode run, checks not recorded, findings pending, a `BLOCKER` not decided interactively, or a report that is already final. `finalise` has the last word: it validates the final report. |
-| `pending` | The findings waiting for a decision, one line each as `<id> <severity> <key>`, blockers first, as many as fit in the line budget (at most 8). |
+| `next` | What the audit recipe does next, in one sentence that starts with the stage and the step of [`audit/SKILL.md`](../../audit/SKILL.md), for example `Stage 2, step 3: ...`. The rule is the recipe's "Resuming" section; the table below gives it. |
+| `next_command` | The command that does it, with absolute paths, or `null` when there is none; `next` then says why. A part only the person can give stays a placeholder, such as `<disposition>`. |
+| `pending` | The findings waiting for a decision, one line each as `<id> <severity> <key>`, blockers first, as many as fit in the line budget (at most 8). With `--all`, every one that fits the byte budget. |
+| `pending_severity` | The severity given with `--severity`, when one was given. |
 | `pending_omitted` | How many pending findings are not listed, when some are left out. The envelope then has `truncated: true`. |
+
+`next` and `next_command` follow the first row that holds, from the top:
+
+| The draft | `next` starts with | `next_command` |
+|---|---|---|
+| Is final | `Nothing: the report is final.` | `null` |
+| Holds no engine report yet | `Stage 2, steps 1 and 2:` | `report.py run-engine <draft> --out-dir <the draft's folder>` |
+| Has a family with a check not recorded | `Stage 2, step 3:`, naming the first such family in the catalogue's order | `report.py add-check <draft> --from -` |
+| Is an eval-mode run | `Stage 5, step 1:`: stop at the draft (the eval-mode lines of Stages 4 and 5) | `null` |
+| Has a pending `BLOCKER` finding | `Stage 4, step 2:`, naming it | `report.py set-disposition <draft> --via interactive --finding <id> --disposition <disposition>` |
+| Has other pending findings | `Stage 4, step 3:` | `report.py set-disposition <draft> --via batch --from -` |
+| Has a `BLOCKER` finding no person decided alone | `Stage 4, step 2:`, naming it | as for a pending `BLOCKER` |
+| Is ready to finalise | `Stage 5, step 3:` | `report.py finalise <draft>` |
+
+The two keys take two lines of the 40, so the `pending` list fits in what is left.
 
 **Exit codes**
 
@@ -612,9 +677,9 @@ python3 audit/tools/render_report.py --describe
 | Section | What it shows |
 |---|---|
 | Title and banners | The repository's name. A warning banner for an evaluation run, a note banner for a draft that counts the findings awaiting a decision, and a note that the audit reports and does not gate. |
-| Bottom line | The answer first, after the title and banners. The blockers remaining, from the readiness summary. The checks that are `UNKNOWN` (up to five IDs, then a count) and the number of unattested requirements. Then the first three actions, in a table: open findings (not `rejected` or `deferred`) ranked by severity, then a finding that waits on an open `depends_on` finding after one that does not, then `effort` (`S`, `M`, `L`, none), then the check and finding IDs. Each action gives the check, the statement and the fix, and says when it awaits a decision. |
+| Bottom line | The answer first, after the title and banners. The blockers remaining, from the readiness summary, worded as in the readiness summary row. The checks that are `UNKNOWN` (up to five IDs, then a count) and the number of unattested requirements. Then the first three actions, in a table: open findings (not `rejected` or `deferred`) ranked by severity, then a finding that waits on an open `depends_on` finding after one that does not, then `effort` (`S`, `M`, `L`, none), then the check and finding IDs. Each action gives the check, the statement and the fix, and says when it awaits a decision. |
 | Provenance | A field and value table, straight after the bottom line: the target, the commit (a bold flag for a dirty working tree), the status, when the audit started and finished, the recipe and catalogue, the engine and ruleset, the framework revision, the agent (self-reported) and the probes. |
-| Readiness summary | The headline of [`spec/readiness-summary.md`](../../spec/readiness-summary.md) and no other number: the phase-1 score to two places, the blockers remaining by state, and the unattested requirements, then the two qualifiers. |
+| Readiness summary | The headline of [`spec/readiness-summary.md`](../../spec/readiness-summary.md) and no other number: the phase-1 score to two places, the blockers remaining by state, and the unattested requirements, then the two qualifiers. The blockers remaining count checks. When the BLOCKER findings that are not `rejected` number differently, the line names both: "7 BLOCKER checks unmet: 5 FAIL, 1 PARTIAL, 1 UNKNOWN (6 BLOCKER findings)". |
 | Checks by verdict and severity | How many checks have each verdict and what each earns, and for each severity its weight, its scored checks and how many are not met. |
 | Checks that need attention | A table for each severity, with the columns Check, Verdict, What we found, Evidence, Fix and Decision. A row is a finding, or a check that has none. A check is listed when it is not met, was overridden, was judged by the agent, or raised a finding. |
 | Overrides of the engine's verdicts | Each check whose verdict differs from the engine's, with both verdicts and the reason. |
@@ -682,7 +747,7 @@ python3 audit/tools/facts.py --describe
 |---|---|
 | `<target>` | The repository to describe. It must exist and be a directory. The tool only reads it. |
 | `--out FILE` | The file to create. It must not exist, its folder must, and the folder must be outside the target. The tool never replaces a file. |
-| `--repo-label LABEL` | The label in the file: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). |
+| `--repo-label LABEL` | The label in the file: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). The audit recipe passes the label `report.py init` chose. |
 | `--exclude GLOB` | An extra path pattern to leave out of the inventory, spelled as `engine.py`'s is, so the facts describe the inventory the engine sees. Up to 10 are named in the file; the rest still apply. May be repeated. |
 | `--max-files N` | A cap on the files the walk inspects. Default: the engine's own cap. A walk the cap stops is `truncated`, which pushes the size class to `huge` whatever the count. |
 
@@ -791,7 +856,9 @@ Nothing is written by a plain `recipe_lint.py <root>`; a clean run's `data` hold
 ## build_skills.py
 
 Builds the two skill bundles under `dev/dist/skills/` (gitignored), self-contained copies that a harness installs and
-runs with no checkout of this repository. The source is [`build_skills.py`](../../dev/build_skills.py). Each
+runs with no checkout of this repository. The source is [`build_skills.py`](../../dev/build_skills.py). The list of
+shipped files is data in [`skill-bundles.json`](../../dev/skill-bundles.json): to ship or drop a file, change that file.
+A test fails when a source folder holds a file the manifest neither names nor lists under `excluded`. Each
 bundle is replaced whole on every run, so a stale file from an earlier build can never survive. Each has three parts:
 
 - `SKILL.md`: the recipe's own file, with its frontmatter `name` rewritten from the source folder's name to the
@@ -802,17 +869,22 @@ bundle is replaced whole on every run, so a stale file from an earlier build can
 - **`agentic-readiness-audit`**: `references/` holds the check files, the stack profiles and the schema docs. It
   also holds the shared prompt on how to talk to the user and the sections of this page for the tools it carries.
   `scripts/` holds the tools the recipe calls. Beside them are the schema files and the `catalogue.json` they read
-  at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. `audit.pyz` is
-  the engine's single-file build. Its Markdown files are rewritten the same way as the implement bundle's, below.
+  at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. The bundle
+  carries no `audit.pyz`: the release attaches it as a file of its own. Its Markdown files are rewritten the same
+  way as the implement bundle's, below.
 - **`agentic-readiness-implement`**: `references/` holds the state contract, the tool-choice procedures, the
   playbooks, the kickoff prompt and the shared prompt on how to talk to the user. It also holds the check files,
-  the stack profiles, ADR 0003, `spec/command-surface.md` and the spec decisions, the state schema and its docs,
-  and the sections of this page for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`,
+  the stack profiles, ADR 0003, `spec/command-surface.md` and the spec decisions, the schema docs, and the
+  sections of this page for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`,
   `compare_reports.py` and `validate_report.py` with their private modules, the schema files, `catalogue.json`,
   and an `engine.py` shim.
   The engine is not copied. The shim loads `engine.py` from the `agentic-readiness-audit` skill installed in the
   same skills folder, so both skills run one engine. A tool that needs the engine without it exits 1 and names the
-  missing skill. In both bundles, every carried Markdown file is rewritten in three ways:
+  missing skill.
+
+  Each bundle carries one copy of each file. The schema files sit in `scripts/schema/` and the schema docs in
+  `references/schema/`, which link to them. A schema that no carried tool reads and no carried file links stays
+  out, such as `eval-expected.schema.json`. In both bundles, every carried Markdown file is rewritten in three ways:
   - a `python3 audit/tools/<tool>.py` command becomes the path from the skill's own folder
     (`python3 scripts/tools/<tool>.py`; in the implement bundle, the audit skill's path for `engine.py`);
   - a link to a carried file points at its place in the bundle;
@@ -824,10 +896,22 @@ validator. It is the PyPI package `skills-ref`, with the CLI entry point `agents
 through `uvx` with a pinned version, and never imported by the tools or the engine. An install smoke-run (S4.5.3)
 acts on the audit bundle.
 
+`--archive DIR --tag TAG` also zips each bundle into `DIR/<bundle name>-<TAG>.zip`, the files that `release.yml`
+attaches to a release. Each zip holds the bundle's folder at its root. The zips are byte-reproducible, like
+`audit.pyz`:
+
+- the entries are in sorted path order;
+- every entry has the timestamp 1980-01-01 00:00:00;
+- a file is mode `0644` (`0755` if executable) and a folder is `0755`, whatever the host's umask;
+- every file is compressed with Deflate at level 9;
+- no entry carries an extra field, an owner or a user ID.
+
+Two builds of the same commit with the same Python and zlib give the same bytes, so the same `SHA256SUMS`.
+
 **Synopsis**
 
 ```text
-python3 dev/build_skills.py [--out-dir DIR]
+python3 dev/build_skills.py [--out-dir DIR] [--archive DIR --tag TAG]
 ```
 
 **Inputs**
@@ -835,10 +919,13 @@ python3 dev/build_skills.py [--out-dir DIR]
 | Argument | Meaning |
 |---|---|
 | `--out-dir` | Where to build `skills/` itself (default: `dev/dist/skills`). The bundles always land at `<out-dir>/agentic-readiness-audit/` and `<out-dir>/agentic-readiness-implement/`. |
+| `--archive` | Also zip each bundle into this folder. Needs `--tag`. |
+| `--tag` | The release tag in the zip names, for example `v0.4.0`: `agentic-readiness-audit-v0.4.0.zip`. Needs `--archive`. Letters, digits, `.`, `_` and `-` only. |
 
 **Outputs**
 
 `data.bundles` lists both bundles, each with `name`, `bundle` (its path) and `files` (how many files it has).
+With `--archive`, each also has `archive`, the path of its zip.
 `data.bundle` and `data.files` repeat the audit bundle's path and count.
 
 **Exit codes**
@@ -846,7 +933,7 @@ python3 dev/build_skills.py [--out-dir DIR]
 | Code | When |
 |---|---|
 | `0` | The bundle was built. |
-| `1` | The engine's own `audit/engine/build.py` failed to produce `audit.pyz` (the message is `audit/engine/build.py failed to build audit.pyz`) (`data.errors` carries its stderr), or a source file lacks the frontmatter `name` line or a Tools CLI section the builder rewrites. |
+| `1` | A source file lacks the frontmatter `name` line or a Tools CLI section the builder rewrites, or its frontmatter already has a `metadata` key. Or `--archive` and `--tag` were not given together, or the tag is not a plain file-name part. |
 
 ## progress.py
 
@@ -877,6 +964,10 @@ python3 implement/tools/progress.py unskip|undefer FINDING --by owner --workspac
 python3 implement/tools/progress.py pref set KEY VALUE --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 python3 implement/tools/progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 python3 implement/tools/progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --workspace DIR --phase PHASE [--render]
+python3 implement/tools/progress.py accept-lost THEME --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
+python3 implement/tools/progress.py record-refs --target REPO --workspace DIR --phase PHASE [--label LABEL] [--render]
+python3 implement/tools/progress.py verify-refs --target REPO --workspace DIR [--label LABEL]
+python3 implement/tools/progress.py accept-ref REF --target REPO --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 python3 implement/tools/progress.py --describe
 ```
 
@@ -885,7 +976,7 @@ python3 implement/tools/progress.py --describe
 | Argument | Meaning |
 |---|---|
 | `--report` | `init`: the final audit report (JSON). Its folder becomes the workspace, so it must be outside the target, and `validate_report.py` must accept it. |
-| `--target` | `init`: the audited repository. `adopt`: the checkout whose `docs/agentic-readiness/` holds a state an earlier release wrote; read only. No other command takes it. |
+| `--target` | `init`: the audited repository. `adopt`: the checkout whose `docs/agentic-readiness/` holds a state an earlier release wrote; read only. `record-refs`, `verify-refs` and `accept-ref`: the repository whose refs are read, with read-only git. No other command takes it. |
 | `--workspace` | Every command but `init`: the folder that holds the state, `<label>-agentic-readiness-state.json`, and its view `<label>-agentic-readiness-STATE.md`. It must be outside the target. `adopt` creates it when it is missing. |
 | `--default-branch` | `init`: the branch the theme PRs go into. Default: the report's `provenance.target.branch`, else `main`. |
 | `--phase` | `init`: the step recorded in the first log entry. Default: `init`. `adopt` requires it. |
@@ -896,13 +987,15 @@ python3 implement/tools/progress.py --describe
 | `--commit` | `set-status`: a commit SHA to add to the item (repeatable), 7 to 40 digits, stored cut to 12. |
 | `--verification-command`, `--verification-result` | `set-status`: the verification and what it gave; given together. `done` needs one. |
 | `--debt`, `--clear-debt` | `set-status`: record debt (repeatable; same `what` replaces) or drop it. `partial` needs debt; `done` needs none. |
-| `--reason` | The reason. Required by `failed`, `blocked`, `skip`, `defer` and `pref`. |
+| `--reason` | The reason. Required by `failed`, `blocked`, `skip`, `defer`, `pref`, `accept-lost` and `accept-ref`. |
 | `KEY VALUE` | `pref set`: a lower-case key (letters, digits, dot, underscore, hyphen; at most 64) and its value. The value `none` records that the owner was asked and has no preference. |
 | `--note` | `set-status`: text appended to the item's notes. When the item already has the given status, this is the only effect (the note and any `--commit` are added and the log says "note added"); without `--note` that case is refused. |
-| `--by` | Who decided, `owner` or `agent` (default `agent`). `skip`, `unskip`, `defer`, `undefer` and `pref` refuse anything but `owner`: the agent relays the owner's answer; the tool cannot see who is typing. |
+| `--by` | Who decided, `owner` or `agent` (default `agent`). `skip`, `unskip`, `defer`, `undefer`, `pref`, `accept-lost` and `accept-ref` refuse anything but `owner`: the agent relays the owner's answer; the tool cannot see who is typing. |
 | `--phase` | Every write: the step recorded in the log entry and on the item or preference. |
 | `--render` | Every write: also replace the Markdown view. Without it the tool warns that the view is out of date. |
 | `--status`, `--branch`, `--pr`, `--merged-sha` | `theme`: the theme's new status (it only moves forward) and the data that status needs: a branch, then a PR, then the merge SHA (stored cut to 12 digits). |
+| `THEME` | `accept-lost`: the theme whose latest `lost` verdict the owner accepts, `T1` to `T8`. |
+| `REF` | `accept-ref`: the full ref name `verify-refs` printed, for example `refs/heads/main`. |
 | `--json` | `show`: print the state itself instead of the summary. Long lists are cut to fit the output and `truncated` is set; the log keeps its newest entries. |
 
 **Outputs**
@@ -914,7 +1007,29 @@ the count per status and the `not_queued` count, with `versions` as [`check_drif
 - the counts per status and per theme (`items`, and `open`: neither `done` nor `skipped`);
 - the skipped finding ids, and the number of preferences, debt entries and log entries;
 - `versions`: the framework that created the state (`created`), the one that last wrote it (`last`) and these
-  tools (`tools`).
+  tools (`tools`);
+- `next`: where a session goes on, worked out from the state alone. `stage` and `step` name a step of
+  [`implement/SKILL.md`](../../implement/SKILL.md), and `text` says it in one sentence. `theme` is the theme the
+  step works on, or `null`. `check_first` lists the themes shown as `branch_open` or `pr_open`; Stage 2, step 1
+  checks each for a merge. The first rule that holds decides:
+
+  | The state | `stage`, `step` |
+  |---|---|
+  | An item is `in_progress` (the lowest finding id is named) | 3, 4: resume it on its theme's branch |
+  | No theme has started and no `ci.pr_by_agent` preference is recorded | 1, 1: triage |
+  | A `branch_open` theme has `queued` items of its own | 3, 4: go on with them |
+  | A theme is `branch_open` or `pr_open` | 2, 1: check whether it merged; `theme` is the theme after that |
+  | The rule below picks a theme | 2, 2: plan it |
+  | Anything else | 5, 1: close out, naming any `queued` item no theme works |
+
+  The next theme is the first `not_started` theme, from T1 to T8, with `queued` items for its own playbooks.
+  The themes before it in the recipe's Themes diagram, directly or through another, must each be `merged`. A
+  `not_started` one with no item `queued` or `in_progress` counts too. A theme shown as `branch_open` or
+  `pr_open` holds back the themes after it. Some items are worked by a playbook of another theme. Today T1 works
+  "`EXEC-03` Non-interactive setup path" and "`TST-01` Test verb exists, suite non-empty". T7 works "`EXEC-06`
+  Documented commands resolve". Such an item counts for neither test, and is resumed in that playbook's theme. The
+  list comes from the catalogue's `playbooks` and `THEMES` in `progress.py`. A playbook belongs to the theme that
+  owns most of its checks.
 
 `adopt` writes both state files into the workspace, and copies each source report and the `.md` beside it there.
 It rewrites each `source_reports[].path` to the file name and appends the log entry `State adopted from <path>.`
@@ -922,8 +1037,8 @@ Its `data` holds `state`, `markdown`, `label`, `adopted_from`, `copied` and `may
 in-repo files the owner may now remove: the state folder, the report folder and an `AGENTS.md` that names the
 state folder. `adopt` writes and deletes nothing in the target.
 
-`show --json` puts the state under `data.state`, with the same `versions`. `render` writes the Markdown and puts its
-path and size in `data`. Every other command checks the changed state whole and appends one log entry. It appends
+`show --json` puts the state under `data.state`, with the same `versions` and `next`. `render` writes the Markdown
+and puts its path and size in `data`. Every other command checks the changed state whole and appends one log entry. It appends
 two when the framework changed since the last write (see `last_framework`). Then it replaces the JSON and puts the
 path and the count per status in `data`. A refused command changes nothing, and a refused move says which states
 the item may go to. The Markdown view keeps prose lines under 110 columns, so it passes MD013: the item details, and
@@ -931,13 +1046,53 @@ the full text of a cut preference cell. A preference's value or reason longer th
 table row, and given in full in a list below the table. Each write is atomic. A temporary file that a killed write
 left behind is removed, with a warning.
 
+**A lost pass stops the theme**
+([ADR 0005](../../implement/docs/architecture/adrs/0005-a-lost-pass-stops-the-theme.md)).
+`check_regressions.py --workspace DIR --theme THEME` writes the theme's verdict,
+`<label>-regressions-<theme>.json`, beside the state. While that verdict reads `lost`, two commands are refused
+(exit 1): `set-status FINDING done` for an item of that theme, and `theme THEME --status merged`. The owner's
+acceptance lifts the refusal: `accept-lost THEME --reason TEXT --by owner` appends the log entry
+`theme Tn lost verdict <sha> accepted by owner (<checks>): <reason>`. `<sha>` is the first 12 digits of the
+verdict file's SHA-256, so a new `lost` verdict needs a new acceptance. A `clean` verdict passes. So does a theme
+with no verdict file: a run that took no base report, or older tools, wrote none. `progress.py` reads the verdict
+and never writes it.
+
+**The target's history is guarded**
+([ADR 0007](../../implement/docs/architecture/adrs/0007-recorded-ref-tips-guard-the-target-history.md)).
+`init` and `adopt` record the target's ref tips in `<label>-ref-tips.json` beside the state, and give its path in
+`data.ref_tips`. They read `git for-each-ref` over `refs/heads`, `refs/tags` and `refs/remotes/origin`, leave out a
+symbolic ref such as `origin/HEAD`, and keep 12 digits of each tip. A target that is not the top folder of a git
+work tree gets no record: `data.ref_tips` is null and a warning says so. `record-refs` records the tips for a state
+that has none, and logs `ref tips recorded for N refs of the target`. No command replaces a record.
+
+`verify-refs` runs at each theme close and writes nothing. It exits 2 when a recorded ref lost history, with one
+line per ref in `data.errors` and on stderr:
+
+- `<ref> is gone; it pointed at <tip>`: a deleted branch or tag, or a pruned `origin/*` branch;
+- `<ref> no longer contains its recorded tip <tip>; it is now <tip>: ...`: a rebase, an amend, a reset or a forced
+  push of a branch (`git merge-base --is-ancestor` fails);
+- `<ref> pointed at <tip> and now points at <tip>`: a tag that moved, even forward.
+
+A branch that moved forward passes, and so does a ref the run created, since it was never recorded. Exit 0 gives
+`data.status` `clean`, `data.checked` (the recorded refs) and `data.new` (the refs not recorded). With no record,
+`verify-refs` exits 1: the history check did not run.
+
+`accept-ref REF --reason TEXT --by owner` takes the ref's current tip as its recorded tip, or drops a ref that is
+gone. It appends the log entry `ref <ref> <gone|rewritten|moved> accepted by owner (recorded <tip>, now <tip>):
+<reason>`. A later rewrite of the same ref is reported again. It refuses a ref that is not recorded, and one that
+still holds its recorded tip.
+
+The check sees refs only. It does not see an `rm -rf` of untracked data, a `git stash drop`, a `docker` stack wipe,
+or a remote that was not fetched. It cannot tell a command the person asked for from one they did not; the owner
+says so with `accept-ref`.
+
 **Exit codes**
 
 | Code | When |
 |---|---|
 | `0` | Done. |
-| `1` | A bad argument, a missing report or target, a workspace inside the target, a missing workspace, an existing state for `init` or `adopt`, no state for `show` or `render`, a state file that is a symlink, or, for `adopt`, a listed report missing from the target. |
-| `2` | The report is invalid, not final, from a newer framework release, or has a finding on a check with no theme; or the state fails the schema or its rules; or, for `adopt`, a report no longer matches its recorded SHA-256. `data.errors` lists what to fix. |
+| `1` | A bad argument, a missing report or target, a workspace inside the target, a missing workspace, an existing state or ref record for `init` or `adopt`, no state for `show` or `render`, a state file that is a symlink, or, for `adopt`, a listed report missing from the target. For `verify-refs`, `record-refs` and `accept-ref`: no ref record (the history check did not run), an existing one for `record-refs`, or a target that is not the top folder of a git work tree. |
+| `2` | The report is invalid, not final, from a newer framework release, or has a finding on a check with no theme; or the state fails the schema or its rules; or, for `adopt`, a report no longer matches its recorded SHA-256; or a theme's verdict file is not one `check_regressions.py` wrote; or the ref record is not one `progress.py` wrote; or, for `verify-refs`, a recorded ref lost history. `data.errors` lists what to fix. |
 | `3` | Internal error, including a write the system refused. The old file is left whole. |
 
 **Errors**
@@ -960,10 +1115,18 @@ left behind is removed, with a warning.
 | `... is an owner decision` | Ask the owner and pass `--by owner`. |
 | `F-nnn cannot be done without a verification` / `... still has N debt entries` / `... cannot be partial without debt` | Give the verification, use `partial`, or record the debt. |
 | `theme Tn is ... and a theme only moves forward` | Themes go `not_started`, `branch_open`, `pr_open`, `merged`. |
+| `... is refused: theme Tn lost a pass (...) and the owner has not decided` | Ask the owner: fix it and compare again, accept it with `accept-lost Tn --reason TEXT --by owner`, or stop the theme. |
+| `theme Tn has no verdict to accept` / `... there is no lost pass to accept` | Nothing waits for the owner; go on. |
+| `<label>-regressions-Tn.json is not a check_regressions.py verdict for theme Tn` | The file was edited by hand. Run `check_regressions.py` again with `--workspace` and `--theme`. |
+| `N recorded refs lost history since <date>: ...` | Stop and ask the owner: restore the ref, accept it with `accept-ref REF --reason TEXT --by owner`, or stop the theme. |
+| `no ref tips are recorded for L in ..., so the history check did not run` | Say so. Record them now with `record-refs`; refs are checked from then on. |
+| `a ref record already exists: ...; it is never replaced` | Use `verify-refs`. To start a new run, move it aside with the old state files. |
+| `REF is not a recorded ref; ...` / `REF still holds its recorded tip ...` | Nothing waits for the owner; go on. |
+| `the target is not the top folder of a git work tree: ...` | Pass the repository's root folder to `--target`. |
 | `the report has findings on checks with no theme: ...` | Add the checks to `THEMES` in `progress.py`. |
 | `no state in ...` | Run `init` first. |
 | `N states in ...; pick one with --label` | Pass `--label`. |
-| `the state is not valid: N errors` | Fix each entry in `data.errors`; `schema:` errors come from the schema, `rule:` errors from the rules above. |
+| `the state is not valid: N errors` | Fix each entry in `data.errors`; `schema:` errors come from the schema, `rule:` errors from the rules of the [state contract](../../implement/state.md). |
 | `refusing a state file that is a symlink` | Replace the link with the real file. |
 
 ## check_drift.py
@@ -1075,4 +1238,182 @@ verdict can move for that reason alone. Each is also a warning and a line in the
 | `0` | Done. A comparison with moves is not an error. |
 | `1` | A bad argument, or a missing report or state file. |
 | `2` | A report or the state is not valid; `data.errors` lists what to fix. |
+| `3` | Internal error. |
+
+## check_regressions.py
+
+Compares two engine reports of one theme worktree. The base report is taken before the theme's first change, the
+close report at theme close. It names each check that was `PASS` at the base and is not at close, so the
+implement recipe can stop the theme and ask the owner. It writes nothing, unless `--workspace` is given (see
+[The verdict file](#the-verdict-file)). Both files are the engine's own JSON reports from `engine.py`, not audit
+reports. The source is
+[`check_regressions.py`](../../implement/tools/check_regressions.py).
+
+### Synopsis
+
+```text
+python3 implement/tools/check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]] [--workspace DIR --theme THEME [--label LABEL]]
+python3 implement/tools/check_regressions.py --describe
+```
+
+### How it compares
+
+Checks are matched by id. A check in the report's `not_applicable` list has the verdict `NOT_APPLICABLE`. Each check
+gets one class:
+
+| Class | When | Effect |
+|---|---|---|
+| `lost_pass` | `PASS` at the base, anything else at close, or missing at close | Stops the theme |
+| `regressed` | `PARTIAL` at the base, `FAIL` at close | Stops the theme |
+| `improved` | A move up along FAIL < PARTIAL < PASS | Reported |
+| `changed` | Any other verdict move, for example `UNKNOWN` to `FAIL` | Reported |
+| `added`, `removed` | The check is missing at the base, or missing at close and was not `PASS` | Reported |
+| `evidence` | The same verdict, but the evidence differs | Reported |
+| `unchanged` | The same verdict and the same evidence | Counted only |
+
+The evidence of a check is its `summary`, its `data` payload and its findings. A changed part is named `summary`,
+`data.<key>` (`data` when the payload is not an object), or `finding <id> added`, `removed` or `changed`. The
+comparison is the one `dev/docindex/evidence.py` makes; a parity test in `dev/tests/` holds the two in step.
+
+### Read attribution
+
+`--changed-from` names the theme worktree, which must be the reports' target. The tool lists the paths changed
+since `--base` with read-only git. The default base is the base report's `git_sha`. The list holds the tracked
+changes up to the working tree, and the untracked files that git does not ignore. Each listed row then gets
+`reads_hit`: the places of the check's read declaration that a changed path meets. The declarations come from the
+engine's `audit.rules.reads`, which the tool loads through `engine.py`. A place read by an upstream step carries
+`via`. A row with no hit has `unattributed: true`. That is reported, never a stop: it may show a gap in the
+declarations. `declared` is `false` for a check with no declaration. `named_by_text` is `true` when the check also
+reads paths that the target's own text names.
+
+`--base-target DIR` (with `--changed-from`) accepts a base report taken on another checkout of the theme's base
+commit. The implement recipe makes one, a temporary detached worktree, when a resumed theme has no base report
+([Resume without a base report](../../implement/theme-checks.md#resume-without-a-base-report)). The base report's
+target must then be `DIR`, and the folder may be gone. The base report must record its commit, and the changed
+paths are listed from it; a `--base` that names another commit is a usage error.
+
+A place matches a changed path as the consistency map's schema states its scope:
+
+| Scope | Matches |
+|---|---|
+| `root` | The exact path from the root; a wildcard stays inside one folder |
+| `any-depth` | The base name, in any folder |
+| `repository-level` | The base name at the root, or directly in `.github/`, `.gitlab/` or `docs/` |
+| `glob` | A glob from the root: `*`, `?` and `[...]` stay inside one folder; `**` matches any number of folders, none included |
+
+So `docs/**/*.md` matches `docs/a.md`. A place with case `fold` is matched in lower case.
+
+### The verdict file
+
+`--workspace DIR --theme THEME` (always together) also writes the verdict to `<label>-regressions-<theme>.json` in
+`DIR`. `DIR` is the implement workspace: the folder that holds the state `progress.py` keeps
+([ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)). It
+must hold that state, and lie outside the reports' target. `--label` picks the state when `DIR` holds more than one.
+The file holds `tool`, `theme`, `status`, `base`, `close`, `counts` and every row of `stops`, unbounded. It replaces
+the theme's earlier verdict atomically, and `data.verdict` gives its path. A refused pair (exit 2) writes nothing
+and leaves the earlier verdict. [`progress.py`](#progresspy) reads the file: it refuses `done` and `merged` for the
+theme while the verdict reads `lost` and the owner has not accepted it.
+
+### Output
+
+`data.status` is `lost` when at least one check is `lost_pass` or `regressed`, and `clean` otherwise. `data.base`
+and `data.close` hold each report's file name, commit, dirty flag, scan time and engine version. `data.counts` has
+one count per class. `data.stops`, `data.moves` and `data.evidence_changes` list the rows; each row has `check`,
+`class`, `base`, `close` and `evidence`. With `--changed-from`, `data.changes` holds `base_sha`, `changed_count`,
+`changed_paths` and the number of `unattributed` rows. A warning is raised when the engine versions differ, when the
+close report was taken on a dirty tree, and when a row is unattributed. A warning is also raised when this engine's
+ruleset hash is not the reports' hash. Long lists are bounded: `data.omitted` counts what was left out, and
+`truncated` is `true`.
+
+### Exit codes
+
+| Code | When |
+|---|---|
+| `0` | Done, whatever the status. Read `data.status`. |
+| `1` | A bad argument or a missing file. With `--workspace`: no `--theme`, a missing workspace, a workspace with no state, or a workspace inside the target. With `--changed-from`: a worktree that is not the reports' target, a close report whose target is a label (the engine's `--target-label`) and not a path, a base commit not in its history, or git that cannot list the changes. With `--base-target`: no `--changed-from`, a base report with no commit, or a `--base` that is not that commit. |
+| `2` | Refused. A file is not an engine report, or the two reports differ in ruleset hash, target, phase, user-config setting, probes or allowed probe verbs. With `--base-target`, the base report's target must be `DIR` instead. The close report may also be no newer than the base. `data.errors` has one line per reason. |
+| `3` | Internal error. |
+
+## check_gates.py
+
+Reads the diff of a theme branch and names each weakened gate and each dependency the owner did not approve. It
+checks two hard rules of the implement recipe at theme close. One is "Never weaken a gate" (boundary B-03). The
+other is "Never install a dependency the owner did not approve" (boundary B-11). It reads the worktree with
+read-only git and writes nothing. The source is [`check_gates.py`](../../implement/tools/check_gates.py); the
+decision is [ADR 0006](../../implement/docs/architecture/adrs/0006-a-weakened-gate-stops-the-theme.md).
+
+### Synopsis
+
+```text
+python3 implement/tools/check_gates.py WORKTREE --base SHA [--theme REF] [--state FILE]
+python3 implement/tools/check_gates.py --describe
+```
+
+`--base` is the commit the theme started from. `--theme` is its last commit, `HEAD` by default; uncommitted changes
+are not read, and a dirty worktree gets a warning. `--state` is the implement state, the
+`<label>-agentic-readiness-state.json` file in the workspace.
+
+### What it reports
+
+The tool lists the changed paths with `git diff --name-status -M <base> <theme>`, so a renamed file is one change.
+It reads both sides of each changed file with `git cat-file`. A binary file, or one over 2 MiB, is not read.
+
+| Finding | Boundary | When |
+|---|---|---|
+| `test-deleted` | B-03 gates | A test file is deleted, or renamed to a path that is not a test file. A test file is one the engine's `TST-03` census counts. |
+| `skip-added` | B-03 gates | A test file holds more skip, ignore or expected-failure markers than at the base. The markers are the engine's `TST-03` table, loaded through `engine.py`. A JavaScript file is counted with each runner's table, and the largest count is used. |
+| `suppression-added` | B-03 gates | A source file holds more inline suppressions than at the base: `# noqa`, `# type: ignore`, `# pragma: no cover`, `eslint-disable`, `@ts-ignore`, `//nolint`, `#[allow(`, `@SuppressWarnings` and the like. Markdown is not read. |
+| `floor-lowered`, `floor-removed` | B-03 gates | A coverage floor (`fail_under`, `--cov-fail-under`, a Jest, Vitest, nyc or c8 threshold) is lower than at the base, or gone. Floors are pooled over the changed files, so a floor moved to another file is still compared. |
+| `limit-raised` | B-03 gates | A `--max-warnings` number, or a number in a `*baseline*.json` or `*ratchet*.json` file, is higher than at the base. |
+| `gate-removed` | B-03 gates | A gate command (`pytest`, `mypy`, `ruff`, `eslint`, `go test` and others) that a gate file ran at the base is in no gate file now. Or a gate target of a Makefile (`check`, `test`, `lint`...) or a gate script of a `package.json` is gone. |
+| `gate-loosened` | B-03 gates | More lines of a gate file run a gate command and then `\|\| true`, `\|\| :` or `\|\| exit 0`. |
+| `dependency-added` | B-11 installs | A dependency name is declared at the theme and not at the base, and `dependencies.approved` does not list it. |
+| `lockfile-changed` | B-11 installs | A lockfile changed, and no approved dependency was added in its ecosystem. |
+
+A gate file is one of these:
+
+- a command runner (`Makefile`, `justfile`, `Taskfile.yml`, `*.mk`) or a shell script;
+- a `package.json`, of which only the scripts are read;
+- a hook (`.husky/`, `.githooks/`, `lefthook.yml`, `.pre-commit-config.yaml`);
+- a CI file (`.github/workflows/`, `.gitlab-ci.yml` and the like).
+
+The manifests read are `package.json`, `pyproject.toml` (PEP 621, dependency groups, Poetry, uv and PDM),
+`requirements*.txt`, `Pipfile`, `go.mod`, `Cargo.toml`, `Gemfile` and `composer.json`. Names are compared in
+lower case, with each run of `-`, `_` and `.` as one `-`.
+
+### The owner's choices
+
+Two preferences in the state record what the owner chose. Their values are lists, separated by commas or white
+space; the value `none` is an empty list.
+
+| Key | Holds | Effect |
+|---|---|---|
+| `dependencies.approved` | Dependency names | An added name on the list passes, and so does a lockfile change in its ecosystem. |
+| `gates.accepted` | Path globs (`fnmatch`; `*` crosses `/`) | A gate finding (B-03) on a matching path moves to `data.accepted` and does not stop the theme. It never approves a dependency. |
+
+Without `--state`, no name is approved and no finding is accepted; a warning says so.
+
+### Output
+
+With no finding left, `data.status` is `clean`. `data.base` and `data.theme` are the two commits, and
+`data.changed_count` is the number of changed paths. `data.accepted` lists the findings the owner accepted, each
+with `boundary`, `kind`, `path` and `detail`. `data.approved_added` lists the approved names the theme added.
+A manifest that does not parse gets a warning, and its dependencies are not compared.
+
+On a finding the tool exits 2, and `data.errors` has one line per finding: `<boundary> <kind>: <path>: <detail>`.
+
+### What it does not see
+
+A weakened assertion inside a kept test, or a test removed from a kept file. A rule turned off in a config file, and
+a config format it does not parse. A gate command removed from one file but still run in another, and a step made
+report-only with `continue-on-error`. A version bump of a declared dependency. A global or one-off install (`npm -g`,
+`npx`, `uvx`) that leaves no trace in the branch.
+
+### Exit codes
+
+| Code | When |
+|---|---|
+| `0` | No finding, or only findings the owner accepted. |
+| `1` | A bad argument: a worktree that is not a folder, a base or theme that is not a commit, git that cannot list the changes, or a missing state file. |
+| `2` | One finding or more; `data.errors` has one line each. The state may also be invalid. |
 | `3` | Internal error. |

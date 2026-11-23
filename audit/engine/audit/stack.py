@@ -19,16 +19,16 @@ from dataclasses import dataclass, field
 
 from audit.scan import Inventory, Kind
 
-#: ecosystem -> (manifest globs, verb-runner hints)
-ECOSYSTEM_SIGNALS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
-    "node": (("package.json",), ("package.json",)),
-    "python": (("pyproject.toml", "setup.py", "requirements*.txt", "Pipfile"), ("pyproject.toml", "Makefile")),
-    "jvm": (("pom.xml", "build.gradle", "build.gradle.kts"), ("pom.xml", "build.gradle", "Makefile")),
-    "go": (("go.mod",), ("Makefile",)),
-    "rust": (("Cargo.toml",), ("Makefile",)),
-    "dotnet": (("*.csproj", "*.sln"), ("*.sln",)),
-    "ruby": (("Gemfile",), ("Rakefile", "Makefile")),
-    "php": (("composer.json",), ("composer.json",)),
+#: ecosystem -> the manifests that name it: a base name, or a glob (with ``*``) matched against each file.
+ECOSYSTEM_SIGNALS: dict[str, tuple[str, ...]] = {
+    "node": ("package.json",),
+    "python": ("pyproject.toml", "setup.py", "requirements*.txt", "Pipfile"),
+    "jvm": ("pom.xml", "build.gradle", "build.gradle.kts"),
+    "go": ("go.mod",),
+    "rust": ("Cargo.toml",),
+    "dotnet": ("*.csproj", "*.sln"),
+    "ruby": ("Gemfile",),
+    "php": ("composer.json",),
 }
 
 #: ecosystem -> source suffix. An ecosystem that is also recognised from its own source files, so that a project
@@ -36,30 +36,63 @@ ECOSYSTEM_SIGNALS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
 #: counted: a test, a generated file or a fixture is not.
 SOURCE_SIGNALS: dict[str, str] = {"python": ".py"}
 
+#: package manager -> the files that name it: a base name, or a glob (with ``*``) matched against each file, as in
+#: :data:`ECOSYSTEM_SIGNALS`. `EXEC-02` reads the names of an ecosystem's managers as its lockfiles.
 PACKAGE_MANAGERS: dict[str, tuple[str, ...]] = {
-    "npm": ("package-lock.json",),
+    "npm": ("package-lock.json", "npm-shrinkwrap.json"),
     "pnpm": ("pnpm-lock.yaml",),
     "yarn": ("yarn.lock",),
-    "bun": ("bun.lockb",),
-    "pip": ("requirements.txt",),
+    "bun": ("bun.lock", "bun.lockb"),
+    "pip": ("requirements*.txt",),
     "poetry": ("poetry.lock",),
     "uv": ("uv.lock",),
     "pipenv": ("Pipfile.lock",),
+    "pdm": ("pdm.lock",),
     "gradle": ("gradle.lockfile",),
     "maven": ("pom.xml",),
     "cargo": ("Cargo.lock",),
     "gomod": ("go.sum",),
     "bundler": ("Gemfile.lock",),
     "composer": ("composer.lock",),
+    "nuget": ("packages.lock.json",),
 }
 
+#: The base names of the lockfiles package managers write. A closed list, matched by exact base name and never
+#: by pattern, so a large hand-written file is not mistaken for one. `NAV-03` leaves these out of its size count
+#: (a generated lockfile is large by design); `CI-05` never reads them as local evidence.
+LOCKFILE_NAMES: frozenset[str] = frozenset(
+    {
+        "package-lock.json",
+        "npm-shrinkwrap.json",
+        "yarn.lock",
+        "pnpm-lock.yaml",
+        "bun.lock",
+        "bun.lockb",
+        "uv.lock",
+        "poetry.lock",
+        "Pipfile.lock",
+        "pdm.lock",
+        "Cargo.lock",
+        "go.sum",
+        "Gemfile.lock",
+        "composer.lock",
+        "gradle.lockfile",
+        "packages.lock.json",
+        "mix.lock",
+        "pubspec.lock",
+    }
+)
+
+#: Globs from the root, matched folder by folder (``audit/globs.py``). GitHub runs only the files straight in
+#: ``.github/workflows/``, so a nested file is no workflow. A Buildkite step may upload any pipeline file below
+#: ``.buildkite/``, so every depth counts there.
 CI_PROVIDERS: dict[str, tuple[str, ...]] = {
     "github": (".github/workflows/*.yml", ".github/workflows/*.yaml"),
     "gitlab": (".gitlab-ci.yml",),
     "jenkins": ("Jenkinsfile",),
     "azure": ("azure-pipelines.yml",),
     "circleci": (".circleci/config.yml",),
-    "buildkite": (".buildkite/*.yml",),
+    "buildkite": (".buildkite/**/*.yml",),
 }
 
 TEST_FRAMEWORKS: dict[str, tuple[str, ...]] = {
@@ -69,26 +102,17 @@ TEST_FRAMEWORKS: dict[str, tuple[str, ...]] = {
     "tox": ("tox.ini",),
     "junit": ("src/test/java/**",),
     "go-test": ("*_test.go",),
-    "cargo-test": ("tests/*.rs",),
+    "cargo-test": ("tests/**/*.rs",),
 }
 
+#: Git runs only the hook files straight in the hooks folder: ``.husky/_/`` holds husky's own helpers, and a
+#: subfolder of ``.githooks/`` holds scripts a hook may call. Neither is a hook.
 HOOK_MANAGERS: dict[str, tuple[str, ...]] = {
     "husky": (".husky/*",),
     "lefthook": ("lefthook.yml", "lefthook.yaml"),
     "pre-commit": (".pre-commit-config.yaml",),
     "gradle-hooks": (".githooks/*",),
 }
-
-VERB_RUNNERS = (
-    "package.json",
-    "Taskfile.yml",
-    "Taskfile.yaml",
-    "Makefile",
-    "pyproject.toml",
-    "build.gradle",
-    "build.gradle.kts",
-    "pom.xml",
-)
 
 #: The seven verbs of the framework's standardized command surface.
 VERBS = ("format", "format:check", "lint", "typecheck", "test", "check", "security")
@@ -127,7 +151,6 @@ class Stack:
     ci_providers: set[str] = field(default_factory=set)
     test_frameworks: set[str] = field(default_factory=set)
     hook_managers: set[str] = field(default_factory=set)
-    verb_runners: list[str] = field(default_factory=list)
     component_manifest_hint: str | None = None
     notes: list[str] = field(default_factory=list)
 
@@ -140,19 +163,18 @@ class Stack:
         return " · ".join(parts) or "stack not recognised"
 
 
+def _named(inv: Inventory, names: set[str], signal: str) -> bool:
+    """Whether a file at any depth has the signal as its base name, or, for a glob, matches it."""
+    return bool(inv.match(signal)) if "*" in signal else signal in names
+
+
 def detect_stack(inv: Inventory) -> Stack:
     stack = Stack()
     names = {f.rel.split("/")[-1] for f in inv.files}
 
-    for eco, (manifests, runners) in ECOSYSTEM_SIGNALS.items():
-        for pattern in manifests:
-            if "*" in pattern:
-                if inv.match(pattern):
-                    stack.ecosystems.add(eco)
-                    break
-            elif pattern in names:
-                stack.ecosystems.add(eco)
-                break
+    for eco, manifests in ECOSYSTEM_SIGNALS.items():
+        if any(_named(inv, names, pattern) for pattern in manifests):
+            stack.ecosystems.add(eco)
         suffix = SOURCE_SIGNALS.get(eco)
         if (
             eco not in stack.ecosystems
@@ -162,12 +184,9 @@ def detect_stack(inv: Inventory) -> Stack:
             stack.ecosystems.add(eco)
             stack.source_only.add(eco)
             stack.notes.append(f"{eco} recognised from its source files: no manifest names it")
-        for runner in runners:
-            if runner in names and runner in VERB_RUNNERS and runner not in stack.verb_runners:
-                stack.verb_runners.append(runner)
 
     for name, signals in PACKAGE_MANAGERS.items():
-        if any(inv.has(s) for s in signals):
+        if any(_named(inv, names, s) for s in signals):
             stack.package_managers.add(name)
 
     for provider, globs in CI_PROVIDERS.items():
@@ -222,8 +241,20 @@ class MakeRule:
 
 @dataclass(frozen=True)
 class ParsedMakefile:
+    """The plain rules and the parse errors, plus what else can name a target.
+
+    ``patterns`` are the target patterns of pattern rules (``test-%:``); ``static_targets`` are the names a static
+    pattern rule lists (``a b: %: ...``). ``computed`` holds each rule whose target list holds a variable or a
+    function (``$(TARGETS):``), whose names this reader cannot know: its line, and the target pattern of a static
+    pattern rule (``$(TARGETS): test-%:``), which every listed name matches, or ``None`` when no such pattern
+    bounds the names.
+    """
+
     rules: dict[str, MakeRule]
     errors: tuple[MakeError, ...]
+    patterns: tuple[str, ...] = ()
+    static_targets: tuple[str, ...] = ()
+    computed: tuple[tuple[int, str | None], ...] = ()
 
 
 _MAKE_DIRECTIVES = frozenset(
@@ -314,7 +345,10 @@ def parse_makefile(inv: Inventory) -> ParsedMakefile:
     Reads what GNU Make reads for a plain rule. A colon in a target name is escaped (``format\\:check:``) and
     is read as part of the name. Prerequisites are kept, in order, because ``check: a b c`` runs ``a``, ``b``
     and ``c`` before its own recipe. A rule is plain unless it has a pattern (``%``) or a variable in a name,
-    and those are left out. Assignments, directives and ``define`` blocks end a rule and are not read.
+    and those are left out of ``rules``: a pattern rule's target pattern goes to ``patterns``, the names a static
+    pattern rule lists go to ``static_targets``, and a target list that holds a variable or a function goes to
+    ``computed``, with its line and the static pattern that bounds it. Assignments, directives and ``define``
+    blocks end a rule and are not read.
 
     The one parse error it reports is the one that sank the engine's own fixture: an unescaped colon in a
     target name (``format:check:``) is a static pattern rule, whose pattern has no ``%``, and Make refuses
@@ -325,6 +359,9 @@ def parse_makefile(inv: Inventory) -> ParsedMakefile:
         return ParsedMakefile(rules={}, errors=())
     rules: dict[str, dict] = {}
     errors: list[MakeError] = []
+    patterns: list[str] = []
+    static_targets: list[str] = []
+    computed: list[tuple[int, str | None]] = []
     current: list[str] = []
     in_define = False
     for number, line in _logical_lines(text):
@@ -356,12 +393,22 @@ def parse_makefile(inv: Inventory) -> ParsedMakefile:
         inline = tail[semicolons[0] + 1 :].strip() if semicolons else ""
         needs = tail[: semicolons[0]] if semicolons else tail
         pattern_colons = _unescaped(needs, ":")
+        pattern = needs[: pattern_colons[0]].strip().replace("\\:", ":") if pattern_colons else ""
+        if "$" in head:
+            bounded = "%" in pattern and "$" not in pattern and len(pattern.split()) == 1
+            computed.append((number, pattern if bounded else None))
         if pattern_colons:
-            pattern = needs[: pattern_colons[0]]
             if "%" not in pattern and "$" not in pattern:
                 errors.append(MakeError(number, stripped[:200], "target pattern contains no '%'"))
+            for name in _words(head):
+                if name not in static_targets:
+                    static_targets.append(name)
             current = []
             continue
+        for word in head.split():
+            target_pattern = word.replace("\\:", ":")
+            if "%" in target_pattern and "$" not in target_pattern and target_pattern not in patterns:
+                patterns.append(target_pattern)
         names = [name for name in _words(head) if not _SPECIAL_TARGET.match(name)]
         prerequisites = _words(needs)
         current = names
@@ -376,6 +423,9 @@ def parse_makefile(inv: Inventory) -> ParsedMakefile:
             for name, rule in rules.items()
         },
         errors=tuple(errors),
+        patterns=tuple(patterns),
+        static_targets=tuple(static_targets),
+        computed=tuple(computed),
     )
 
 

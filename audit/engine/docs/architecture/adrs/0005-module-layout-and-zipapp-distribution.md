@@ -21,8 +21,14 @@ different in kind: a module tree can be packed into one **archive** that runs an
 
 **The package tree is the source of truth; a zipapp is the distributable.**
 
-1. **Package layout**: `audit/` at the repository root, one module per pipeline stage, one module per check family
-   under `audit/rules/checks/`, report writers under `audit/report/`.
+1. **Package layout**: `audit/` at the repository root, with one module per pipeline stage. Each check family is a
+   package under `audit/rules/checks/`, and the report writers are under `audit/report/`. In a family package, each
+   check has its own module, `<family>/<pack>_NN.py`. That module holds the check's `SPEC` (built with `declare`,
+   `audit/rules/spec.py`).
+   It also holds the implementation, the `reads()` declaration and the helpers only that check uses. Helpers
+   that two or more checks of the family use are in `<family>/_shared.py`. The package's `__init__.py` re-exports
+   those names. It also assembles the family's `SPECS` and `IMPLEMENTATIONS`. The registry joins the families'
+   `SPECS` in the written order of `FAMILIES`. Every family is a package.
 2. **No install step, ever, to run the tool**: `python3 -m audit <target>` works from a fresh clone with no
    virtualenv, no `pip install`, no `PYTHONPATH`. This is why there is no `src/` layout. Nothing outside the
    standard library is imported.

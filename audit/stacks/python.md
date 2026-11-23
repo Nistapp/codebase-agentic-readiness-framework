@@ -1,19 +1,22 @@
 # Python
 
 > Follows the anatomy in [`README.md`](README.md). Covers pip, uv and poetry. `shipped`, per
-> `run_context.stack_profile` (DP §5.6).
+> `run_context.stack_profile` ([§4 Shipped versus derived](README.md#4-shipped-versus-derived)).
 
 ---
 
 ## Detection signals
 
 `facts.json`'s `stack` section reads `ecosystems: ["python"]` from `pyproject.toml`, `setup.py`,
-`requirements*.txt` or `Pipfile` anywhere in the tree, or, with none of those present, from a bare `.py`
-source file alone (D29 item 9) — the latter is `source_only`, and several checks below treat it
-differently from a manifest-bearing project, never as a false `PASS`. `package_managers` reads the
-lockfile at the repository root: `poetry.lock` → poetry, `uv.lock` → uv, `Pipfile.lock` → pipenv; a
-plain `pip` project pinned only by `requirements.txt` has no lockfile signal at all (`requirements.txt`
-is a manifest, not a lock, by the engine's own "manifest-as-lock" exclusion — see Pitfalls).
+`requirements*.txt` or `Pipfile` anywhere in the tree. With none of those present, it reads it from a
+bare `.py` source file alone (the engine's
+[stack detection](../engine/docs/architecture/contributor-deep-dive/01-scan-engine-and-tiering.md#4-stack--layout-detection)
+table). That case is `source_only`, and several checks below treat it differently from a manifest-bearing
+project, never as a false `PASS`. `package_managers` reads each tool's own file anywhere in the tree:
+`requirements*.txt` (the same glob that names the ecosystem) → pip, `poetry.lock` → poetry, `uv.lock` → uv,
+`Pipfile.lock` → pipenv, `pdm.lock` → pdm. A lockfile alone does not name the ecosystem. A plain `pip`
+project pinned only by `requirements.txt` still has no lockfile (`requirements.txt` is a manifest, not a lock,
+by the engine's own "manifest-as-lock" exclusion — see Pitfalls).
 
 ## Command-surface map
 
@@ -35,8 +38,11 @@ pip/uv/poetry's resolved environment) or `safety check`. Hook manager: pre-commi
 (`.pre-commit-config.yaml`); lefthook in a mixed repository. Commit rule: a pre-commit `commit-msg` hook
 (conventional-pre-commit, commitizen or gitlint), and the same rule in CI (`TOOL-06`):
 `cz check --rev-range` or `gitlint --commits` over the pull request's commits (conventional-pre-commit has no
-range form). Branch guard (`TOOL-07`): pre-commit-hooks' `no-commit-to-branch` with a `--branch` per
-protected branch. Dependency updates: Dependabot `package-ecosystem: pip`
+range form). gitlint has had no stable release since 2023-03-10: keep it where it runs, and do not offer it
+for a new setup ([tool currency](../../implement/tool-choice.md#tool-currency)). Branch guard (`TOOL-07`):
+pre-commit-hooks' `no-commit-to-branch` with a `--branch` per protected branch. pre-commit-hooks has had no
+stable release since 2025-08-09, so the same rule applies. A repository that runs it keeps it. A new setup
+offers it only with the owner's recorded reason. Dependency updates: Dependabot `package-ecosystem: pip`
 (pip, pipenv, poetry, pip-compile) or `uv` (a `uv.lock`); Renovate's `pep621`, `pip_requirements`,
 `poetry` and `pipenv` managers. Language-server inputs (`register-index`, advisory): a pyright or basedpyright config
 that mirrors the type-check gate's import paths.
@@ -46,8 +52,9 @@ that mirrors the type-check gate's import paths.
 `.python-version` or `pyproject.toml`'s `requires-python` pins the interpreter (`EXEC-01`); uv and
 poetry both honour `.python-version` directly, pip does not read it at all — say which the project
 actually acts on, not just which file exists. The matching lockfile (`poetry.lock`/`uv.lock`/
-`Pipfile.lock`) must be git-tracked at the root; `uv sync --frozen`/`poetry install --no-update`/
-`pipenv sync` is the non-interactive install path, never a bare `install` that can resolve new versions.
+`Pipfile.lock`/`pdm.lock`) must be git-tracked at the root. The non-interactive install path is
+`uv sync --frozen`/`poetry install --no-update`/`pipenv sync`/`pdm sync`. Never accept a bare `install`, which
+can resolve new versions.
 Tool versions (`EXEC-08`) go in a dependency group of a `pyproject.toml`, locked in `uv.lock`, never inline in
 `uvx ruff@0.5.0` or `pip install black==24.1.0`; the runner reads the pin or runs `uv run`.
 
@@ -86,10 +93,12 @@ verification: `CMD-01` on a Makefile-less, poe/taskipy-less pip/uv/poetry projec
 `UNKNOWN` rather than `FAIL` for lack of a recognised runner — confirm by reading whether the project
 documents its commands in prose (a README) instead, which the engine cannot credit; `EXEC-02`, whose
 `python` lockfile table omits `pip` entirely (the same "manifest-as-lock" exclusion as Detection signals)
-— a plain `requirements.txt` project reads `FAIL` naming `poetry.lock`/`uv.lock`/`Pipfile.lock` as the
+— a plain `requirements.txt` project reads `FAIL` naming `poetry.lock`/`uv.lock`/`Pipfile.lock`/`pdm.lock` as the
 missing file, accurate ("no lockfile exists") but worth explaining to a user expecting its own manifest
-to count; a `source_only` repository (D29 item 9: Python recognised from a bare `.py` file, no manifest
-at all) reads `EXEC-02` `UNKNOWN`, correctly, since no dependency is declared to lock.
+to count. A tracked `pdm.lock` counts, and its package names are compared with the manifest, as for
+`poetry.lock` and `uv.lock`. A `source_only` repository
+(Python recognised from a bare `.py` file, no manifest at all) reads `EXEC-02` `UNKNOWN`, correctly, since no
+dependency is declared to lock.
 
 ## Pitfalls
 
@@ -108,7 +117,7 @@ via `git ls-files` only, never opened, per the root `AGENTS.md` rule — and is 
 (`/home/kc/Projects/Nistapp-agentic-frameworks/agentic-readiness-audit`, `dev` at `b8235a8`, matching the
 §10 pin): no `pyproject.toml`/`setup.py`/`requirements*.txt`/`Pipfile`/`Makefile`/CI workflow anywhere in
 the tree — a genuine `source_only` Python project, not a pip/uv/poetry one, so the pip/uv/poetry
-conventions above are read from the engine's own source (`audit/rules/checks/tool.py`, `execution.py`,
-`_common.py`) and D29 item 9's changelog entry, not exercised against a manifest-bearing repository —
+conventions above are read from the engine's own source (`audit/rules/checks/tool/`, `execution/`,
+`_common.py`) and its rule for a bare `.py` file, not exercised against a manifest-bearing repository —
 that remains to do once one joins the corpus. Read via direct inspection of the checkout (`git ls-files`,
 the root listing, `README.md`); no target command was run and `.env` was not opened.

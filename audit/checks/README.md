@@ -30,7 +30,7 @@ Pitfalls         known false positives / false negatives
 value the catalogue does not already carry, so the recipe linter's check, requirement and playbook
 references stay meaningful.
 
-## 2. Two fields beyond DP §5.2
+## 2. The Engine and Method fields
 
 - **Engine.** Every engine check (`method: automated`) names its engine ID, what that check reads inside
   the target, the condition under which its verdict should be distrusted (stale index, a tool the engine
@@ -44,7 +44,7 @@ references stay meaningful.
 
 A rubric names what is counted, measured or matched — a file that exists, a pattern that is present, a
 number compared against a stated limit — never an adjective ("reasonable", "sufficient", "clear"). This is
-the rubric's job as the lever for consistency across models (DP §5.2): two readings of the same repository
+the rubric's job as the lever for consistency across models: two readings of the same repository
 against the same rubric text should reach the same verdict.
 
 ## 4. A FAIL lists its absence searches
@@ -58,22 +58,35 @@ distinguishable from a verdict reached by not looking, so the absence proof is n
 
 Each file is this folder's single source for its family: `04-command-surface.md` holds every `CMD-*`
 check, nothing is duplicated across two files, and a check that moves families is a rename of its section,
-not a copy. The recipe linter's size rule (500 lines, shared with `SKILL.md`, D46) applies to each file, so
-a family that outgrows the budget splits by check number into two files (S3.3.5 does this for `HYG`), each
-still following this anatomy.
+not a copy. The recipe linter's size rule ([`LINE_BUDGET`](../../dev/recipe_lint.py), 500 lines, shared with
+`SKILL.md`, because an agent loads the whole file at once) applies to each file, so a family that outgrows the
+budget splits by check number into two files (`AGT` does this: `02-agent-governance.md` and
+`02-agent-governance-2.md`), each still following this anatomy.
 
 ## 6. What counts as the repository
 
 Every check reads the repository the engine's inventory describes, and the inventory leaves out *carried
 data*: a path with a directory named `templates`, `template`, `examples`, `example`, `fixtures`, `samples`,
-`testdata` or `scaffold`. A `package.json` under `templates/` is not the runner, a `CODEOWNERS` under
+`testdata` or `scaffold`, except below a JVM source root (`src/<set>/<java|kotlin|scala|groovy>/`), where such a
+folder is a package. A `package.json` under `templates/` is not the runner, a `CODEOWNERS` under
 `templates/github/` is not the repository's, and a fixture's lockfile is not its lockfile. The report lists
 what it set aside (`inventory.set_aside`), so a verdict that surprises a reader can be explained. When two
-runners compete, the shallowest manifest wins before the kind does. The rule is
+runners compete, the kind decides. A `package.json`, a `Makefile`, a Taskfile, a `pyproject.toml`, a
+Gradle or a Maven build is a runner only at the root. The rule is
 [ADR-0008](../engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md); a check file
 below states only where it applies. `--exclude` is still the tool for anything else (`artefacts/**`, a vendored
 tree), but a template, example or fixture directory no longer needs it. Distrust a verdict when a real
-directory has one of these names (a Java package `samples`): `inventory.set_aside` names it.
+directory has one of these names (a Python package `samples`): `inventory.set_aside` names it.
+
+The inventory also leaves out what the target's ignore files ignore and git does not track: build output, caches,
+local data and agent worktrees. The report names each such folder in `inventory.ignored_dirs`. A file git tracks
+stays in, even when an ignore rule covers it
+([ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)).
+
+A check page that names `README.md` among its root documents means the root README by any name. That is the root
+file whose name starts with `readme`, in any case, with `README.md` first. A `README` with no extension or a
+`README.rst` is read and cited by its own name, and every check agrees with `HYG-01` on whether it exists. A README
+below the root is not the root README.
 
 ## 7. How a verdict is recorded
 

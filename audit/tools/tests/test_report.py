@@ -16,6 +16,7 @@ import io
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -31,6 +32,7 @@ import _paths
 import _common
 import _git
 import _summary
+import engine as engine_launcher
 import render_report
 import report as rb
 import validate_report as vr
@@ -971,6 +973,15 @@ class AddFindingTests(BuilderCase):
         found: list[dict[str, Any]] = read_json(self.draft)["findings"]
         return found
 
+    def test_cited_lines_past_the_end_of_the_file_are_a_warning(self) -> None:
+        (self.target / "AGENTS.md").write_text("# Rules\nOne rule.\n", encoding="utf-8")
+        code, envelope, _ = self.add_finding(self.draft, agent_finding())
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(
+            envelope["warnings"],
+            ["/findings/0/evidence/0: lines 1-3 are past the end of AGENTS.md in the target, which has 2 lines"],
+        )
+
     def test_it_records_a_finding_and_computes_its_id_key_and_disposition(self) -> None:
         code, envelope, stderr = self.add_finding(self.draft, agent_finding())
         self.assertEqual(code, 0, envelope)
@@ -1664,6 +1675,53 @@ class StatusTests(BuilderCase):
         self.assertGreater(data["pending_omitted"], 0)
         self.assertEqual(len(data["families_remaining"]), 13)
 
+    def test_all_lists_every_pending_finding_and_omits_none(self) -> None:
+        draft = self.engine_draft()
+        code, envelope, stderr = call(["status", str(draft), "--all"])
+        self.assertEqual(code, 0, stderr)
+        data = envelope["data"]
+        self.assertEqual(len(data["pending"]), 24)
+        self.assertNotIn("pending_omitted", data)
+        self.assertIs(envelope["truncated"], False)
+        order = [line.split()[1] for line in data["pending"]]
+        self.assertEqual(order, sorted(order, key=["BLOCKER", "DEGRADER", "COSMETIC"].index))
+
+    def test_severity_keeps_only_the_pending_findings_of_that_severity(self) -> None:
+        draft = self.engine_draft()
+        code, envelope, stderr = call(["status", str(draft), "--severity", "DEGRADER", "--all"])
+        self.assertEqual(code, 0, stderr)
+        data = envelope["data"]
+        degraders = [f for f in read_json(draft)["findings"] if f["severity"] == "DEGRADER"]
+        self.assertEqual(data["pending"], [f"{f['id']} DEGRADER {f['key']}" for f in degraders])
+        self.assertEqual(data["pending_severity"], "DEGRADER")
+        self.assertEqual(data["findings_pending"], 24)
+
+    def test_severity_alone_keeps_the_line_budget(self) -> None:
+        draft = self.engine_draft()
+        data = call(["status", str(draft), "--severity", "BLOCKER"])[1]["data"]
+        self.assertEqual([line.split()[1] for line in data["pending"]], ["BLOCKER"] * 4)
+        self.assertNotIn("pending_omitted", data)
+
+    def test_all_still_bounds_the_list_by_the_output_budget(self) -> None:
+        busy = self.failing_draft()
+        for number in range(30):
+            code, envelope, _ = self.add_finding(busy, agent_finding(scope=f"module-{number}"))
+            self.assertEqual(code, 0, envelope)
+        document = read_json(busy)
+
+        def first_five(items: Sequence[Any]) -> tuple[list[Any], int]:
+            return list(items[:5]), len(items) - 5
+
+        with mock.patch.object(_common, "bound_items", first_five):
+            data = rb.status_data(busy, document, show_all=True)
+        self.assertGreater(data["pending_omitted"], 0)
+        self.assertEqual(len(data["pending"]) + data["pending_omitted"], 30)
+
+    def test_an_unknown_severity_is_a_usage_error(self) -> None:
+        code, envelope, _ = call(["status", str(self.start()), "--severity", "MINOR"])
+        self.assertEqual(code, 1)
+        self.assertFalse(envelope["ok"])
+
     def test_it_is_ready_when_every_check_is_recorded_and_every_finding_decided(self) -> None:
         draft = self.complete_engine_draft()
         data = self.data(draft)
@@ -1751,6 +1809,235 @@ class StatusTests(BuilderCase):
         document["provenance"]["target"]["path"] = str(self.root)
         draft.write_text(rb.dumps(document), encoding="utf-8")
         self.assertEqual(self.status(draft)[0], 0)
+
+
+class NextStepTests(BuilderCase):
+    """`status` says what the recipe does next: one rule of audit/SKILL.md's "Resuming" per test."""
+
+    def next_of(self, draft: Path) -> tuple[str, str | None]:
+        code, envelope, stderr = call(["status", str(draft)])
+        self.assertEqual(code, 0, stderr)
+        data = envelope["data"]
+        return data["next"], data["next_command"]
+
+    def rewrite(self, draft: Path, change: Callable[[dict[str, Any]], None]) -> None:
+        document = read_json(draft)
+        change(document)
+        document["summary"] = _summary.compute_summary(document)
+        draft.write_text(rb.dumps(document), encoding="utf-8")
+
+    def test_a_draft_with_no_engine_import_runs_the_engine(self) -> None:
+        draft = self.start()
+        step, command = self.next_of(draft)
+        self.assertTrue(step.startswith("Stage 2, steps 1 and 2: "), step)
+        self.assertEqual(command, f"python3 audit/tools/report.py run-engine {draft} --out-dir {self.out}")
+
+    def test_a_path_with_a_space_is_quoted_in_the_command(self) -> None:
+        self.out = self.root / "audit runs"
+        draft = self.start()
+        _, command = self.next_of(draft)
+        assert command is not None
+        self.assertEqual(shlex.split(command)[3:], [str(draft), "--out-dir", str(self.out)])
+
+    def test_a_family_left_names_the_first_one_in_catalogue_order(self) -> None:
+        draft = self.engine_draft()
+        step, command = self.next_of(draft)
+        self.assertEqual(
+            step, "Stage 2, step 3: assess the Agent Governance (AGT) family, check by check; 1 check not recorded."
+        )
+        self.assertEqual(command, f"python3 audit/tools/report.py add-check {draft} --from -")
+
+    def test_a_pending_blocker_is_asked_on_its_own(self) -> None:
+        draft = self.engine_draft()
+        evidence = [{"kind": "file", "path": "AGENTS.md", "quote": "x"}]
+        for check_id in ("AGT-11", "CI-04"):
+            self.assertEqual(self.add_check(draft, agent_check(id=check_id, evidence=evidence))[0], 0)
+        blocker = rb.pending_findings(read_json(draft))[0]["id"]
+        step, command = self.next_of(draft)
+        self.assertEqual(step, f"Stage 4, step 2: ask the person about BLOCKER finding {blocker}, on its own.")
+        self.assertEqual(
+            command,
+            f"python3 audit/tools/report.py set-disposition {draft} --via interactive --finding {blocker}"
+            " --disposition <disposition>",
+        )
+
+    def test_other_pending_findings_are_asked_in_batches(self) -> None:
+        draft = self.complete_engine_draft()
+        other = next(f["id"] for f in read_json(draft)["findings"] if f["severity"] != "BLOCKER")
+        self.decide(draft, "--finding", other, "--disposition", "pending")
+        step, command = self.next_of(draft)
+        self.assertEqual(step, "Stage 4, step 3: ask the person about the 1 other pending findings, in batches.")
+        self.assertEqual(command, f"python3 audit/tools/report.py set-disposition {draft} --via batch --from -")
+
+    def test_a_blocker_no_person_decided_is_asked_again(self) -> None:
+        draft = self.complete_engine_draft()
+        blocker = next(f["id"] for f in read_json(draft)["findings"] if f["severity"] == "BLOCKER")
+
+        def by_batch(document: dict[str, Any]) -> None:
+            next(f for f in document["findings"] if f["id"] == blocker)["confirmed_via"] = "batch"
+
+        self.rewrite(draft, by_batch)
+        step, command = self.next_of(draft)
+        self.assertTrue(step.startswith(f"Stage 4, step 2: ask the person about BLOCKER finding {blocker} again"))
+        assert command is not None
+        self.assertIn(f"--via interactive --finding {blocker}", command)
+
+    def test_a_ready_draft_is_finalised(self) -> None:
+        draft = self.complete_engine_draft()
+        self.assertEqual(
+            self.next_of(draft),
+            ("Stage 5, step 3: finalise the draft.", f"python3 audit/tools/report.py finalise {draft}"),
+        )
+
+    def test_an_eval_draft_with_every_family_done_stops_at_the_draft(self) -> None:
+        draft = self.complete_engine_draft()
+
+        def to_eval(document: dict[str, Any]) -> None:
+            document["run_context"].update(eval_mode=True, confirmation_policy="defer-all")
+            for finding in document["findings"]:
+                finding["disposition"] = "pending"
+                finding.pop("confirmed_via", None)
+
+        self.rewrite(draft, to_eval)
+        step, command = self.next_of(draft)
+        self.assertTrue(step.startswith("Stage 5, step 1: eval mode, so stop at the draft"), step)
+        self.assertIsNone(command)
+
+    def test_an_eval_draft_with_no_engine_import_still_runs_the_engine(self) -> None:
+        draft = self.draft_with_findings(["a"], confirmation_policy="accept-all", eval_mode=True)
+        step, _ = self.next_of(draft)
+        self.assertTrue(step.startswith("Stage 2, steps 1 and 2: "), step)
+
+    def test_a_final_report_has_no_next_command(self) -> None:
+        worked = next((TOOLS.parent / "schema" / "examples").glob("example-service.audit-report.*.json"))
+        self.out.mkdir()
+        copy = self.out / worked.name
+        shutil.copyfile(worked, copy)
+        step, command = self.next_of(copy)
+        self.assertTrue(step.startswith("Nothing: the report is final."), step)
+        self.assertIsNone(command)
+
+    def test_a_relative_draft_path_gives_an_absolute_one_in_the_command(self) -> None:
+        draft = self.engine_draft()
+        relative = os.path.relpath(draft)
+        _, command = self.next_of(Path(relative))
+        self.assertEqual(command, f"python3 audit/tools/report.py add-check {draft} --from -")
+
+
+class RunEngineTests(BuilderCase):
+    """`run-engine` runs the engine with the flags the intake recorded, then imports its report, once."""
+
+    def run_engine(self, draft: Path, out_dir: Path | None = None) -> tuple[int, dict[str, Any], str]:
+        return call(["run-engine", str(draft), "--out-dir", str(out_dir or self.root / "engine")])
+
+    def test_the_engine_gets_every_flag_the_intake_recorded(self) -> None:
+        draft = self.start(
+            excluded=["vendor/*", "docs/old notes/*"],
+            probes={"allowed": ["lint", "test"], "timeout_s": 90},
+            repo_label="svc",
+        )
+        self.assertEqual(
+            rb.engine_arguments(read_json(draft), self.root / "engine"),
+            [
+                str(self.target),
+                "--out-dir",
+                str(self.root / "engine"),
+                "--repo-label",
+                "svc",
+                "--no-user-config",
+                "--exclude",
+                "vendor/*",
+                "--exclude",
+                "docs/old notes/*",
+                "--run-gates",
+                "--allow-probe",
+                "lint",
+                "--allow-probe",
+                "test",
+                "--timeout",
+                "90",
+                "--emit-baseline",
+            ],
+        )
+
+    def test_no_allowed_verb_runs_no_gate(self) -> None:
+        argv = rb.engine_arguments(read_json(self.start()), self.root / "engine")
+        self.assertNotIn("--run-gates", argv)
+        self.assertNotIn("--timeout", argv)
+        self.assertEqual(argv[-2:], ["--no-user-config", "--emit-baseline"])
+
+    def test_it_runs_the_engine_and_imports_its_report(self) -> None:
+        (self.target / "README.md").write_text("# My service\n", encoding="utf-8")
+        draft = self.start()
+        code, envelope, stderr = self.run_engine(draft)
+        self.assertEqual(code, 0, (envelope, stderr))
+        data = envelope["data"]
+        report = Path(data["engine_run"]["report"])
+        self.assertEqual(report.parent, self.root / "engine")
+        self.assertTrue(report.is_file())
+        self.assertTrue((self.root / "engine" / "do-not-do.draft.md").is_file())
+        self.assertEqual(data["engine_report"], str(report.resolve()))
+        self.assertGreater(data["checks_imported"], 0)
+        self.assertIn("engine", read_json(draft)["provenance"])
+        self.assertTrue(stderr.startswith(f"report: the engine wrote {report.name}; imported "), stderr)
+        step = call(["status", str(draft)])[1]["data"]["next"]
+        self.assertTrue(step.startswith("Stage 2, step 3: "), step)
+
+    def test_the_engine_is_called_with_the_draft_flags(self) -> None:
+        draft = self.start(excluded=["vendor/*"], repo_label="svc")
+        seen: list[list[str]] = []
+
+        def fake(argv: Sequence[str]) -> _common.Result:
+            seen.append(list(argv))
+            raise _common.UsageError("stop here")
+
+        with mock.patch.object(engine_launcher, "handler", fake):
+            code, _, _ = self.run_engine(draft)
+        self.assertEqual(code, 1)
+        self.assertEqual(seen, [rb.engine_arguments(read_json(draft), self.root / "engine")])
+
+    def test_a_draft_that_holds_an_engine_report_is_refused_before_the_engine_runs(self) -> None:
+        draft = self.engine_draft()
+        before = draft.read_bytes()
+        code, envelope, _ = self.run_engine(draft)
+        self.assertEqual(code, 2)
+        self.assertIn("already holds an engine report", envelope["data"]["error"])
+        self.assertEqual(draft.read_bytes(), before)
+        self.assertFalse((self.root / "engine").exists())
+
+    def test_a_final_report_is_refused(self) -> None:
+        worked = next((TOOLS.parent / "schema" / "examples").glob("example-service.audit-report.*.json"))
+        self.out.mkdir()
+        copy = self.out / worked.name
+        shutil.copyfile(worked, copy)
+        code, envelope, _ = self.run_engine(copy)
+        self.assertEqual(code, 1)
+        self.assertIn("is a final report", envelope["data"]["error"])
+
+    def test_an_output_folder_inside_the_target_is_refused_and_nothing_is_imported(self) -> None:
+        draft = self.start()
+        before = draft.read_bytes()
+        code, envelope, _ = self.run_engine(draft, self.target / "reports")
+        self.assertEqual(code, 1)
+        self.assertIn("inside the target", envelope["data"]["error"])
+        self.assertEqual(draft.read_bytes(), before)
+        self.assertFalse((self.target / "reports").exists())
+
+    def test_an_engine_failure_is_exit_3_and_leaves_the_draft(self) -> None:
+        draft = self.start()
+        before = draft.read_bytes()
+
+        def broken(argv: Sequence[str]) -> _common.Result:
+            raise _common.ToolError("the engine exited with code 4: boom")
+
+        with mock.patch.object(engine_launcher, "handler", broken):
+            code, envelope, _ = self.run_engine(draft)
+        self.assertEqual(code, 3)
+        self.assertEqual(draft.read_bytes(), before)
+
+    def test_out_dir_is_required(self) -> None:
+        code, envelope, _ = call(["run-engine", str(self.start())])
+        self.assertEqual((code, envelope["ok"]), (1, False))
 
 
 class FinaliseTests(BuilderCase):

@@ -81,13 +81,15 @@ TST-04 has two playbooks: this one writes the fenced line when the repository's 
 
 3. **Coverage gate.** Ask per repository, record `pref set tests.coverage_gate check|ci`:
    - `check` (default): the floor sits in the test runner's configuration and the coverage-instrumented run is part
-     of `test`, so local `check` and CI fail on a drop. Costs instrumentation time on every `check`.
+     of `test`, so local `check` and CI fail on a drop. Costs instrumentation time on every `check`. The `check`
+     verb still composes the read-only verbs, as "`CMD-02` check composes the read-only verbs" asks.
    - `ci`: the floor sits in the same configuration, but only a CI coverage step runs it; `check` stays fast.
      Local green can then fail in CI. Suggest it when the suite is slow or needs live services and
      `check.verify_without_stack=yes`.
 
 4. **Coverage floor value.** Measure line coverage on the untouched tree; the floor is that number rounded **down**
-   to a whole percent. Never a target the repository fails today. It is raised only by a deliberate commit when the
+   to a whole percent. Never a target the repository fails today. A higher floor turns `test` red, and "`TST-02`
+   Suite status known" then reads a failing suite. It is raised only by a deliberate commit when the
    measured value is at least one point above the floor; no script rewrites it.
 
 5. **Tool choice when nothing exists.** Offer from the table, recommend, let the owner decide, record the choice.
@@ -95,7 +97,7 @@ TST-04 has two playbooks: this one writes the fenced line when the repository's 
 ### Tool currency
 
 Checked 2026-11-05 against the release pages and registries. Re-check before offering a tool; drop one with no
-stable release in the last 12 months.
+stable release in the last 12 months ([tool currency](../tool-choice.md#tool-currency)).
 
 | Tool | Latest | Released | Notes |
 |---|---|---|---|
@@ -125,15 +127,22 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    went down it prints the new number and asks for the counts file to be lowered in the same change (it does not
    rewrite the file itself). Call the script from `format:check` (spec decision 0002). Make sure the CI job that runs
    `check` reaches it; name the counts file in that workflow step or its comment so the link is visible.
+   The script writes nothing, so `format:check` stays read-only for "`CMD-04` Write verbs separated from
+   read-only verbs". Give each public function in it a docstring or doc comment. "`NAV-05` Public-symbol
+   documentation coverage" counts them.
 5. **Counts written down (BASE-02).** Where a tool has a budget flag, put today's count on the flag in the verb
-   (`--max-warnings <N>`) instead of a counts-file entry. Every other count lives in the counts file.
+   (`--max-warnings <N>`) instead of a counts-file entry. Every other count lives in the counts file. Add only
+   the flag: the verb stays read-only, with no `--fix` or `--write`.
 6. **Say it in `AGENTS.md`.** One short paragraph in the quality or commands section, in words an agent and the
    audit both read: name each baseline mechanism and file, say "no new violations: `format:check` compares against
    the quality baseline", and state the rule "a baseline only goes down, a coverage floor only goes up; raising
    either needs the owner".
 7. **Coverage (TST-05, BASE-04).** Configure the runner's coverage, add or reuse a coverage verb (`test:cov` or
    similar), measure, set the floor (Inputs 4) in the runner's own configuration, and wire it per
-   `tests.coverage_gate`. One floor per component in a multi-component repository.
+   `tests.coverage_gate`. The floor adds no writer to `test` or `check`: no `--fix`, `--write` or install.
+   One floor per component in a multi-component repository. A coverage tool the verb adds
+   (`c8`, `nyc`) is a pinned dev dependency in the manifest. The verb runs it by name, never as `npx c8@<version>`.
+   So "`EXEC-08` Tool versions visible to dependency automation" finds its version in the manifest.
 8. **Suite status (TST-02).** Run `test` once (with the services it needs, through the repository's own start
    scripts) and record the result: green, or the failing tests by name as debt. A separate suite outside `check` (an
    end-to-end suite, for example) that fails to load counts too: record it as one failing suite with 0 tests run, in
@@ -141,10 +150,16 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    reads TST-02 only from a Tier-C probe; this record is for the agent, not a substitute verdict.
 9. **Skip census (TST-03).** List every skip, ignore and expected-failure marker. Judge each one: a test that can be
    fixed is an item for the owner; a deliberate skip gets a one-line reason next to it. Never delete or un-skip in
-   bulk. The count is debt with the marker list as its baseline.
+   bulk. The count is debt with the marker list as its baseline. A reason line shifts the lines below it. The
+   secrets allowlist (`.secrets.baseline`, `.gitleaksignore`) may name a line in that file. Then regenerate it with
+   the scanner's own command, in its own commit (Commits row 17). "`SEC-02` No key-shaped strings in tracked
+   files" accepts an allowlisted hit only on its listed line.
 10. **Fast path (TST-04)**, when the item is in T5: add the single-test command for the repository's runner to
-    `AGENTS.md` in a fenced shell block (the engine reads only fenced commands), for example
-    `./gradlew test --tests '<Class>'` or `npx jest <path/to/file.spec.ts>`.
+    `AGENTS.md` in a fenced shell block (the engine also reads an inline code span, but `EXEC-06` reads only
+    fenced commands), for example `./gradlew test --tests '<Class>'` or `npx jest -t '<test name>'`. Jest needs
+    `-t`, `--testNamePattern` or a test file path that holds `.test.` or `.spec.`: a folder alone is not read as a
+    subset. Start the line with a word that resolves, such as a verb or the wrapper. "`EXEC-06` Documented commands
+    resolve" reads every fenced command in `AGENTS.md`.
 
 ### Java (Gradle)
 
@@ -168,9 +183,9 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#baseline--ratchet).
   copy), because with the list in place PMD reports nothing for those files. A Spotless full-tree count has no usable
   output (the tool truncates its list), so run the full format task in a scratch copy and count the files that
   changed against the original. Neither goes into the working tree.
-- **Engine blind spot.** BASE-04 reads no Gradle build file, so a correct `jacocoTestCoverageVerification` floor
-  still reads `FAIL`. Add one sentence with the floor to `AGENTS.md` ("coverage floor: NN% line coverage, enforced by
-  `jacocoTestCoverageVerification`") so the audit reads at least `PARTIAL`, and verify from the build file.
+- **Engine visibility.** BASE-04 reads a `jacocoTestCoverageVerification` task with a `minimum` in a Gradle build,
+  and a `jacoco-maven-plugin` `check` goal with a `<minimum>` in a `pom.xml`, at any depth, so a configured floor
+  reads `PASS`. Verify from the build file that the verification task runs in `check`.
 - **Fast path**: `./gradlew test --tests '<package>.<Class>'`, optionally `.<method>`.
 
 ### TypeScript and Node
@@ -187,13 +202,10 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#bas
   multi-component repository. Create React App passes `coverageThreshold` through its `jest` key in
   `package.json`; check the supported keys for the repository's `react-scripts` version. Vitest:
   `test.coverage.thresholds`.
-- **Engine visibility.** BASE-04 reads the root `package.json` and `jest.config.*`/`vitest.config.*` files at any depth,
-  not a `jest` key in a nested component's `package.json`. In a multi-component repository either keep the key where it
-  is and add the floor sentence to `AGENTS.md`, or (owner choice) move that component's Jest config to a `jest.config.*`
-  file. Verify from the real config either way. BASE-02 reads only a budget flag, so a counts file alone reads
-  `PARTIAL`, and TST-04 accepts a Jest line only with `-t` or `--testNamePattern`; a path-only `npx jest <file>` reads
-  `FAIL` (framework issues #45 and #50). Write the fast-path block in the form the engine reads and keep the path-only
-  form out of the verification.
+- **Engine visibility.** BASE-04 reads every `package.json` (a `jest` key in a component's own manifest included)
+  and `jest.config.*`/`vitest.config.*` files at any depth. Verify from the real config. BASE-02 reads only a budget
+  flag, so a counts file alone reads `PARTIAL` (framework issue #45). TST-04 accepts a Jest line with `-t`,
+  `--testNamePattern` or a test file path, such as `npx jest src/app.test.ts`.
 - **Whole-tree counts in `format:check`.** ESLint older than 9.24 has no baseline file, so the compare script runs
   the linter over the whole tree with JSON output and counts errors and files with errors. That adds the linter's
   full run (15-20 s on a mid-sized app) to `format:check`; say so in the paragraph in `AGENTS.md`. The script resolves
@@ -247,6 +259,7 @@ A commit that raises a count or lowers a floor carries the `Baseline-Exception` 
 | 14 | Failing-suite entry in the counts file (only when a suite outside `check` fails) | `TST-02` | bulk |
 | 15 | One-line reasons next to deliberate skip markers | `TST-03` | hand |
 | 16 | Fenced single-test command in `AGENTS.md` (only when the item is in T5) | `TST-04` | hand |
+| 17 | Secrets allowlist regenerated after row 15 (only when it names a line that row 15 shifted) | - | bulk |
 
 ## Continue on error
 
@@ -281,7 +294,7 @@ phrases, and misses mechanisms it has no reader for.
 | BASE-01 | The counts file and each native baseline; the `AGENTS.md` paragraph | Each tool with debt has a baseline; the paragraph names them | A `*baseline*.json` name, or a "quality baseline" / "no new violations" sentence in `AGENTS.md` or `CLAUDE.md`: `PASS` |
 | BASE-02 | The counts file entries and any budget flag | One number per tool, matching a fresh full run | Only a budget flag (`--max-warnings N`, `max-issues N`) in a manifest or counting config gives `PASS`; a counts file alone reads `PARTIAL` |
 | BASE-03 | Raise one count by one in a scratch copy and run `format:check` | Exits non-zero naming the tool; the real tree exits 0 | The counts file named in a CI workflow, or a "ratchet" / "no new violations" sentence: `PASS` |
-| BASE-04 | The runner config key and its value; run the coverage verb | Floor equals today's number rounded down; the run passes | Root `package.json`, `jest.config.*`, `vitest.config.*`, Python coverage configs: `PASS`. Gradle and nested `package.json`: `FAIL`, or `PARTIAL` with the `AGENTS.md` sentence |
+| BASE-04 | The runner config key and its value; run the coverage verb | Floor equals today's number rounded down; the run passes | Any `package.json`, `jest.config.*`, `vitest.config.*`, a JaCoCo floor in a Gradle or Maven build, root Python coverage configs: `PASS` |
 | TST-02 | The recorded run | Green, or failing tests listed as debt | `UNKNOWN` without a Tier-C probe |
 | TST-03 | The marker list | Every marker has a reason or an owner item | Engine `PASS` is a census; the rubric's reading is `FAIL` when the total is above zero |
 | TST-04 | The fenced block in `AGENTS.md` | One single-test command for the runner | A fenced single-test command: `PASS` |
@@ -294,7 +307,8 @@ last column above.
 
 `git revert` the commits, newest first. The baseline paragraph in `AGENTS.md` goes together with the counts file,
 the compare script, the compare call and the CI step it names. The floor sentence goes together with the coverage
-floor and its wiring. The other commits revert alone. A shrunk exclude list can stay shrunk.
+floor and its wiring. The regenerated allowlist (row 17) goes together with the skip reasons it follows. The other
+commits revert alone. A shrunk exclude list can stay shrunk.
 
 ## Do-not-do
 
@@ -304,7 +318,8 @@ floor and its wiring. The other commits revert alone. A shrunk exclude list can 
 - No upgrade of a tool or runner only to get its native baseline format, without the owner.
 - No agent edit that raises a count or lowers a floor; no script that rewrites a baseline or floor by itself.
 - No new member of `check` for a ratchet; it goes in `format:check`.
-- Do not start or stop services outside the repository's own scripts.
+- Do not start or stop services outside the repository's own scripts, unless the person asks for that exact
+  action ([Hard rules](../SKILL.md#hard-rules)).
 
 ## State updates
 

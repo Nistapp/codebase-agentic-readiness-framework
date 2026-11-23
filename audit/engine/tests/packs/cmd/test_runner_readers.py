@@ -149,6 +149,13 @@ class GradleTests(unittest.TestCase):
         build = "tasks.register('lint') {\n}\n"
         self.assertEqual(verbs_of({"build.gradle": build}), {"lint": "build.gradle: gradle lint"})
 
+    def test_a_nested_wrapper_does_not_launch_the_root_build(self):
+        """``./gradlew`` runs from the root folder, so a ``tools/gradlew`` is not the root build's launcher."""
+        self.assertEqual(
+            verbs_of({"build.gradle": "plugins {\n    id 'java'\n}\n", "tools/gradlew": "#!/bin/sh\n"}),
+            {"test": "build.gradle: gradle test", "check": "build.gradle: gradle check"},
+        )
+
 
 class MavenTests(unittest.TestCase):
     @staticmethod
@@ -169,6 +176,10 @@ class MavenTests(unittest.TestCase):
 
     def test_without_a_wrapper_the_installed_maven_is_the_launcher(self):
         self.assertEqual(verbs_of({"pom.xml": self.pom()})["check"], "pom.xml: mvn verify")
+
+    def test_a_nested_wrapper_does_not_launch_the_root_build(self):
+        """``./mvnw`` runs from the root folder, so a ``tools/mvnw`` is not the root build's launcher."""
+        self.assertEqual(verbs_of({"pom.xml": self.pom(), "tools/mvnw": "#!/bin/sh\n"})["check"], "pom.xml: mvn verify")
 
     def test_each_default_plugin_gives_its_verbs_in_the_specs_spelling(self):
         pom = self.pom("spotless-maven-plugin", "maven-checkstyle-plugin", "dependency-check-maven")
@@ -222,32 +233,44 @@ class MavenTests(unittest.TestCase):
 
 
 class NestedManifestTests(unittest.TestCase):
-    """``Inventory.has`` matches a manifest at any depth; the runner name read must follow it there.
+    """A runner below the root is no runner, and no runner is cited by a literal name that does not exist.
 
-    A monorepo whose only ``package.json`` lives under ``packages/app`` has no manifest at the literal
-    name ``"package.json"`` — a caller that cites that literal name as a path is citing one that does not
-    exist anywhere in the repository (the defect this leaf fixes).
+    A ``Makefile``, a ``package.json``, a Gradle or a Maven build counts only at the root, where ``make``,
+    ``npm``, ``./gradlew`` and ``./mvnw`` read it.
     """
 
-    def test_a_nested_only_package_json_is_named_by_its_real_path(self):
+    def test_a_nested_only_maven_build_is_not_a_runner(self):
+        verbs, commands = read({"packages/app/pom.xml": "<project></project>\n"})
+        self.assertNotIn("test", verbs)
+        self.assertNotIn("packages/app/pom.xml", commands)
+        self.assertNotIn("pom.xml", commands)
+
+    def test_a_nested_only_gradle_build_is_not_a_runner(self):
+        verbs, commands = read({"packages/app/build.gradle": "plugins { id 'java' }\n"})
+        self.assertNotIn("test", verbs)
+        self.assertNotIn("packages/app/build.gradle", commands)
+        self.assertNotIn("build.gradle", commands)
+
+    def test_a_nested_only_package_json_is_not_a_runner(self):
         verbs, commands = read({"packages/app/package.json": '{"scripts": {"test": "vitest run"}}'})
-        self.assertEqual(verbs["test"].runner, "packages/app/package.json")
-        self.assertIn("packages/app/package.json", commands)
+        self.assertNotIn("test", verbs)
+        self.assertNotIn("packages/app/package.json", commands)
         self.assertNotIn("package.json", commands)
 
-    def test_the_shallowest_of_two_nested_manifests_is_named(self):
+    def test_a_root_build_is_read_and_a_nested_one_beside_it_is_not(self):
         _, commands = read(
             {
-                "apps/web/package.json": '{"scripts": {"test": "jest"}}',
-                "apps/web/deep/nested/package.json": '{"scripts": {"test": "mocha"}}',
+                "pom.xml": "<project></project>\n",
+                "apps/web/pom.xml": "<project><artifactId>maven-checkstyle-plugin</artifactId></project>\n",
             }
         )
-        self.assertIn("apps/web/package.json", commands)
-        self.assertNotIn("apps/web/deep/nested/package.json", commands)
+        self.assertEqual(commands["pom.xml"], {})
+        self.assertNotIn("apps/web/pom.xml", commands)
 
-    def test_a_nested_only_makefile_is_named_by_its_real_path(self):
+    def test_a_nested_only_makefile_is_not_a_runner(self):
+        """``make`` reads the root ``Makefile`` only, so a nested one is neither read nor cited."""
         _, commands = read({"packages/app/Makefile": "check:\n\techo ok\n"})
-        self.assertIn("packages/app/Makefile", commands)
+        self.assertNotIn("packages/app/Makefile", commands)
         self.assertNotIn("Makefile", commands)
 
     def test_a_root_manifest_is_unaffected(self):
