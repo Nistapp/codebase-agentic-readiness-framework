@@ -1,0 +1,8 @@
+{
+  "engine": [
+    {
+      "modules": ["test_framework_default", "test_smoke"],
+      "why": "both run audit/engine/build.py, which deletes and rewrites dist/audit.pyz, then run that file; in two shards at once one could run a half-written archive"
+    }
+  ]
+}

@@ -203,8 +203,8 @@ test-dev-shard:
 # each shard of the engine's and the audit tools' suites short; the dev checks' slowest shard is
 # test_implement_eval alone (about 80 s), which a module cannot split. With TEST_JOBS empty, `test` runs the suites
 # whole, one by one. The engine modules test_smoke and test_framework_default both build audit/engine/dist/audit.pyz
-# in place, so they must fall in the same shard. With the committed weights they do at 2, 4 and 6 shards, and do not
-# at 3 and 5. Check again after a change to LOCAL_SHARDS or to dev/test_shard_weights.json.
+# in place, so they must share a shard. dev/test_shard.py keeps them together at every count, from the groups in
+# dev/test_shard_groups.json, and a dev check fails when a module that builds the archive is not in a group.
 LOCAL_SHARDS ?= 4
 LOCAL_SHARD_TARGETS := $(foreach suite,$(TEST_SHARDED_SUITES),$(foreach i,$(shell seq 1 $(LOCAL_SHARDS)),test-$(suite)-local-$(i)))
 TEST_TARGETS = $(if $(strip $(TEST_JOBS)),$(LOCAL_SHARD_TARGETS) $(filter-out $(TEST_SHARDED_SUITES:%=test-%),$(TEST_SUITES)),$(TEST_SUITES))
