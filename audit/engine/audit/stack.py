@@ -241,8 +241,20 @@ class MakeRule:
 
 @dataclass(frozen=True)
 class ParsedMakefile:
+    """The plain rules and the parse errors, plus what else can name a target.
+
+    ``patterns`` are the target patterns of pattern rules (``test-%:``); ``static_targets`` are the names a static
+    pattern rule lists (``a b: %: ...``). ``computed`` holds each rule whose target list holds a variable or a
+    function (``$(TARGETS):``), whose names this reader cannot know: its line, and the target pattern of a static
+    pattern rule (``$(TARGETS): test-%:``), which every listed name matches, or ``None`` when no such pattern
+    bounds the names.
+    """
+
     rules: dict[str, MakeRule]
     errors: tuple[MakeError, ...]
+    patterns: tuple[str, ...] = ()
+    static_targets: tuple[str, ...] = ()
+    computed: tuple[tuple[int, str | None], ...] = ()
 
 
 _MAKE_DIRECTIVES = frozenset(
@@ -333,7 +345,10 @@ def parse_makefile(inv: Inventory) -> ParsedMakefile:
     Reads what GNU Make reads for a plain rule. A colon in a target name is escaped (``format\\:check:``) and
     is read as part of the name. Prerequisites are kept, in order, because ``check: a b c`` runs ``a``, ``b``
     and ``c`` before its own recipe. A rule is plain unless it has a pattern (``%``) or a variable in a name,
-    and those are left out. Assignments, directives and ``define`` blocks end a rule and are not read.
+    and those are left out of ``rules``: a pattern rule's target pattern goes to ``patterns``, the names a static
+    pattern rule lists go to ``static_targets``, and a target list that holds a variable or a function goes to
+    ``computed``, with its line and the static pattern that bounds it. Assignments, directives and ``define``
+    blocks end a rule and are not read.
 
     The one parse error it reports is the one that sank the engine's own fixture: an unescaped colon in a
     target name (``format:check:``) is a static pattern rule, whose pattern has no ``%``, and Make refuses
@@ -344,6 +359,9 @@ def parse_makefile(inv: Inventory) -> ParsedMakefile:
         return ParsedMakefile(rules={}, errors=())
     rules: dict[str, dict] = {}
     errors: list[MakeError] = []
+    patterns: list[str] = []
+    static_targets: list[str] = []
+    computed: list[tuple[int, str | None]] = []
     current: list[str] = []
     in_define = False
     for number, line in _logical_lines(text):
@@ -375,12 +393,22 @@ def parse_makefile(inv: Inventory) -> ParsedMakefile:
         inline = tail[semicolons[0] + 1 :].strip() if semicolons else ""
         needs = tail[: semicolons[0]] if semicolons else tail
         pattern_colons = _unescaped(needs, ":")
+        pattern = needs[: pattern_colons[0]].strip().replace("\\:", ":") if pattern_colons else ""
+        if "$" in head:
+            bounded = "%" in pattern and "$" not in pattern and len(pattern.split()) == 1
+            computed.append((number, pattern if bounded else None))
         if pattern_colons:
-            pattern = needs[: pattern_colons[0]]
             if "%" not in pattern and "$" not in pattern:
                 errors.append(MakeError(number, stripped[:200], "target pattern contains no '%'"))
+            for name in _words(head):
+                if name not in static_targets:
+                    static_targets.append(name)
             current = []
             continue
+        for word in head.split():
+            target_pattern = word.replace("\\:", ":")
+            if "%" in target_pattern and "$" not in target_pattern and target_pattern not in patterns:
+                patterns.append(target_pattern)
         names = [name for name in _words(head) if not _SPECIAL_TARGET.match(name)]
         prerequisites = _words(needs)
         current = names
@@ -395,6 +423,9 @@ def parse_makefile(inv: Inventory) -> ParsedMakefile:
             for name, rule in rules.items()
         },
         errors=tuple(errors),
+        patterns=tuple(patterns),
+        static_targets=tuple(static_targets),
+        computed=tuple(computed),
     )
 
 

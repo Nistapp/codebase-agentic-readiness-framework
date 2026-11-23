@@ -289,17 +289,24 @@ Engine           `EXEC-06`. Extracts every fenced shell command from README.md, 
                  command surface's own verbs, `npm`/`pnpm`/`yarn` scripts, Makefile targets, declared
                  package binaries, or a real repository path. A `make <t>` or `npm run <s>` also resolves
                  when `<t>`/`<s>` is a verb the shared resolver binds on that runner, so `make format:check`
-                 reads the same here and in `AGT-05` when the Makefile spells it `format-check`. This check runs regardless of detected
+                 reads the same here and in `AGT-05` when the Makefile spells it `format-check`. A
+                 `make <t>` resolves too when a pattern rule's target (`build-%:`) matches `<t>`, or a static
+                 pattern rule lists `<t>` (`lint-a lint-b: lint-%:`). The engine never runs Make, so it cannot
+                 expand a target list built from a variable or a function (`$(TARGETS): test-%:`). Such a
+                 list may name `<t>` when it has no static pattern, or when its static pattern matches `<t>`:
+                 Make requires every listed name to match it. When only such a list may name `<t>`, the
+                 command is not verified. It does not fail the check, and the summary names it and the
+                 lines of those lists. Any other unfound target fails. This check runs regardless of detected
                  ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` naming a tool the fixed table
                  does not yet carry — verify the tool is genuinely unresolvable, not merely missing from
                  `_KNOWN_TOOLS` in `audit/rules/checks/execution/exec_06.py`, before treating the finding as a
                  real documentation defect.
 Method           automated
 Look for         Fenced shell commands in README.md, AGENTS.md and CLAUDE.md; each one's head token
-                 against known tools/builtins, command-surface verbs, package scripts, Makefile targets,
-                 declared binaries, and real paths.
-Rubric           PASS: every documented command resolves, or no fenced shell command is documented at
-                 all.
+                 against known tools/builtins, command-surface verbs, package scripts, Makefile targets
+                 (plain, pattern and static pattern rules), declared binaries, and real paths.
+Rubric           PASS: every documented command resolves or is a make command not verified, or no fenced
+                 shell command is documented at all.
                  PARTIAL: not used by this check — any one unresolved command fails the whole check.
                  FAIL: at least one documented command's head token names no known tool, verb, script,
                  target, binary, or path.
@@ -307,7 +314,7 @@ Rubric           PASS: every documented command resolves, or no fenced shell com
                  UNKNOWN when: never — the extraction and resolution run unconditionally.
 Evidence to cite A `file` evidence item per unresolved command (up to 12), citing the doc file, line
                  number and the command text itself; for PASS, the count of documented commands that
-                 resolved.
+                 resolved, and each make command not verified with its doc file and line.
 Absence proof    A FAIL names every unresolved command verbatim with its doc file and line number (up to
                  8 in the summary, up to 12 as evidence), so "does not resolve" is checkable command by
                  command.

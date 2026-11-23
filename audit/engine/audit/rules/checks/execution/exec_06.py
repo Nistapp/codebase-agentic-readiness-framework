@@ -20,7 +20,7 @@ from audit.rules.checks._common import (
     entry_documents,
 )
 from audit.scan import Inventory
-from audit.stack import extract_npm_scripts, parse_makefile_targets
+from audit.stack import ParsedMakefile, extract_npm_scripts, parse_makefile, parse_makefile_targets
 from audit.rules.checks.execution._shared import _outcome, _tokenise
 
 SPEC = declare("EXEC-06", "Documented commands resolve", "B", Severity.DEGRADER)
@@ -254,42 +254,75 @@ def _command_parts(command: str) -> list[str]:
     return _tokenise(command)
 
 
+#: What :func:`_resolves` says of one command.
+RESOLVED, UNVERIFIED, UNRESOLVED = "resolved", "unverified", "unresolved"
+
+
+def _matches_pattern(target: str, pattern: str) -> bool:
+    """Whether a Make target pattern (``test-%``) matches ``target``; the ``%`` stands for at least one character."""
+    prefix, _, suffix = pattern.partition("%")
+    return len(target) > len(prefix) + len(suffix) and target.startswith(prefix) and target.endswith(suffix)
+
+
+def _computed_lines(target: str, makefile: ParsedMakefile) -> list[int]:
+    """The lines of the target lists the reader cannot expand that may name ``target``.
+
+    Make requires every name a static pattern rule lists to match its target pattern, so a list bounded by
+    ``test-%`` cannot name ``deploy``; a list with no such pattern may name anything.
+    """
+    return [line for line, pattern in makefile.computed if pattern is None or _matches_pattern(target, pattern)]
+
+
+def _make_target(target: str, make_targets: dict, makefile: ParsedMakefile) -> str:
+    """Whether a rule, a pattern rule or the list of a static pattern rule builds ``target``.
+
+    Failing that, a target list the reader cannot expand (``$(TARGETS):``) may name it, so the target is not
+    verified rather than unresolved. With no such list, it is unresolved.
+    """
+    if target in make_targets or target in makefile.static_targets:
+        return RESOLVED
+    if any(_matches_pattern(target, pattern) for pattern in makefile.patterns):
+        return RESOLVED
+    return UNVERIFIED if _computed_lines(target, makefile) else UNRESOLVED
+
+
 def _resolves(
-    inv: Inventory, tokens: list[str], verbs: dict, scripts: dict, make_targets: dict, bins: set[str]
-) -> bool:
+    inv: Inventory,
+    tokens: list[str],
+    verbs: dict,
+    scripts: dict,
+    make_targets: dict,
+    bins: set[str],
+    makefile: ParsedMakefile | None = None,
+) -> str:
     while tokens and tokens[0] in _STRIPPABLE_PREFIXES:
         tokens = tokens[1:]
     if not tokens:
-        return True
+        return RESOLVED
     head = tokens[0]
     rest = tokens[1:]
 
     if head in _SHELL_KEYWORDS or head in _KNOWN_TOOLS:
-        if head in {"npm", "pnpm", "bun"}:
-            if rest[:1] == ["run"]:
-                return len(rest) >= 2 and rest[1] in scripts
-            return True
-        if head == "yarn":
-            if rest[:1] == ["run"]:
-                return len(rest) >= 2 and rest[1] in scripts
-            return True
+        if head in {"npm", "pnpm", "bun", "yarn"} and rest[:1] == ["run"]:
+            return RESOLVED if len(rest) >= 2 and rest[1] in scripts else UNRESOLVED
         if head == "make":
             targets = [t for t in rest if not t.startswith("-") and "=" not in t]
-            return all(t in make_targets for t in targets) if targets and make_targets else True
-        return True
+            if not targets or not make_targets:
+                return RESOLVED
+            parsed = makefile or ParsedMakefile(rules={}, errors=())
+            states = {_make_target(t, make_targets, parsed) for t in targets}
+            return next(state for state in (UNRESOLVED, UNVERIFIED, RESOLVED) if state in states)
+        return RESOLVED
 
-    if head in verbs:
-        return True
-
-    if head in bins:
-        return True
+    if head in verbs or head in bins:
+        return RESOLVED
 
     candidate = head[2:] if head.startswith("./") else head
     if "/" in candidate or head.startswith("./"):
         if inv.has(candidate) or any(f.rel == candidate or f.rel.startswith(candidate + "/") for f in inv.files):
-            return True
+            return RESOLVED
 
-    return False
+    return UNRESOLVED
 
 
 def _logical_commands(entries: list[tuple[str, int, str]]) -> list[tuple[str, int, str]]:
@@ -347,18 +380,37 @@ def check_exec06(*, spec, target, inventory, stack, components, session) -> Chec
                 scripts.setdefault(verb, binding.command)
     bins = _package_bins(inventory)
 
+    makefile = parse_makefile(inventory)
     unresolved: list[tuple[str, int, str]] = []
+    unverified: list[tuple[str, int, str]] = []
     for path, line, command in unique:
         if re.search(r"[<]|\.\.\.|\b(your[_-]|tbd|xxx|placeholder)\b", command, re.IGNORECASE):
             continue
         tokens = _command_parts(command)
         if not tokens:
             continue
-        if not _resolves(inventory, tokens, verbs, scripts, make_targets, bins):
+        state = _resolves(inventory, tokens, verbs, scripts, make_targets, bins, makefile)
+        if state == UNRESOLVED:
             unresolved.append((path, line, command))
+        elif state == UNVERIFIED:
+            unverified.append((path, line, command))
+
+    # The engine never runs Make, so a target list it cannot expand is no evidence against a target. Such a
+    # command does not fail the check, as a make command does not when no Makefile can be read; the summary
+    # names it, so a reader can check it by hand.
+    lines = sorted(
+        {n for _path, _line, cmd in unverified for word in _command_parts(cmd) for n in _computed_lines(word, makefile)}
+    )
+    note = (
+        f"; {len(unverified)} make command(s) not verified, because the Makefile builds target names from a "
+        f"variable or a function (line {', '.join(str(n) for n in lines[:4])}) the engine does not "
+        "expand: " + "; ".join(f"{cmd!r} ({path}:{line})" for path, line, cmd in unverified[:8])
+        if unverified
+        else ""
+    )
 
     if not unresolved:
-        return _outcome(spec, Verdict.PASS, f"{len(unique)} documented command(s) resolve")
+        return _outcome(spec, Verdict.PASS, f"{len(unique) - len(unverified)} documented command(s) resolve{note}")
 
     because = f"{len(unresolved)} documented command(s) name no script, verb, or file: " + "; ".join(
         f"{cmd!r} ({path}:{line})" for path, line, cmd in unresolved[:8]
@@ -366,7 +418,7 @@ def check_exec06(*, spec, target, inventory, stack, components, session) -> Chec
     return _outcome(
         spec,
         Verdict.FAIL,
-        because,
+        because + note,
         [
             Finding(
                 check=spec.id,
@@ -400,6 +452,8 @@ def reads():
             "Fenced bash, sh, shell, console and zsh blocks in the three root docs only, continuations "
             "joined, repeats and placeholders skipped. The first word must be a known tool, a shell keyword, "
             "a resolved verb, an npm script or bin of the root package.json, a root Makefile target or a real"
-            " path."
+            " path. A make target also resolves through a pattern rule or a static pattern rule's list; one that"
+            " only a computed target list may name (one with no static pattern, or whose static pattern matches"
+            " it) is not verified and does not fail."
         ),
     )
