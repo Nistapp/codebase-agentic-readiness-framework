@@ -9,8 +9,9 @@ added to ``check`` cannot silently drop out of the gate that decides a pull requ
 
 CI also splits the slow suites into shards (``SHARDED_SUITES``, ``TEST_SHARDED_SUITES``, ``TEST_SHARDS``,
 ``dev/test_shard.py``). These tests fail when a
-matrix misses a shard, when a shard leaves the coverage environment, or when a verb (``test``, ``coverage``) starts
-to shard. The nightly workflow runs the verbs whole.
+matrix misses a shard, when a shard leaves the coverage environment, or when a verb starts to shard on CI's count
+(``coverage`` never shards; ``test`` shards on its own count, ``LOCAL_SHARDS``, and runs whole with ``TEST_JOBS``
+empty). The nightly workflow runs the verbs as a person does.
 """
 
 from __future__ import annotations
@@ -235,7 +236,7 @@ class CheckRunsInCI(unittest.TestCase):
                 self.assertIn(f"COVERAGE_FILE=$(COVERAGE_DATA).{suite}-$(SHARD)", recipe)
                 self.assertIn(f"$(call test_shard,{suite})", recipe)
 
-    def test_the_verbs_never_shard(self) -> None:
+    def test_the_verbs_never_shard_on_cis_count(self) -> None:
         rules = [
             "test",
             "coverage",
@@ -246,6 +247,25 @@ class CheckRunsInCI(unittest.TestCase):
                 recipe = make_recipe(self.makefile, rule) + " ".join(make_rule(self.makefile, rule))
                 self.assertNotIn("SHARD", recipe)
                 self.assertNotIn("test_shard", recipe)
+
+        # `make test` with TEST_JOBS set runs LOCAL_SHARDS shards of each sharded suite, never CI's SHARD/TEST_SHARDS;
+        # with TEST_JOBS empty (the serial path, as on macOS) it runs every suite whole.
+        def commands(*args: str) -> str:
+            return subprocess.run(
+                ["make", "-s", "-n", "-C", str(REPO), "test", *args], capture_output=True, text=True, check=True
+            ).stdout
+
+        serial = commands("TEST_JOBS=")
+        self.assertNotIn("test_shard", serial)
+        sharded = commands("TEST_JOBS=-j2 --output-sync=target", "LOCAL_SHARDS=3")
+        for suite in self.test_sharded:
+            with self.subTest(suite=suite):
+                found = re.findall(rf"test_shard\.py --suite {re.escape(suite)} --shard (\d+)/(\d+)", sharded)
+                self.assertEqual(sorted(found), [(str(i), "3") for i in range(1, 4)])
+        for suite in self.suites:
+            if suite.removeprefix("test-") not in self.test_sharded:
+                with self.subTest(suite=suite):
+                    self.assertIn(suite, sharded.splitlines()[0])
 
     def test_ci_gate_needs_every_other_job(self) -> None:
         # A job that CI Gate does not need can fail, or never finish, while the gate passes.

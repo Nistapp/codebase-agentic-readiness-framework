@@ -17,7 +17,8 @@ modules with the same names), so a module imported after it could come from the 
 ``--measure`` runs every module of the suite one by one and rewrites the suite's weights (seconds, one decimal).
 
 The assignment is the same on every machine: the heaviest module first, each onto the shard with the least weight so
-far (ties by name and shard number). ``make test`` and ``make coverage`` never shard; only CI's jobs do.
+far (ties by name and shard number). CI's jobs shard into ``TEST_SHARDS`` parts. On Linux, ``make test`` shards into
+``LOCAL_SHARDS`` parts that run at once; ``make test TEST_JOBS=`` and ``make coverage`` never shard.
 """
 
 from __future__ import annotations

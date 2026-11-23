@@ -12,8 +12,8 @@
 #   make lint           read-only lint
 #   make typecheck      mypy, strict, on the typed scope below
 #   make test           the five unittest suites: the engine's, the audit tools' (the catalogue checks), the
-#                       implement tools', the greenfield scaffolder's and the dev checks'; at once on Linux
-#                       (TEST_JOBS), else one by one
+#                       implement tools', the greenfield scaffolder's and the dev checks'; on Linux at once,
+#                       the slow three in LOCAL_SHARDS shards each (TEST_JOBS), else one by one and whole
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
 #                       cross-check, the recipe linter, the master-list freshness check,
 #                       the workflow lint and the spell check
@@ -97,12 +97,14 @@ TYPED_SOURCES := $(shell find audit/tools implement/tools implement/playbooks/te
 .DEFAULT_GOAL := help
 
 # The suites of `test`. On Linux with GNU make 4 or newer, `make test` runs them at once, in a sub-make with
-# TEST_JOBS: about 80 s on CI instead of 170 s, and about 200 MB of memory in all (measured 2026-11-09). Elsewhere
-# they run one by one: macOS ships GNU make 3.81, which has no --output-sync. `make test TEST_JOBS=` runs them one by
-# one on Linux too. --output-sync=target prints each suite's output in one piece, when that suite ends.
+# TEST_JOBS, one job per CPU core (nproc). There the slow suites (TEST_SHARDED_SUITES) also run in LOCAL_SHARDS
+# shards each, all at once, so `make test` takes as long as its slowest shard: about 95 s instead of 234 s on 16
+# cores (measured 2026-11-23). Elsewhere the suites run one by one and whole: macOS ships GNU make 3.81, which has no
+# --output-sync. `make test TEST_JOBS=` runs them one by one and whole on Linux too. --output-sync=target prints
+# each suite's or shard's output in one piece, when it ends.
 TEST_SUITES := test-engine test-audit-tools test-implement-tools test-greenfield test-dev
 ifeq ($(shell uname -s 2>/dev/null)-$(filter 3.%,$(MAKE_VERSION)),Linux-)
-TEST_JOBS ?= -j4 --output-sync=target
+TEST_JOBS ?= -j$(shell nproc 2>/dev/null || echo 4) --output-sync=target
 endif
 
 # Everything else runs one target at a time, even under `make -j`: spec/command-surface.md fixes the order of
@@ -115,7 +117,7 @@ endif
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-combine"
+	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  test-<suite>-local-<i> (LOCAL_SHARDS=4)  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
 	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  update-skip-baseline  verify-rules  crosscheck  recipe-lint  recipe-paths  adr-lint  consistency-map [CMAP_ARGS=...]  golden GOLDEN_ARGS=...  catalogue-check  update-catalogue  new-check ID=... TITLE=...  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills  ruleset-renumber [RULESET_ARGS=check]"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
@@ -148,7 +150,7 @@ typecheck:
 	$(QUALITY_BASELINE) mypy -- $(MYPY) --config-file mypy.ini $(TYPED_SOURCES)
 
 test:
-	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_TARGETS)
 
 test-engine:
 	cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests
@@ -167,8 +169,8 @@ test-dev:
 
 # CI splits the slow suites (SHARDED_SUITES) into TEST_SHARDS parts that run in separate jobs; SHARD=<i> picks one
 # (1 to TEST_SHARDS). dev/test_shard.py finds the modules at run time and balances them by
-# dev/test_shard_weights.json; every module is in exactly one shard, and a shard that selects no test fails. `test`
-# and `coverage` never shard. TEST_SHARDED_SUITES are the suites that test-part shards: SHARDED_SUITES, plus the dev
+# dev/test_shard_weights.json; every module is in exactly one shard, and a shard that selects no test fails.
+# `coverage` never shards; `test` shards on its own count, LOCAL_SHARDS (below). TEST_SHARDED_SUITES are the suites that test-part shards: SHARDED_SUITES, plus the dev
 # checks, which coverage.py does not measure. The dev checks are sharded only in the Python 3.14 parts, where the whole
 # suite set the length of the run (76-97 s, against 60 s or less for every other job; measured 2026-11-10).
 TEST_SHARDS := 2
@@ -188,6 +190,20 @@ test-audit-tools-shard:
 test-dev-shard:
 	$(require_shard)
 	$(PYTHON) $(call test_shard,dev)
+
+# The targets `make test` runs when TEST_JOBS is set: LOCAL_SHARDS shards of each suite in TEST_SHARDED_SUITES
+# (test-<suite>-local-<i>), plus the other suites whole. LOCAL_SHARDS is separate from CI's TEST_SHARDS. Four keeps
+# each shard of the engine's and the audit tools' suites short; the dev checks' slowest shard is
+# test_implement_eval alone (about 80 s), which a module cannot split. With TEST_JOBS empty, `test` runs the suites
+# whole, one by one.
+LOCAL_SHARDS ?= 4
+LOCAL_SHARD_TARGETS := $(foreach suite,$(TEST_SHARDED_SUITES),$(foreach i,$(shell seq 1 $(LOCAL_SHARDS)),test-$(suite)-local-$(i)))
+TEST_TARGETS = $(if $(strip $(TEST_JOBS)),$(LOCAL_SHARD_TARGETS) $(filter-out $(TEST_SHARDED_SUITES:%=test-%),$(TEST_SUITES)),$(TEST_SUITES))
+local_index = $(lastword $(subst -, ,$*))
+local_suite = $(patsubst %-local-$(local_index),%,$*)
+.PHONY: $(LOCAL_SHARD_TARGETS)
+$(LOCAL_SHARD_TARGETS): test-%:
+	$(PYTHON) $(CURDIR)/dev/test_shard.py --suite $(local_suite) --shard $(local_index)/$(LOCAL_SHARDS)
 
 # Every suite of `test` in TEST_SHARDS parts, for CI's Python 3.14 jobs: part <i> is shard <i> of each suite in
 # TEST_SHARDED_SUITES plus the targets in TEST_PART_<i>, run at once as `test` runs its suites. The dev checks' two

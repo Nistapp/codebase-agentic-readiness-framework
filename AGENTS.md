@@ -30,7 +30,8 @@ make lint           # read-only lint
 make typecheck      # mypy, strict: audit/tools, implement/tools, the playbook templates, dev, greenfield/bootstrap,
                     # the engine build.py
 make test           # the engine's, the audit tools', the implement tools', the greenfield scaffolder's and the dev
-                    # checks' suites (at once on Linux)
+                    # checks' suites (on Linux at once, the slow three in LOCAL_SHARDS=4 shards each;
+                    # TEST_JOBS= runs them one by one and whole)
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
                     # cross-check, recipe-lint, recipe-paths, adr-lint, masters-check, eval-expected-check,
                     # workflow-lint (actionlint, zizmor, check-jsonschema), spell (typos)
