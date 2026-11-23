@@ -20,8 +20,9 @@
 #   make security       secrets scan against the committed baseline, then the dependency audit (osv-scanner) of
 #                       the dev tools' lockfiles; needs Go and the network
 #   make coverage       (extra) the engine's, the tools' and the scaffolder's suites under coverage.py; fails
-#                       below the floor in .coveragerc. CI runs it in parts: coverage-<suite> per job, then
-#                       coverage-combine
+#                       below the floor in .coveragerc. On Linux the suites run at once, the engine's and the
+#                       audit tools' in LOCAL_SHARDS shards each (TEST_JOBS), else one by one and whole. CI
+#                       runs it in parts: coverage-<suite> per job, then coverage-combine
 #   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
 #                       or exit 1 when the test trees hold more skip markers than .quality-baseline.json allows
 #
@@ -117,7 +118,7 @@ endif
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  test-<suite>-local-<i> (LOCAL_SHARDS=4)  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-combine"
+	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  test-<suite>-local-<i> (LOCAL_SHARDS=4)  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-<suite>-local-<i>  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
 	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  update-skip-baseline  verify-rules  crosscheck  recipe-lint  recipe-paths  adr-lint  consistency-map [CMAP_ARGS=...]  golden GOLDEN_ARGS=...  catalogue-check  update-catalogue  new-check ID=... TITLE=...  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills  ruleset-renumber [RULESET_ARGS=check]"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
@@ -170,7 +171,7 @@ test-dev:
 # CI splits the slow suites (SHARDED_SUITES) into TEST_SHARDS parts that run in separate jobs; SHARD=<i> picks one
 # (1 to TEST_SHARDS). dev/test_shard.py finds the modules at run time and balances them by
 # dev/test_shard_weights.json; every module is in exactly one shard, and a shard that selects no test fails.
-# `coverage` never shards; `test` shards on its own count, LOCAL_SHARDS (below). TEST_SHARDED_SUITES are the suites that test-part shards: SHARDED_SUITES, plus the dev
+# `test` and `coverage` shard on their own count, LOCAL_SHARDS (below). TEST_SHARDED_SUITES are the suites that test-part shards: SHARDED_SUITES, plus the dev
 # checks, which coverage.py does not measure. The dev checks are sharded only in the Python 3.14 parts, where the whole
 # suite set the length of the run (76-97 s, against 60 s or less for every other job; measured 2026-11-10).
 TEST_SHARDS := 2
@@ -230,7 +231,11 @@ COVERAGE_HOME := $(CURDIR)/dev/dist/coverage/home
 coverage_env = env -u AUDIT_INDEX_STORE -u XDG_CONFIG_HOME -u XDG_CACHE_HOME HOME=$(COVERAGE_HOME)/$(1) CI=true \
 	UV_CACHE_DIR="$$(uv cache dir)" UV_PYTHON_INSTALL_DIR="$$(uv python dir)" UV_TOOL_DIR="$$(uv tool dir)"
 COVERAGE_SUITES := coverage-engine coverage-audit-tools coverage-implement-tools coverage-greenfield
-coverage: coverage-engine coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine
+# With TEST_JOBS set (Linux, GNU make 4), `coverage` runs LOCAL_SHARDS shards of each sharded suite and the other
+# suites whole, all at once, then combines their data files (coverage-local). With TEST_JOBS empty (`make coverage
+# TEST_JOBS=`, and macOS) it runs the four suites one by one and whole. Both paths give the same total and the same
+# missed lines per file.
+coverage: $(if $(strip $(TEST_JOBS)),coverage-local,coverage-engine coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine)
 
 coverage-engine:
 	mkdir -p $(dir $(COVERAGE_DATA))
@@ -271,6 +276,17 @@ coverage-audit-tools-shard:
 	rm -f $(COVERAGE_DATA).audit-tools-$(SHARD)
 	rm -rf $(COVERAGE_HOME)/audit-tools-$(SHARD) && mkdir -p $(COVERAGE_HOME)/audit-tools-$(SHARD)
 	$(call coverage_env,audit-tools-$(SHARD)) COVERAGE_FILE=$(COVERAGE_DATA).audit-tools-$(SHARD) $(COVERAGE) run --rcfile=.coveragerc $(call test_shard,audit-tools)
+
+# coverage-<suite>-local-<i>: shard <i> of LOCAL_SHARDS of a sharded suite under coverage.py, through
+# coverage-<suite>-shard (its own HOME and data file, .coverage.<suite>-<i>). coverage-local runs them beside the
+# whole suites in one parallel sub-make, then coverage-combine SHARDED=1 TEST_SHARDS=LOCAL_SHARDS merges the files.
+COVERAGE_LOCAL_SHARD_TARGETS := $(foreach suite,$(SHARDED_SUITES),$(foreach i,$(shell seq 1 $(LOCAL_SHARDS)),coverage-$(suite)-local-$(i)))
+.PHONY: coverage-local $(COVERAGE_LOCAL_SHARD_TARGETS)
+$(COVERAGE_LOCAL_SHARD_TARGETS): coverage-%:
+	$(MAKE) --no-print-directory coverage-$(local_suite)-shard SHARD=$(local_index) TEST_SHARDS=$(LOCAL_SHARDS)
+coverage-local:
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(COVERAGE_LOCAL_SHARD_TARGETS) coverage-implement-tools coverage-greenfield
+	$(MAKE) --no-print-directory coverage-combine SHARDED=1 TEST_SHARDS=$(LOCAL_SHARDS)
 
 # The coverage suites in TEST_SHARDS parts, for CI's Python 3.11 jobs: part <i> is shard <i> of each sharded suite
 # plus the targets in COVERAGE_PART_<i>, run at once. Each writes its own data file for coverage-combine SHARDED=1.

@@ -54,7 +54,7 @@ that run at once ([The required checks](docs/reference/branch-protection.md#the-
 | `make docs-lint` | Markdown lint over the ratchet path list in the `Makefile`. Run it when Markdown changed |
 | `make docs-prose FILES=<file.md>` | The plain-language check from [`docs/COMMUNICATION_RULES.md`](docs/COMMUNICATION_RULES.md). Advisory: it prints warnings and notices and never fails. Fix the warnings on the lines you changed |
 | `make docs-mermaid FILES=<file.md>` | Renders every Mermaid block in the files. Run it when you added or changed one |
-| `make coverage` | The engine's, the tools' and the greenfield scaffolder's suites under coverage.py; fails below the floor in `.coveragerc`. The floor only goes up |
+| `make coverage` | The engine's, the tools' and the greenfield scaffolder's suites under coverage.py; fails below the floor in `.coveragerc`. The floor only goes up. On Linux the suites run at once, the engine's and the audit tools' in `LOCAL_SHARDS` shards each, with the same total as a serial run; `make coverage TEST_JOBS=` runs them one by one and whole |
 | `make self-audit` | The engine on this repository against `.audit-baseline.json`; exit 2 on a regression. See [Self-Audit](docs/reference/self-audit.md) |
 
 The seven verbs the framework asks of any repository (`format`, `format:check`, `lint`, `typecheck`, `test`,

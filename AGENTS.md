@@ -80,9 +80,11 @@ No vendor-specific instruction file exists beside it.
   Hooks do not replace the gate: CI runs `make check`, `make security` and `make docs-lint`.
 - `make coverage` runs the engine's, the audit tools', the implement tools' and the greenfield scaffolder's suites
   under coverage.py. It fails
-  below the floor in `.coveragerc` (`fail_under`). CI runs it in parts (`coverage-<suite>` per job, then
-  `coverage-combine` in the `coverage` job). Each suite runs as CI does (an empty `HOME` and `CI=true`), so a local
-  pass means a CI pass. The floor is debt that only goes up: when coverage rises, ask the owner to raise it. Never
+  below the floor in `.coveragerc` (`fail_under`). On Linux it runs the suites at once, the engine's and the audit
+  tools' in `LOCAL_SHARDS` shards each, then combines the data files. `make coverage TEST_JOBS=` runs the four suites
+  one by one and whole, with the same total and the same missed lines. CI runs it in parts (`coverage-<suite>` per
+  job, then `coverage-combine` in the `coverage` job). Each suite runs as CI does (an empty `HOME` and `CI=true`), so
+  a local pass means a CI pass. The floor is debt that only goes up: when coverage rises, ask the owner to raise it. Never
   lower it to get green.
 - Quality baseline: existing lint debt is counted in `.quality-baseline.json` (ruff, mypy, Markdown lint outside the
   ratchet) and the secrets in `.secrets.baseline`. No new violations: `make format-check`, `make typecheck` and

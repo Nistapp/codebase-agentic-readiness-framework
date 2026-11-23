@@ -10,8 +10,7 @@ added to ``check`` cannot silently drop out of the gate that decides a pull requ
 CI also splits the slow suites into shards (``SHARDED_SUITES``, ``TEST_SHARDED_SUITES``, ``TEST_SHARDS``,
 ``dev/test_shard.py``). These tests fail when a
 matrix misses a shard, when a shard leaves the coverage environment, or when a verb starts to shard on CI's count
-(``coverage`` never shards; ``test`` shards on its own count, ``LOCAL_SHARDS``, and runs whole with ``TEST_JOBS``
-empty). The nightly workflow runs the verbs as a person does.
+(``test`` and ``coverage`` shard on their own count, ``LOCAL_SHARDS``, and run whole with ``TEST_JOBS`` empty). The nightly workflow runs the verbs as a person does.
 """
 
 from __future__ import annotations
@@ -175,7 +174,12 @@ class CheckRunsInCI(unittest.TestCase):
         self.assertNotIn("SHARD", nightly)
 
     def test_coverage_combines_every_suite_ci_measures(self) -> None:
-        self.assertEqual(make_rule(self.makefile, "coverage"), [*self.coverage_suites, "coverage-combine"])
+        # With TEST_JOBS empty, `coverage` runs the suites one by one and whole; with it set, it runs coverage-local.
+        serial_suites = " ".join([*self.coverage_suites, "coverage-combine"])
+        self.assertEqual(
+            " ".join(make_rule(self.makefile, "coverage")),
+            f"$(if $(strip $(TEST_JOBS)),coverage-local,{serial_suites})",
+        )
         for target in self.coverage_suites:
             with self.subTest(target=target):
                 self.assertIn(target.replace("coverage-", "test-", 1), self.suites)
@@ -250,9 +254,9 @@ class CheckRunsInCI(unittest.TestCase):
 
         # `make test` with TEST_JOBS set runs LOCAL_SHARDS shards of each sharded suite, never CI's SHARD/TEST_SHARDS;
         # with TEST_JOBS empty (the serial path, as on macOS) it runs every suite whole.
-        def commands(*args: str) -> str:
+        def commands(*args: str, verb: str = "test") -> str:
             return subprocess.run(
-                ["make", "-s", "-n", "-C", str(REPO), "test", *args], capture_output=True, text=True, check=True
+                ["make", "-s", "-n", "-C", str(REPO), verb, *args], capture_output=True, text=True, check=True
             ).stdout
 
         serial = commands("TEST_JOBS=")
@@ -266,6 +270,17 @@ class CheckRunsInCI(unittest.TestCase):
             if suite.removeprefix("test-") not in self.test_sharded:
                 with self.subTest(suite=suite):
                     self.assertIn(suite, sharded.splitlines()[0])
+
+        # `make coverage` does the same: LOCAL_SHARDS shards of each sharded suite, then a combine that expects them.
+        serial_coverage = commands("TEST_JOBS=", verb="coverage")
+        self.assertNotIn("test_shard", serial_coverage)
+        self.assertNotIn("-shard", serial_coverage)
+        local = commands("TEST_JOBS=-j2 --output-sync=target", "LOCAL_SHARDS=3", verb="coverage")
+        for suite in self.sharded_by("coverage")[1]:
+            with self.subTest(suite=suite):
+                found = re.findall(rf"coverage-{re.escape(suite)}-shard SHARD=(\d+) TEST_SHARDS=(\d+)", local)
+                self.assertEqual(sorted(found), [(str(i), "3") for i in range(1, 4)])
+        self.assertIn("coverage-combine SHARDED=1 TEST_SHARDS=3", local)
 
     def test_ci_gate_needs_every_other_job(self) -> None:
         # A job that CI Gate does not need can fail, or never finish, while the gate passes.
