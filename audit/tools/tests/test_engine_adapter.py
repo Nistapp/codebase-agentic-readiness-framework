@@ -957,7 +957,7 @@ class ProbeDriftTests(unittest.TestCase):
     def checks_that_run_probes(self) -> dict[str, str]:
         found: dict[str, str] = {}
         folder = engine_launcher.ENGINE_DIR / "audit" / "rules" / "checks"
-        for source in sorted(folder.glob("*.py")):
+        for source in sorted(folder.rglob("*.py")):
             for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
                 if not isinstance(node, ast.FunctionDef):
                     continue

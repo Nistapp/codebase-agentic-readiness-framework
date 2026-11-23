@@ -4,7 +4,7 @@
 > [Why These Checks §11](../engine/docs/architecture/user-overview/03-why-these-checks.md#11-tests-tst)
 > for the consequence behind this family: verification is the single biggest lever on agent output, so a
 > suite that is absent, unknown, weakened or slow to subset undoes most of what the rest of Phase 1 buys.
-> Every check reads the engine's `TST` pack (`audit/engine/audit/rules/checks/tst.py`), whose
+> Every check reads the engine's `TST` pack (`audit/engine/audit/rules/checks/tst/__init__.py`), whose
 > module docstring names each check's own `UNKNOWN` conditions and its deliberate limits (test-file
 > discovery is the scan's own classification; marker and fast-path/coverage detection are textual pattern
 > matches, not a parse). The `test` verb is read the same way `CMD`/`CI`/`TOOL` read it, through the
@@ -135,7 +135,7 @@ Remediation      `add-baselines-and-ratchet` (the census step); each
                  marker needs its own judgment (fix the test, or document why the skip is deliberate), so
                  note the specific markers found rather than pointing at a generic playbook.
 Pitfalls         A marker pattern matched inside a string literal or a comment is still counted — this is
-                 a deliberate census limit (`tst.py`'s own docstring), acceptable for a count but not a
+                 a deliberate census limit (`tst/__init__.py`'s own docstring), acceptable for a count but not a
                  reason to distrust a nonzero total; do not discount the total on the theory that some
                  hits might be false positives without reading them.
 

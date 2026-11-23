@@ -244,8 +244,8 @@ The diagram shows the steps below in order. A check that misses one does not mer
 `make new-check ID=<PACK-NN> TITLE="..."`, run from the repository root, writes the stubs of steps 2, 5 and 6: the
 module wired into its family, a fixture with its matrix row, a rubric section in `audit/checks/`, the overlay entry
 and a ruleset changelog row. It prints what is left to write. Each stub carries `NEW-CHECK-STUB`, and
-`dev/tests/test_new_check.py` fails while one is left. It refuses `IDX`, `AGT` and `TST`, which are still one
-module each, and never takes the ruleset revision for you.
+`dev/tests/test_new_check.py` fails while one is left. It refuses a family that is still one module (none is
+today). It never takes the ruleset revision for you.
 
 ```mermaid
 flowchart LR
@@ -263,8 +263,7 @@ flowchart LR
    a fixture reaches the same verdict. Write the check in its own module, `audit/rules/checks/<family>/<pack>_NN.py`,
    with its `SPEC = declare(...)` (`audit/rules/spec.py`) and its implementation. Add the module to the family's
    `SPECS` and `IMPLEMENTATIONS` in `<family>/__init__.py`, in catalogue order. A helper that two or more checks of
-   the family use goes in `<family>/_shared.py`. In `tst.py`, which is still one module, add the row to that
-   module's `SPECS`.
+   the family use goes in `<family>/_shared.py`.
 3. Add the failure mode to [Why These Checks](../user-overview/03-why-these-checks.md). No failure mode, no check.
 4. Emit a short human `summary`. Where the check has table-shaped facts, also emit a typed `data` payload from
    `audit/rules/payloads.py` (ADR-0007). The renderer builds check tables from the payload `kind`, never
@@ -273,8 +272,7 @@ flowchart LR
    of the check's family, `tests/packs/<family>/matrix.py`. A fixture that belongs to no one family goes in
    `tests/packs/cross_family/matrix.py`.
 6. Declare what the check reads in its module's `reads()`, which returns a `Reads`. It imports the types and
-   helpers of `audit/rules/reads.py` inside the function. A check of `tst.py` uses
-   `_DECLARED` in `audit/rules/reads.py` instead. Give the places, the text and the binding. Take the paths
+   helpers of `audit/rules/reads.py` inside the function. Give the places, the text and the binding. Take the paths
    from the check's own constant with `_held` where one exists. Give a place `via` when the scan's file kinds or
    component detection read it before the check runs. Give it `case=FOLD` when the check lower-cases the name. Set
    `named_by_text` when the check looks up paths that the target's text names. Mark a place `unexercised`, with the
