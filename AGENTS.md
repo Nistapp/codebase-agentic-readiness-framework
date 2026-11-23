@@ -46,6 +46,10 @@ Here `make security` also runs the secrets scan. This repository has no runtime 
 as that scan and the dependency audit joined it later. A target's `security` stays a dependency gate only
 ([`configure-quality-tools`](implement/playbooks/configure-quality-tools.md)).
 
+While you work, run only the tests of the code you change. Before you propose the change, run `make gate` once.
+A narrow run never replaces the gate: a change in one area can break a test in another suite. Details are in
+[`CONTRIBUTING.md`](CONTRIBUTING.md#the-gates).
+
 One test, without the whole suite. Run the engine's tests from `audit/engine/`:
 
 ```bash
@@ -59,6 +63,15 @@ python3 -m unittest discover -s audit/tools/tests -k catalogue
 python3 -m unittest discover -s implement/tools/tests
 python3 -m unittest discover -s greenfield/bootstrap/tests -k package_json
 ```
+
+Run one module of the dev checks:
+
+```bash
+python3 -m unittest discover -s dev/tests -p test_new_check.py
+```
+
+Run one shard of a suite with `make test-<suite>-local-<i>`. The `<suite>` is `engine`, `audit-tools` or `dev`. The `<i>`
+runs from 1 to `LOCAL_SHARDS` (default 4).
 
 This file is read by Claude Code, opencode, Codex, Gemini CLI, Cursor and any other harness that reads `AGENTS.md`.
 No vendor-specific instruction file exists beside it.

@@ -70,6 +70,18 @@ python3 -m unittest discover -s audit/tools/tests -k catalogue
 python3 -m unittest discover -s greenfield/bootstrap/tests -k package_json
 ```
 
+One module of the dev checks:
+
+```bash
+python3 -m unittest discover -s dev/tests -p test_new_check.py
+```
+
+One shard of a suite: `make test-<suite>-local-<i>`. The `<suite>` is `engine`, `audit-tools` or `dev`. The `<i>` runs
+from 1 to `LOCAL_SHARDS` (default 4).
+
+While you work, run only the tests of the code you change. Before you propose the change, run `make gate` once.
+A narrow run never replaces the gate: a change in one area can break a test in another suite.
+
 A change to a fixture or a test that holds a key-shaped string needs `make update-secrets-baseline`; review the
 diff. Use low-entropy fakes (`aaaabbbbcccc`) in examples so the baseline does not grow.
 
