@@ -23,6 +23,12 @@
 #                       below the floor in .coveragerc. On Linux the suites run at once, the engine's and the
 #                       audit tools' in LOCAL_SHARDS shards each (TEST_JOBS), else one by one and whole. CI
 #                       runs it in parts: coverage-<suite> per job, then coverage-combine
+#   make gate           (extra) every gate CI needs in one command: check, security, docs-lint, commit-lint,
+#                       self-audit and coverage. On Linux the first five run at once, then coverage alone (the
+#                       tests of `check` and `coverage` both build audit/engine/dist/audit.pyz, so they must not
+#                       overlap); else one by one. Each gate's output comes in one piece, and the gates that
+#                       failed are named at the end. Run it before you propose a change: it replaces
+#                       `make check`, `make security`, `make coverage`, `make self-audit` and `make docs-lint`
 #   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
 #                       or exit 1 when the test trees hold more skip markers than .quality-baseline.json allows
 #
@@ -114,13 +120,13 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint recipe-paths adr-lint consistency-map catalogue-check update-catalogue new-check masters-check eval-expected-check update-masters golden check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline update-skip-baseline validate-skills ruleset-renumber docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part gate coverage coverage-enginecoverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint recipe-paths adr-lint consistency-map catalogue-check update-catalogue new-check masters-check eval-expected-check update-masters golden check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline update-skip-baseline validate-skills ruleset-renumber docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  test-<suite>-local-<i> (LOCAL_SHARDS=4)  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-<suite>-local-<i>  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  update-skip-baseline  verify-rules  crosscheck  recipe-lint  recipe-paths  adr-lint  consistency-map [CMAP_ARGS=...]  golden GOLDEN_ARGS=...  catalogue-check  update-catalogue  new-check ID=... TITLE=...  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills  ruleset-renumber [RULESET_ARGS=check]"
+	@echo "extra: gate (check, security, docs-lint, commit-lint, self-audit, then coverage: the one command before a change)  setup (checks prerequisites, installs nothing)  coverage self-audit  update-audit-baseline  update-skip-baseline  verify-rules  crosscheck  recipe-lint  recipe-paths  adr-lint  consistency-map [CMAP_ARGS=...]  golden GOLDEN_ARGS=...  catalogue-check  update-catalogue  new-check ID=... TITLE=...  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills  ruleset-renumber [RULESET_ARGS=check]"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -217,6 +223,38 @@ TEST_PART_2 := test-implement-tools test-greenfield verify-rules
 test-part:
 	$(require_shard)
 	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SHARDED_SUITES:%=test-%-shard) $(TEST_PART_$(SHARD))
+
+# One command for every gate that CI's `ci-gate` job needs (dev/tests/test_gate_parity.py reads that list and fails when
+# a job has no gate here). The gates run in two waves. GATE_FIRST runs at once, one job each, on Linux with GNU make 4
+# (TEST_JOBS set); GATE_THEN runs after it. `coverage` waits because the engine suite builds audit/engine/dist/audit.pyz
+# in place (test_smoke and test_framework_default: build.py deletes the archive and writes it again), and `check`'s
+# tests and `coverage` both run that suite, so the two would race on one file. With TEST_JOBS empty (`make gate
+# TEST_JOBS=`, and macOS) the gates run one by one, in the same order. Each gate is its own `make` with its own internal
+# order (`check` keeps format:check, typecheck, test), so `TEST_SUITES_SUBMAKE=` is cleared for it: the sub-make that runs
+# the gates is parallel, the gates are not. `test` and `coverage` start their own -j sub-makes, so make prints
+# "-jN forced in submake: resetting jobserver mode" for them: each gate gets its own pool of jobs, which is meant
+# (check's tests, the only heavy step of wave one, use the cores; the other gates are light). A gate's output comes in one piece, when it ends (--output-sync=target).
+# A failed gate does not stop the others: it leaves GATE_DIR/<gate>.failed, and the last step names every failed gate
+# and exits 1. Python 3.11 is not run here: CI runs it, and `uv` can supply it offline only after an earlier download.
+# `make test PYTHON=$(uv python find 3.11)` runs the suites under it.
+GATE_FIRST := check security docs-lint commit-lint self-audit
+GATE_THEN := coverage
+GATE_NAMES := $(GATE_FIRST) $(GATE_THEN)
+GATE_TARGETS := $(GATE_NAMES:%=gate-%)
+GATE_DIR := $(CURDIR)/dev/dist/gate
+.PHONY: $(GATE_TARGETS)
+$(GATE_TARGETS): gate-%:
+	@start=$$(date +%s); \
+	if $(MAKE) --no-print-directory TEST_SUITES_SUBMAKE= $*; then result=passed; else result=FAILED; touch $(GATE_DIR)/$*.failed; fi; \
+	echo "gate: $* $$result in $$(( $$(date +%s) - start )) s"
+gate:
+	mkdir -p $(GATE_DIR)
+	rm -f $(GATE_DIR)/*.failed
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(GATE_FIRST:%=gate-%)
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(GATE_THEN:%=gate-%)
+	@failed=""; for gate in $(GATE_NAMES); do test ! -e $(GATE_DIR)/$$gate.failed || failed="$$failed $$gate"; done; \
+	if test -n "$$failed"; then echo "gate: FAILED:$$failed" >&2; exit 1; fi; \
+	echo "gate: every gate passed ($(GATE_NAMES))"
 
 # Runs the engine's suite and the tools' suites under coverage.py and fails when the total drops below the floor in
 # .coveragerc (`fail_under`). Not part of `check`; needs uv. Each coverage-<suite> writes its own data file
