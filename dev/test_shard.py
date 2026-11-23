@@ -24,8 +24,8 @@ a group as one unit with the sum of its weights, at every shard count. A test fi
 
 The assignment is the same on every machine: the heaviest unit (a module or a group) first, each onto the shard with
 the least weight so far (ties by name and shard number). CI's jobs shard into ``TEST_SHARDS`` parts. On Linux,
-``make test`` shards into ``LOCAL_SHARDS`` parts that run at once;
-``make test TEST_JOBS=`` and ``make coverage`` never shard.
+``make test`` shards into ``LOCAL_SHARDS`` parts that run at once, and ``make coverage`` does the same for the
+engine's and the audit tools' suites. With ``TEST_JOBS=`` neither shards.
 """
 
 from __future__ import annotations
