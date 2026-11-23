@@ -148,6 +148,10 @@ If the work follows a roadmap step, add a trailer to the commit message: `Roadma
 
 ### Step 4: Run the gates
 
+While you work on a step, run only the tests of the code you change, as
+[Contributing](../../CONTRIBUTING.md#the-gates) shows. That is quick, but it never replaces the gates below: a change
+in one area can break a test in another suite.
+
 Run these commands from the root of the repository. All of them must pass before you push.
 
 ```bash
