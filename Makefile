@@ -120,7 +120,7 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part gate coverage coverage-enginecoverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint recipe-paths adr-lint consistency-map catalogue-check update-catalogue new-check masters-check eval-expected-check update-masters golden check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline update-skip-baseline validate-skills ruleset-renumber docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part gate coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint recipe-paths adr-lint consistency-map catalogue-check update-catalogue new-check masters-check eval-expected-check update-masters golden check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline update-skip-baseline validate-skills ruleset-renumber docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
