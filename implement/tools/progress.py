@@ -120,7 +120,7 @@ from _progress_transitions import (
 )
 
 #: The framework release these tools belong to: the state's `framework.release`. release-please rewrites the line.
-FRAMEWORK_RELEASE = "0.4.1"  # x-release-please-version
+FRAMEWORK_RELEASE = "0.4.2"  # x-release-please-version
 
 FRAMEWORK_ROOT = RECIPES.parent
 

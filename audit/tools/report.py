@@ -166,7 +166,7 @@ INFO = _common.ToolInfo(
 )
 
 #: The framework release these tools belong to: `provenance.framework.release`. release-please rewrites the line.
-FRAMEWORK_RELEASE = "0.4.1"  # x-release-please-version
+FRAMEWORK_RELEASE = "0.4.2"  # x-release-please-version
 DRAFT_KIND = "audit-draft"
 FINAL_KIND = "audit-report"
 STATUS_LINE_BUDGET = 40
