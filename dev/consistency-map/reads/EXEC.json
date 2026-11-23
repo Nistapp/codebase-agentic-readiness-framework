@@ -460,7 +460,7 @@
   {
     "binding": "line",
     "check": "EXEC-06",
-    "note": "Fenced bash, sh, shell, console and zsh blocks in the three root docs only, continuations joined, repeats and placeholders skipped. The first word must be a known tool, a shell keyword, a resolved verb, an npm script or bin of the root package.json, a root Makefile target or a real path.",
+    "note": "Fenced bash, sh, shell, console and zsh blocks in the three root docs only, continuations joined, repeats and placeholders skipped. The first word must be a known tool, a shell keyword, a resolved verb, an npm script or bin of the root package.json, a root Makefile target or a real path. A make target also resolves through a pattern rule or a static pattern rule's list; one that only a computed target list may name (one with no static pattern, or whose static pattern matches it) is not verified and does not fail.",
     "source": "engine",
     "threshold": "every documented command resolves",
     "what": {

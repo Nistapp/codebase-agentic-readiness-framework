@@ -637,7 +637,8 @@ Does the same command give the same result on a fresh machine, without a human i
 
 `DEGRADER` · scored · engine check · fixed by [`adapt-agents-md`](implement-master.md#adapt-agents-md)
 
-- **Passes when:** every documented command resolves, or no fenced shell command is documented at all.
+- **Passes when:** every documented command resolves or is a make command not verified, or no fenced shell command is
+  documented at all.
 - **Why it matters:** An agent runs the documented command literally; a command that does not resolve is the most
   expensive brownfield trap there is, discovered only after the agent has already acted on it ([Phased-Approach.md §
   Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-)).
