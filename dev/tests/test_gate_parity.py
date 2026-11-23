@@ -25,19 +25,15 @@ from test_ci_parity import CI, MAKEFILE, ci_jobs, ci_targets, make_rule, make_va
 #: The gate of ``make gate`` that covers each job CI Gate needs. Python 3.11 and 3.14 jobs map to the one gate that
 #: runs the same suites on the machine's own Python: ``make gate`` never installs another Python (the comment above
 #: GATE_FIRST in the Makefile says why). A job with no entry fails ``test_every_ci_gate_job_has_a_gate``.
-GATE_FOR_JOB = {
-    "static": "check",
-    "crosscheck": "check",
-    "test-coverage": "coverage",
-    "test-dev": "check",
-    "test-py314": "check",
-    "coverage": "coverage",
-    "security-secrets": "security",
-    "security-deps": "security",
-    "self-audit": "self-audit",
-    "docs": "docs-lint",
-    "commits": "commit-lint",
+JOBS_OF_GATE = {
+    "check": ("static", "crosscheck", "test-dev", "test-py314"),
+    "coverage": ("test-coverage", "coverage"),
+    "security": ("security-secrets", "security-deps"),
+    "self-audit": ("self-audit",),
+    "docs-lint": ("docs",),
+    "commit-lint": ("commits",),
 }
+GATE_FOR_JOB = {job: gate for gate, jobs in JOBS_OF_GATE.items() for job in jobs}
 
 
 def ci_gate_needs(text: str) -> list[str]:
