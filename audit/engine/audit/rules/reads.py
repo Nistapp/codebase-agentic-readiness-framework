@@ -4,8 +4,7 @@
 """What each engine check reads in a target: the places, the text and how close its parts must be.
 
 One declaration per implemented check, keyed by check id. Each check module declares its own in
-``reads()``, and this module gathers them in registry order; a family that is still one module keeps its
-entries in ``_DECLARED`` here. A place built with
+``reads()``, and this module gathers them in registry order. A place built with
 ``_held`` takes its paths from the engine constant the check itself uses (``module:NAME``), so a name
 added to or removed from that constant changes the declaration with it. The map's ``constants`` field
 names them when they hold every place of the entry.
@@ -38,7 +37,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from types import ModuleType
 
-from audit.rules.checks import _common, tst
+from audit.rules.checks import _common
 
 ROOT = "root"
 ANY_DEPTH = "any-depth"
@@ -158,134 +157,6 @@ _GO_FIXTURE = (
 )
 
 
-#: The reads that a family with no module per check still declares here, keyed by check id.
-_DECLARED: dict[str, Reads] = {
-    "TST-01": Reads(
-        where=(
-            *_runners(),
-            *_at(
-                GLOB,
-                "**/*test_*",
-                "**/*_test.*",
-                "**/*.test.*",
-                "**/*.spec.*",
-                "**/tests/**",
-                "**/test/**",
-                "**/__tests__/**",
-                via=SCAN_KIND,
-            ),
-            *_at(ANY_DEPTH, "*_test.go"),
-            *_at(GLOB, "tests/**/*.rs"),
-        ),
-        what=What("key"),
-        binding="file",
-        note=(
-            "The test verb is resolved from the runner manifests. A test file is a scanned file whose "
-            "lower-case path holds a test hint (test_, _test., .test., .spec., tests/, test/, __tests__/) and"
-            " has a test-source suffix, plus *_test.go and tests/*.rs; the globs approximate that substring "
-            "match."
-        ),
-    ),
-    "TST-02": Reads(
-        where=(*_runners(),),
-        what=What("key"),
-        binding="file",
-        note=(
-            "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and "
-            "--allow-probe test. Every runner manifest counts only at the root, where it is read. A "
-            "package.json verb runs with node_modules/.bin first on PATH."
-        ),
-    ),
-    "TST-03": Reads(
-        where=(
-            *_at(
-                GLOB,
-                "**/*test_*",
-                "**/*_test.*",
-                "**/*.test.*",
-                "**/*.spec.*",
-                "**/tests/**",
-                "**/test/**",
-                "**/__tests__/**",
-                via=SCAN_KIND,
-            ),
-            *_at(ANY_DEPTH, "*_test.go"),
-            *_at(GLOB, "tests/**/*.rs"),
-        ),
-        what=What("phrase"),
-        binding="file",
-        note=(
-            "Each readable test file of TST-01 is searched for skip, ignore and expected-failure markers of "
-            "its language family (by suffix), for example @pytest.mark.skip, it.skip, t.Skip(, #[ignore], "
-            "@Disabled. A census: any count passes."
-        ),
-    ),
-    "TST-04": Reads(
-        where=(
-            *_held(tst, "_FASTPATH_DOCS", ANY_DEPTH),
-            *_at(
-                GLOB,
-                "**/*test_*",
-                "**/*_test.*",
-                "**/*.test.*",
-                "**/*.spec.*",
-                "**/tests/**",
-                "**/test/**",
-                "**/__tests__/**",
-                via=SCAN_KIND,
-            ),
-            *_held(tst, "_FRAMEWORK_TEST_GLOBS", ANY_DEPTH, {"tests/*.rs": GLOB}),
-        ),
-        what=What("fenced-command"),
-        binding="line",
-        note=(
-            "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a "
-            "plain full-suite run does not count. With no fenced match, an inline code span outside any fence "
-            "is read with the same patterns. A file is kept only at the root, so a nested-only copy is "
-            "skipped. README.md stands for the root README: the root file whose name starts with readme, any "
-            "case, README.md first, as for HYG-01. The test files "
-            "give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs."
-        ),
-    ),
-    "TST-05": Reads(
-        where=(
-            *_at(
-                ANY_DEPTH,
-                ".coveragerc",
-                ".coveragerc.toml",
-                ".nycrc",
-                ".nycrc.json",
-                ".nycrc.yml",
-                ".nycrc.yaml",
-                "nyc.config.js",
-                "nyc.config.cjs",
-                ".c8rc",
-                ".c8rc.json",
-                "codecov.yml",
-                ".codecov.yml",
-                ".codecov.yaml",
-                "coveralls.yml",
-                ".coveralls.yml",
-            ),
-            *_at(
-                ROOT,
-                "setup.cfg",
-                "tox.ini",
-                "pytest.ini",
-            ),
-            *_at(ANY_DEPTH, "vitest.config.*", "jest.config.*", "vite.config.*", "karma.conf.*"),
-            *_runners(),
-        ),
-        what=What("key"),
-        binding="file",
-        note=(
-            "Coverage config names count on presence at any depth; the root files are read for "
-            "[tool.coverage, [coverage, --cov or jacoco; a runner config at any depth for a coverage key; "
-            "package scripts and resolved verbs for --coverage, --cov, c8, nyc, jacoco or go test -cover."
-        ),
-    ),
-}
-
 #: Rule R5 of ADR 0012: the places where text added to a file can only raise the check's verdict, by check. "Added"
 #: means whole lines or keys, put in at a block boundary (between paragraphs, list items or sections; a new heading
 #: only where a section ends), in a file that already exists, with nothing changed or removed, and the file still
@@ -317,7 +188,7 @@ _DECLARED: dict[str, Reads] = {
 def _gathered() -> dict[str, Reads]:
     """The reads of every implemented engine check, in registry order. The agent checks have no code and no entry.
 
-    A check's reads come from its own module's ``reads()``, or from ``_DECLARED`` while its family keeps one module.
+    A check's reads come from its own module's ``reads()``.
     """
     import importlib
 
@@ -325,9 +196,7 @@ def _gathered() -> dict[str, Reads]:
 
     table: dict[str, Reads] = {}
     for spec in REGISTRY:
-        if spec.id in _DECLARED:
-            table[spec.id] = _DECLARED[spec.id]
-        elif spec.impl is not None:
+        if spec.impl is not None:
             table[spec.id] = importlib.import_module(spec.impl.__module__).reads()
     return table
 

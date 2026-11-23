@@ -416,7 +416,7 @@ update-catalogue:
 
 # Writes the stubs of a new engine check (module, fixture, matrix row, rubric section, overlay entry, ruleset
 # changelog row) and prints what is left to write: `make new-check ID=SEC-04 TITLE="..."`. The gate's tests name
-# each stub until it is finished. It refuses a family that is still one module (IDX, AGT, TST).
+# each stub until it is finished. It refuses a family that is still one module (none is today).
 new-check:
 	$(PYTHON) dev/new_check.py --id "$(ID)" --title "$(TITLE)"
 
