@@ -178,8 +178,8 @@ test-dev:
 # (1 to TEST_SHARDS). dev/test_shard.py finds the modules at run time and balances them by
 # dev/test_shard_weights.json; every module is in exactly one shard, and a shard that selects no test fails.
 # `test` and `coverage` shard on their own count, LOCAL_SHARDS (below). TEST_SHARDED_SUITES are the suites that test-part shards: SHARDED_SUITES, plus the dev
-# checks, which coverage.py does not measure. The dev checks are sharded only in the Python 3.14 parts, where the whole
-# suite set the length of the run (76-97 s, against 60 s or less for every other job; measured 2026-11-10).
+# checks, which coverage.py does not measure. The dev checks run in shards on both Pythons: in the Python 3.14 parts,
+# and through test-dev-shard in CI's test-dev job on Python 3.11, where the whole suite set the length of the run.
 TEST_SHARDS := 2
 SHARDED_SUITES := engine audit-tools
 TEST_SHARDED_SUITES := engine audit-tools dev

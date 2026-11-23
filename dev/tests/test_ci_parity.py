@@ -141,8 +141,8 @@ class CheckRunsInCI(unittest.TestCase):
         self.assertIn("setup-go", jobs["security-deps"])
 
     def test_every_test_suite_has_a_ci_job(self) -> None:
-        # A suite counts when CI runs it plainly (test-dev), under coverage (coverage-engine runs test-engine's
-        # suite) or in shards (coverage-engine-shard, through coverage-part).
+        # A suite counts when CI runs it plainly in shards (test-dev-shard), under coverage (coverage-engine runs
+        # test-engine's suite) or under coverage in shards (coverage-engine-shard, through coverage-part).
         ci = self.expand(self.ci)
         missing = [
             suite
@@ -150,6 +150,20 @@ class CheckRunsInCI(unittest.TestCase):
             if not self.runs(suite, ci) and not self.runs(suite.replace("test-", "coverage-", 1), ci)
         ]
         self.assertEqual(missing, [], "test suites that CI never runs")
+        # The same holds for the Python 3.11 jobs alone (.python-version): the coverage parts and the dev checks'
+        # shards. test_every_suite_runs_on_python_3_14 checks the other Python.
+        jobs = ci_jobs(CI.read_text(encoding="utf-8"))
+        py311: set[str] = set()
+        for job in ("test-coverage", "test-dev"):
+            with self.subTest(job=job):
+                self.assertRegex(jobs[job], r"(?m)^          python-version-file: \.python-version$")
+            py311 |= self.job_targets(job)
+        missing = [
+            suite
+            for suite in self.suites
+            if not self.runs(suite, py311) and not self.runs(suite.replace("test-", "coverage-", 1), py311)
+        ]
+        self.assertEqual(missing, [], "test suites Python 3.11 never runs")
 
     def test_every_suite_runs_on_python_3_14(self) -> None:
         # The Python 3.14 job runs `make test-part` once per shard: every suite of `make test`, split over the parts.
@@ -219,7 +233,11 @@ class CheckRunsInCI(unittest.TestCase):
             with self.subTest(job=job):
                 self.assertEqual(job_shards(block), list(range(1, self.count + 1)), "list shards 1 to TEST_SHARDS")
                 self.assertRegex(block, r"(?m)^      SHARD: \$\{\{ matrix\.shard \}\}$")
-        self.assertEqual(sorted(sharded), ["test-coverage", "test-py314"], "both Pythons run the suites in shards")
+        self.assertEqual(
+            sorted(sharded), ["test-coverage", "test-dev", "test-py314"], "both Pythons run the suites in shards"
+        )
+        # The dev checks' Python 3.11 job runs its shard alone: test-dev-shard, once per shard of the matrix.
+        self.assertEqual(ci_targets(ci_jobs(CI.read_text(encoding="utf-8"))["test-dev"]), {"test-dev-shard"})
 
     def test_the_makefile_and_the_runner_shard_the_same_suites(self) -> None:
         # test-part shards every suite the runner knows; coverage-part shards a subset (coverage.py skips dev/).
