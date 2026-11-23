@@ -155,6 +155,13 @@ make check
 make security
 ```
 
+Or run both, and the rest of CI's gates (coverage, the self-audit, the Markdown lint and the commit-subject check),
+in one command. On Linux the gates run at once, so it takes about 4 minutes:
+
+```bash
+make gate
+```
+
 If you changed Markdown, also run:
 
 ```bash

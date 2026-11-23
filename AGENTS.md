@@ -37,6 +37,7 @@ make check          # THE gate: format:check, typecheck, test, the engine's --ve
                     # workflow-lint (actionlint, zizmor, check-jsonschema), spell (typos)
 make security       # secrets scan, then the dependency audit (osv-scanner; needs Go and the network)
 make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin/dev..HEAD); CI runs it on each PR
+make gate           # check, security, docs-lint, commit-lint, self-audit, then coverage: every gate CI needs
 make update-masters # regenerate docs/reference/audit-master.md and implement-master.md (check runs masters-check)
 make golden GOLDEN_ARGS="record --out DIR"   # then "compare DIR": prove a change altered no output (not in check)
 ```
@@ -63,6 +64,11 @@ This file is read by Claude Code, opencode, Codex, Gemini CLI, Cursor and any ot
 No vendor-specific instruction file exists beside it.
 
 - Run `make check` and `make security` before you propose a change. Do not run an ad-hoc substitute.
+  `make gate` runs both, plus coverage, the self-audit, the Markdown lint and the commit-subject check, in one command
+  (about 4 minutes on 16 cores). On Linux the first five run at once and `coverage` runs after them, because the
+  engine tests of `check` and of `coverage` build the same `audit/engine/dist/audit.pyz`. Each gate's output comes
+  in one piece, and the last line names every gate that failed. `make gate TEST_JOBS=` runs the gates one by one.
+  It does not run Python 3.11; CI does.
 - A misspelling fails `make spell` (in `make check`). Fix it, or run `make spell-fix` and review the diff. Add a word
   to `_typos.toml` only for a project term or a code token.
 - When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the

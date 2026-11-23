@@ -49,6 +49,12 @@ runs it, where CI runs it, and where its version is pinned. The rules for the ga
 `make check` runs `format:check`, `typecheck`, `test`, the engine's rule check, `crosscheck`, `recipe-lint`,
 `recipe-paths`, `adr-lint`, `masters-check`, `eval-expected-check`, `workflow-lint` and `spell`, in sequence. CI's `CI Gate`
 passes only when the `check`, `security`, `coverage`, `self-audit`, `docs` and `commits` jobs pass ([Branch protection](branch-protection.md#the-required-checks)).
+`make gate` runs every gate that CI Gate needs in one command: `check`, `security`, `docs-lint`, `commit-lint`,
+`self-audit` and `coverage`. The first five run at once and `coverage` runs after them, because the engine suite
+builds `audit/engine/dist/audit.pyz` in place and the tests of `check` and of `coverage` would race on it. Each gate
+is a `make` of its own, so `check` keeps its order. `dev/tests/test_gate_parity.py` reads CI Gate's `needs` list and
+fails when a job has no gate. `make gate` does not run Python 3.11: `uv` can supply it offline only after an earlier
+download, so CI keeps that run.
 `masters-check` first runs `catalogue-check`: `audit/catalogue.json` is generated from the engine registry and
 `audit/catalogue-overlay.json` by `dev/build_catalogue.py`, and `make update-catalogue` rewrites it.
 `make new-check ID=<PACK-NN> TITLE="..."` (`dev/new_check.py`) writes the stubs of a new engine check and regenerates
