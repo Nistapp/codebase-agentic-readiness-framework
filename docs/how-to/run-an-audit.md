@@ -4,7 +4,8 @@
 > **Audience:** Operators / Engineers
 > **Status:** Live. The recipe is [`audit/SKILL.md`](../../audit/SKILL.md) (S3.5).
 > **See also:** this page audits through the agent. To run the engine directly, without the agent:
-> [Run an audit with the engine](../../audit/engine/docs/how-to/run-an-audit.md).
+> [Run an audit with the engine](../../audit/engine/docs/how-to/run-an-audit.md). For a repository of several
+> services: [Audit and implement a monorepo](audit-and-implement-a-monorepo.md).
 
 ---
 

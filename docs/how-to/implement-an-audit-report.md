@@ -4,6 +4,8 @@
 > **Audience:** Operators / Engineers
 > **Status:** Live. The [implementation recipe](../../implement/SKILL.md) runs all six stages; start it with
 > [`implement/prompts/kickoff.md`](../../implement/prompts/kickoff.md).
+> **See also:** [Audit and implement a monorepo](audit-and-implement-a-monorepo.md), for a repository of several
+> services.
 
 ---
 

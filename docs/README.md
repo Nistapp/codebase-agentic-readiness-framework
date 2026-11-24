@@ -24,6 +24,7 @@ output to `<output-path>`". To fix the findings, say "Start implementing the fix
 | [Install the skills](how-to/install-the-skills.md) | Put both skills from a release into a project, with no clone |
 | [Run an audit](how-to/run-an-audit.md) | Produce a confirmed report through the agent and the audit recipe |
 | [Implement an audit report](how-to/implement-an-audit-report.md) | Apply the confirmed findings, one theme per branch |
+| [Audit and implement a monorepo](how-to/audit-and-implement-a-monorepo.md) | Audit a repository of several services and hand its fixes to the implement recipe |
 | [Resume an interrupted run](how-to/resume-an-interrupted-run.md) | Continue an audit or an implementation after a stop |
 | [Add a stack profile](how-to/add-a-stack-profile.md) | Add support for a new toolchain |
 | [Run the evals](how-to/run-the-evals.md) | Evaluate the recipes headlessly |
