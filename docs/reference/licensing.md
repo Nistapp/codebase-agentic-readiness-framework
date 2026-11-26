@@ -1,7 +1,7 @@
 # Licensing
 
 > **Audience:** Everyone
-> **Source of truth:** KC's decisions of 2026-10-09; the `LICENSE` files in this repository.
+> **Source of truth:** the licence files in this repository: `LICENSE`, `LICENSE-CODE` and `LICENSE-TEMPLATES`.
 > **Status:** Live.
 
 ---
