@@ -25,8 +25,10 @@ Four questions need an answer:
 
 **Rules.** [`docs/COMMUNICATION_RULES.md`](../../COMMUNICATION_RULES.md) holds all the rules for writing for people:
 
-* the reader persona: a new engineer who knows Git, Python and Markdown, but not this repository or its terms;
-* nine plain-language rules taken from the STE100 writing rules, without its approved word list;
+* the reader ladder: four readers, from a CTO who decides in minutes (rung 0) to a contributor (rung 3);
+* the default reader of rungs 2 and 3: a new engineer who knows Git, Python and Markdown, not this repository;
+* ten plain-language rules taken from the STE100 writing rules, without its approved word list;
+* eight extra rules for rung 0 and rung 1 pages, such as outcome first and no internal codes;
 * the diagram rules;
 * the layouts for status reports, done reports and decision requests.
 
@@ -60,6 +62,7 @@ this repository's `docs/`.
 
 | Alternative | Why it is rejected |
 |---|---|
+| One reader for every page: the new engineer | A CTO or a lawyer who gets a link reads for minutes and stops. In a test of the old README, four simulated CTOs could not find the outcome, the data flow or the cost. Engineer-first pages lose that reader. |
 | The full STE100 standard, with its approved word list | Made for maintenance manuals. The word list blocks the technical terms this repository needs. |
 | Rules only in `AGENTS.md` | Every line costs context in every session, and `AGENTS.md` is already long. |
 | Rules only in `COMMUNICATION_RULES.md` | Agents often skip a linked file. The short summary in `AGENTS.md` keeps the core in view. |

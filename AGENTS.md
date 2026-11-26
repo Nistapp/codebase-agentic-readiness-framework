@@ -143,7 +143,8 @@ strictest.
 Full rules: [`docs/COMMUNICATION_RULES.md`](docs/COMMUNICATION_RULES.md). They apply to chat replies, plans,
 reports, commit messages, pull request descriptions and docs.
 
-- Write for a new engineer who knows Git, Python and Markdown, but not this repository or its terms.
+- Write for a new engineer who knows Git, Python and Markdown, but not this repository or its terms. A page for a
+  decision maker follows the reader ladder and its extra rules (sections 1.1 and 2.1 of the rules).
 - Put the bottom line first: the answer, the result or the decision you need.
 - Use short sentences (at most 25 words; 20 in a step), active voice and one term per meaning.
 - Never leave a code alone. Write "T7 AGENTS.md and governance", not `T7`; "`IDX-01` codebase-memory-mcp
