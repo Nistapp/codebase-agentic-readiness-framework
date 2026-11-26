@@ -80,8 +80,8 @@ report and pull request names it, since local results may then differ from CI.
 Two themes bring the framework's writing rules to your repository. The `AGENTS.md` theme (T7) adds a "How to write
 for people" section; the agent drafts the reader persona and you confirm it. The docs theme (T6) adds "Plain
 language" and "Diagrams" sections to your style guide. It records the prose debt of your existing pages and never
-rewrites them, unless you name pages for a rewrite. It can also copy a prose check with a ratchet, but only under a
-licence you name; by default it adds no tool.
+rewrites them, unless you name pages for a rewrite. It can also copy a prose check with a ratchet. The copy takes
+your repository's own licence; by default the theme adds no tool.
 
 ### Step 4: Review the theme branch and merge it yourself
 
