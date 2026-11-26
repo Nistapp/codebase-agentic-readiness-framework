@@ -337,7 +337,7 @@
       "file"
     ],
     "id": "establish-docs-contract/row-16",
-    "note": "Item 5: the template copy under the owner's licence, named and placed as the repository names its scripts.",
+    "note": "Item 5: the template copy under the repository's own licence, named and placed as the repository names its scripts.",
     "origin": {
       "path": "implement/playbooks/establish-docs-contract.md",
       "row": 16,

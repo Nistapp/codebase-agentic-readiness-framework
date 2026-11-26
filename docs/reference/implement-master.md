@@ -308,9 +308,9 @@ not moved.
 - Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
   change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one
   commit per page.
-- Do not copy the prose check template unless the owner picked `MIT`, `Apache-2.0` or `BSD-3-Clause` for the copy.
-  Never copy it under another licence, the framework's own included, and never remove or replace its copyright
-  line.
+- Do not copy the prose check template before the repository's licence is recorded (`docs.prose_check_licence`):
+  read from its licence file, or given by the owner. Never guess it, never offer a list of licences, and never
+  leave the framework's licence line on the copy. Never remove or replace the copyright line.
 - Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
 - Do not rewrite, reorder or renumber the text of an existing style guide. Append the form rules as one section, and
   only with `docs.style_guide_update=yes`. With `no`, do not touch the file.

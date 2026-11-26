@@ -54,10 +54,15 @@ Rules for every playbook:
 - A playbook never restates a check's rubric or a requirement; it links to the check file in
   [`audit/checks/`](../../audit/checks/README.md) and to `spec/`.
 - Templates come from `greenfield/templates/` by reference, never copied verbatim into the playbook.
+- Text and code that a playbook generates or copies into a target take the target's own licence, even when copied
+  word for word. The project grants that relicensing: see
+  [licensing](../../docs/reference/licensing.md#what-an-implement-run-puts-into-your-repository).
 - Text a playbook copies or adapts into a target comes only from `greenfield/templates/` (MIT-0), never from
-  this repository's `docs/` (GFDL 1.3). See [licensing](../../docs/reference/licensing.md).
+  this repository's `docs/` (GFDL 1.3). The copy needs no notice.
 - Code a playbook copies into a target lives in [`templates/`](templates/), with its tests in
-  `implement/tools/tests/`. A copy carries `MIT`, `Apache-2.0` or `BSD-3-Clause`, as the owner picks, never this repository's.
+  `implement/tools/tests/`. A copy carries the target's licence on its SPDX line and keeps the copyright line. The
+  playbook reads the licence from the target's root licence file, and asks the owner when the file is absent or
+  unclear. It never offers a list of licences, and never leaves this repository's licence line on the copy.
 - A playbook does not restate the shared procedure of `SKILL.md` Stages 2 to 4; it links to the stage step.
 - A new playbook name is added to the `playbooks` list of each check it resolves in `catalogue.json`, in the same change
   that writes the file; the framework's recipe linter (`recipe_lint.py`) rejects a playbook name the catalogue does not

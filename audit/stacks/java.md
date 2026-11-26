@@ -93,9 +93,9 @@ Coverage: the core `jacoco` plugin gives `jacocoTestReport` and `jacocoTestCover
 `jacoco-maven-plugin` runs `check` with a `<minimum>`, at any depth. The implement playbook
 `add-baselines-and-ratchet` covers both.
 
-Prose (`DOC-05`): the `establish-docs-contract` prose check is a stdlib Python script, copied only under a licence
-the owner names. It needs Python 3.11 or newer on the developer machine and the CI runner; the Gradle build does not
-change. Run it from the docs CI job, or wrap it in a Gradle `Exec` task (`docsProse`) if the team wants one verb.
+Prose (`DOC-05`): the `establish-docs-contract` prose check is a stdlib Python script, copied under the
+repository's own licence. It needs Python 3.11 or newer on the developer machine and the CI runner; the Gradle build
+does not change. Run it from the docs CI job, or wrap it in a Gradle `Exec` task (`docsProse`) if the team wants one verb.
 
 ## Boundaries
 

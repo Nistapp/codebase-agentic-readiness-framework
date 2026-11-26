@@ -86,4 +86,6 @@ to `main`. Step by step: [Contribute a change](docs/how-to/contribute-a-change.m
 ## Licence
 
 Documentation, schemas and published outputs: GFDL-1.3 ([`LICENSE`](LICENSE)). Code: AGPL-3.0-or-later
-([`LICENSE-CODE`](LICENSE-CODE)). Details: [licensing](docs/reference/licensing.md).
+([`LICENSE-CODE`](LICENSE-CODE)). Templates: MIT-0 ([`LICENSE-TEMPLATES`](LICENSE-TEMPLATES)). Text and code
+that the implement step generates or copies into your repository take your repository's own licence. Reports on
+your own repositories are yours. Details: [licensing](docs/reference/licensing.md).
