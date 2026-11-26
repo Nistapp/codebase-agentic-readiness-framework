@@ -129,7 +129,7 @@ The intake answers, as the run used them. [`report.py init`](#intake-file) copie
 | `confirmation_policy` | `interactive`: the person decides on each finding. `defer-all`: every disposition stays pending. `accept-all`: every finding is confirmed; eval mode only. |
 | `provider_exposure_acknowledged` | Always `true`. The operator confirmed in the intake that the model provider receives whatever the agent reads from the target, and the report keeps the record. |
 | `index` | `kind` (`mcp`, `cli` or `none`), and the tool's `name` and `notes`. |
-| `probes` | `allowed`: the verbs the engine's probe runner may execute on the target, each one of the seven in [`spec/command-surface.md`](../../spec/command-surface.md). `timeout_s`: the per-command limit. An empty `allowed` means nothing ran. |
+| `probes` | `allowed`: the verbs the operator allowed the engine's probe runner to execute on the target. The intake accepts only the six read-only verbs of [`spec/command-surface.md`](../../spec/command-surface.md): `format:check`, `lint`, `typecheck`, `test`, `check` and `security`. The engine never runs `format` or another verb that writes. `timeout_s`: the per-command limit. An empty `allowed` means nothing ran. |
 | `excluded`, `known_components` | Paths the audit left out, and component roots the operator named. |
 | `stack_profile` | The stack profile used: `id`, whether it was `shipped` or `derived`, and whether the user confirmed it. |
 
@@ -212,7 +212,7 @@ The report also shows the unattested list beside them. The spec defines no level
 | `harness`, `model` | yes | Self-reported, as in `provenance.agent`. |
 | `provider_exposure_acknowledged` | yes, `true` | The operator confirms that the model provider receives whatever the agent reads from the target. The schema accepts nothing else, so there is no way to start without it. |
 | `index` | yes | `kind` (`mcp`, `cli`, `none`), `name`, `allow_install` (off when absent; an installed index lives outside the target) and `notes`. |
-| `probes` | no | `allowed` verbs and `timeout_s`. Nothing runs when absent. A target's commands run its code. |
+| `probes` | no | `allowed`: the read-only verbs the engine's probe runner may execute, each one of `format:check`, `lint`, `typecheck`, `test`, `check` and `security`. The schema refuses the write verb `format`, because the audit never writes to the target. `timeout_s`: the per-command limit. Nothing runs when absent. A target's commands run its code. |
 | `excluded`, `known_components` | no | Paths relative to the target. |
 | `confirmation_policy` | yes | `interactive`, `defer-all` or `accept-all`. |
 | `repo_label` | no | A short name for the repository, used in output file names. Derived from the target directory's name when absent. |

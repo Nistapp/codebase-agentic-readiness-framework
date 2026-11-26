@@ -102,9 +102,10 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      stays on their machine, but this skill still sends whatever it reads from the target to the model
      provider regardless of whether an index exists, and that an install writes outside the target and
      is recorded in `run_context.index`, never assumed;
-   - which of the [seven verbs](../spec/command-surface.md#the-verbs) (`format`, `format:check`,
-     `lint`, `typecheck`, `test`, `check`, `security`), if any, the engine's Tier-C runner may execute
-     read-only against the target (`probes.allowed`), and the per-command timeout. Before asking, glance
+   - which of the six read-only [verbs](../spec/command-surface.md#the-verbs) (`format:check`, `lint`,
+     `typecheck`, `test`, `check`, `security`), if any, the engine's Tier-C runner may execute against
+     the target (`probes.allowed`), and the per-command timeout. Never offer `format` or another verb
+     that writes: the engine refuses it and the intake schema does not accept it. Before asking, glance
      at the target's manifest and build files (`package.json` scripts, a `Makefile`'s targets,
      `pyproject.toml`, `pom.xml`/`build.gradle`) — a direct read, never a command run — and tell the
      person which verbs already look like they resolve to something, so they decide with that in view

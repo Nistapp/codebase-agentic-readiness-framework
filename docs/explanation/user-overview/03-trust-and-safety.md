@@ -29,12 +29,13 @@ an output directory the operator names, outside the target.
 
 The audit never runs a target's own command directly. The only way it executes anything inside the target
 is the deterministic engine's opt-in Tier-C runner (`engine.py --run-gates --allow-probe <verb>`), and only
-for one of the seven command-surface verbs (`format:check`, `lint`, `typecheck`, `test`, `check`,
-`security` — never the write form `format`) the operator explicitly allowed at intake, with a timeout the
-operator set. The default is that no verb is allowed, so by default nothing in the target runs at all. A
-target's own command is arbitrary code it owns, not a sandboxed operation the recipe controls: the recipe
-says so before asking for consent, and suggests a disposable worktree or container when any verb is
-allowed. Sandboxing beyond that is the operator's own responsibility.
+for one of the six read-only command-surface verbs (`format:check`, `lint`, `typecheck`, `test`, `check`,
+`security`) the operator explicitly allowed at intake, with a timeout the operator set. It never runs the
+write verb `format`, or any other verb that writes: the engine refuses it and the intake does not accept it.
+The default is that no verb is allowed, so by default nothing in the target runs at all. A target's own
+command is arbitrary code it owns, not a sandboxed operation the recipe controls: the recipe says so before
+asking for consent, and suggests a disposable worktree or container when any verb is allowed. Sandboxing
+beyond that is the operator's own responsibility.
 
 The audit makes one network read, and only with consent: the platform's live branch rules, for `HYG-11` and
 `CI-04`. The recipe asks once. On a yes, and with an authenticated `gh` or `glab`, it runs read-only API calls

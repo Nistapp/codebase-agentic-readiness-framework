@@ -498,6 +498,17 @@ class IntakeRuleTests(BuilderCase):
         self.assertTrue(envelope["data"]["errors"][0].startswith("schema: /provider_exposure_acknowledged"))
         self.assertFalse(self.out.exists())
 
+    def test_a_probe_verb_that_writes_is_refused(self) -> None:
+        code, envelope, _ = self.init(probes={"allowed": ["format"], "timeout_s": 30})
+        self.assertEqual(code, 2, envelope)
+        self.assertTrue(envelope["data"]["errors"][0].startswith("schema: /probes/allowed/0"), envelope)
+        self.assertFalse(self.out.exists())
+
+    def test_every_read_only_probe_verb_is_accepted(self) -> None:
+        verbs = ["format:check", "lint", "typecheck", "test", "check", "security"]
+        code, _, stderr = self.init(probes={"allowed": verbs, "timeout_s": 30})
+        self.assertEqual(code, 0, stderr)
+
     def test_the_schema_errors_are_all_listed(self) -> None:
         path = self.root / "bad.json"
         path.write_text(json.dumps({"intake_version": "0.1"}), encoding="utf-8")
