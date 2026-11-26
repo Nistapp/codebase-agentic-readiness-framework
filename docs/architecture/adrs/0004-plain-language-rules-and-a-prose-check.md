@@ -32,7 +32,7 @@ Four questions need an answer:
 * the diagram rules;
 * the layouts for status reports, done reports and decision requests.
 
-[`AGENTS.md`](../../../AGENTS.md) carries a six-line summary, because every harness loads it. The style guide
+[`AGENTS.md`](../../../AGENTS.md) carries a short summary, because every harness loads it. The style guide
 ([`docs/STYLE_GUIDE.md`](../../STYLE_GUIDE.md)) adds only the rules for doc pages and links to the rest.
 
 **Check.** [`dev/prose_check.py`](../../../dev/prose_check.py) is a standard-library script with three rules. Each
@@ -62,7 +62,7 @@ this repository's `docs/`.
 
 | Alternative | Why it is rejected |
 |---|---|
-| One reader for every page: the new engineer | A CTO or a lawyer who gets a link reads for minutes and stops. In a test of the old README, four simulated CTOs could not find the outcome, the data flow or the cost. Engineer-first pages lose that reader. |
+| One reader for every page: the new engineer | A CTO or a lawyer who gets a link reads for minutes and stops. In a test of an engineer-first front page, four simulated CTOs could not find the outcome, the data flow or the cost. Engineer-first pages lose that reader. |
 | The full STE100 standard, with its approved word list | Made for maintenance manuals. The word list blocks the technical terms this repository needs. |
 | Rules only in `AGENTS.md` | Every line costs context in every session, and `AGENTS.md` is already long. |
 | Rules only in `COMMUNICATION_RULES.md` | Agents often skip a linked file. The short summary in `AGENTS.md` keeps the core in view. |
