@@ -8,7 +8,9 @@
 ---
 
 The files in `templates/` are MIT-0 ([`LICENSE-TEMPLATES`](../LICENSE-TEMPLATES)): copy and change them freely,
-with no notice. Your project then owns its copy and picks its own licence.
+with no notice. Your project then owns its copy and picks its own licence. A copy that an implement playbook
+places in an existing repository takes that repository's licence
+([licensing](../docs/reference/licensing.md#what-an-implement-run-puts-into-your-repository)).
 
 ---
 

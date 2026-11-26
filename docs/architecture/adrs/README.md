@@ -46,6 +46,7 @@ Number 0001 is retired in this group.
 | [0005](../../../implement/docs/architecture/adrs/0005-a-lost-pass-stops-the-theme.md) | A Lost Pass Stops the Theme Until the Owner Decides | An engine check that passed before the theme and not after it stops the theme; the owner fixes, accepts or stops. |
 | [0006](../../../implement/docs/architecture/adrs/0006-a-weakened-gate-stops-the-theme.md) | A Weakened Gate or an Unapproved Dependency Stops the Theme Until the Owner Decides | `check_gates.py` reads the theme's diff at close; a weakened gate or a dependency no preference approves stops the theme. |
 | [0007](../../../implement/docs/architecture/adrs/0007-recorded-ref-tips-guard-the-target-history.md) | Recorded Ref Tips Guard the Target's History | `progress.py init` records the target's ref tips beside the state; `verify-refs` exits 2 at theme close for a ref that is gone or rewritten. |
+| [0008](../../../implement/docs/architecture/adrs/0008-copies-in-a-target-take-the-targets-licence.md) | Text and Code Placed in a Target Take the Target's Own Licence | A copy the implement step places in a target takes the target's licence; the playbook reads it from the licence file or asks, and never offers a list. |
 
 ## Audit engine: `audit/engine/docs/architecture/adrs/`
 
