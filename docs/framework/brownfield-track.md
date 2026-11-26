@@ -11,10 +11,11 @@ The ultimate goal: follow **SDD/BDD + TDD with confidence** to deploy agent-assi
 
 ---
 
-## Business Case
+## What We Expect, and Why
 
 > [!IMPORTANT]
-> The following outcomes are directional expectations based on early experience with `agentic-tdd` in well-structured projects. Formal benchmarks are pending.
+> These outcomes are expectations from early experience with `agentic-tdd` in well-structured projects. They are
+> not measurements, and no benchmark of the framework exists yet.
 
 | Outcome | Mechanism |
 |---------|-----------|
@@ -25,7 +26,7 @@ The ultimate goal: follow **SDD/BDD + TDD with confidence** to deploy agent-assi
 | **Controlled blast radius** | Constraint Engineering enforces explicit boundaries on what agents can and cannot touch, reducing spaghetti edits across unrelated components. |
 | **Production confidence** | The phased approach builds toward SDD/BDD + TDD workflows that meet the bar for production deployment. |
 
-While `agentic-tdd` has been fairly performant in well-structured projects, it needs help in legacy/brownfield codebases that have drifted from best practices. We saw an opportunity to **increase accuracy and reduce spaghettification** by preparing the codebase for agentic participation.
+While `agentic-tdd` has been fairly performant in well-structured projects, it needs help in legacy/brownfield codebases that have drifted from best practices. We saw an opportunity to **make agents' work in such codebases cheaper and easier to check**, by preparing the codebase first.
 
 ---
 
