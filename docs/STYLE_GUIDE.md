@@ -31,13 +31,14 @@ This page tells you how to write a documentation page in this repository. It app
 |---|---|---|---|---|
 | Front page (the first screen of `README.md`) | A decision maker | 0 | The problem, what the reader gets, one fact that backs it | Plain, calm, no jargon |
 | Tutorial | A newcomer | 1 | One guided success from start to end, on a sample repository | Encouraging, step by step |
-| How-to guide | An engineer with a task | 1 | The steps for one task, and how to check the result | Direct, imperative |
+| How-to guide | An engineer with a task | 1; 3 for a contributor task | The steps for one task, and how to check the result | Direct, imperative |
 | User overview (explanation) | A lead or an adopter | 1 | Value, method, guarantees and limits | Short and clear |
 | Reference | Everyone | 2 | Exact facts: tool options, schemas, mappings, harness details | Dry, complete, easy to scan |
 | Contributor deep dive (explanation) | A maintainer | 2 or 3 | How it works: contracts, rules, failure modes | Precise |
 | Agent directive | An AI coding agent | 3 | Rules and required steps | RFC 2119 words (MUST, MUST NOT) |
 
-The rungs are the reader ladder in [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md) section 1.1.
+The rungs are the reader ladder in [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md) section 1.1. The rung is a
+default: the reader of the page sets it.
 
 Rules:
 

@@ -21,11 +21,13 @@ Pick the reader of a page before you write it. Each page serves one rung of this
 | Rung | Reader | Their question | Time they give | Example pages |
 |---|---|---|---|---|
 | 0. Decide | A CTO, CIO or head of engineering | Is this worth a look? Is it safe? What does it cost? | 2 to 5 minutes | `README.md` (first screen) |
-| 1. Evaluate | The staff engineer, security reviewer or lawyer they delegate to | How does it work? What does it change? Can we pilot it? | 15 to 60 minutes | How-to guides, trust and safety, licensing |
-| 2. Go deep | An evaluator who checks the method | Is the score meaningful? How was it tested? | Hours | Explanation and reference pages, the framework |
-| 3. Contribute | A person or an agent who changes this repository | How do I change it safely? | As long as it takes | `CONTRIBUTING.md`, `AGENTS.md`, ADRs |
+| 1. Evaluate | The staff engineer, security reviewer or lawyer they delegate to | How does it work? What does it change? Can we pilot it? | 15 to 60 minutes | The tutorial, user how-to guides, trust and safety |
+| 2. Go deep | An evaluator who checks the method | Is the score meaningful? How was it tested? | Hours | Reference pages (licensing included), contributor deep dives, the framework |
+| 3. Contribute | A person or an agent who changes this repository | How do I change it safely? | As long as it takes | `CONTRIBUTING.md`, `AGENTS.md`, contributor how-to guides, ADRs |
 
+- The reader sets the rung. The kind of page ([`STYLE_GUIDE.md`](STYLE_GUIDE.md) section 2) gives only the default.
 - The default reader above is the reader of rungs 2 and 3.
+- An existing page follows the rules for its rung when it is next rewritten.
 - A rung 0 or rung 1 reader may not read Python or know this repository's commands. Lead with the outcome,
   not the mechanism.
 - A page links one rung down for the reader who wants more. It does not make a reader climb two rungs at once.
@@ -88,7 +90,7 @@ Rung 0 and rung 1 readers (section 1.1) decide fast and stop early. These rules 
    A rung 1 page: at most 1,500 words. Move the rest one rung down.
 5. **The on-ramp words.** Use these freely: audit, report, finding, fix, check, score. Define other terms on
    first use. Examples: skill, recipe, playbook, theme, harness, engine, stage and phase.
-   If it needs more than one sentence, move it one rung down.
+   If a definition needs more than one sentence, move it one rung down.
 6. **Claims follow the evidence.** Say what is measured, and link the measurement. Say once, calmly, what is not
    yet known. Do not hedge every sentence.
 7. **A short story is allowed.** One short paragraph may explain the "why" as a narrative. A list of facts can
