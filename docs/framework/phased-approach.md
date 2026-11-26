@@ -95,7 +95,9 @@ task security      # npm run security      — dependency-CVE gate
 **Result:** An agent can inspect a bounded area, modify code, and run a known verification command.
 
 > [!IMPORTANT]
-> Phase-1 itself is a significant improvement for any repository. Agent performance should increase dramatically from baseline immediately after Phase-1. Anecdotally, we have observed significant improvement in accuracy and token efficiency after just this one phase.
+> In our own use, agents worked with fewer wasted steps after Phase 1. That is experience, not a measurement.
+> Published studies of single practices report small gains in task success, and cost savings from about 7% to
+> about half. Nobody has measured Phase 1 as a whole.
 
 ---
 
