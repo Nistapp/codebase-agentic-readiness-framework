@@ -43,8 +43,9 @@ one repository at a time, writing nothing inside it:
 
 The implementation recipe ([`implement/SKILL.md`](../../../implement/SKILL.md)) takes a final,
 owner-confirmed audit report and closes its confirmed findings in the audited repository, one theme at a
-time. Everything a later session needs to resume lives in a state file inside the target, described in the
-[state contract](../../../implement/state.md).
+time. Everything a later session needs to resume lives in a state file beside the audit report, outside the
+target ([ADR 0004](../../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)).
+The [state contract](../../../implement/state.md) describes it.
 
 1. **Intake (live).** `validate_report.py` refuses a report that is not `final`. `check_drift.py` shows how
    far the repository moved since the audit, and the agent re-verifies each finding whose evidence changed.
