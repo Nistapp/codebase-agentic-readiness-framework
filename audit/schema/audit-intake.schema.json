@@ -65,15 +65,15 @@
       }
     },
     "probes": {
-      "description": "Which of the target's own commands the engine's probe runner may execute. None when absent. A target's commands run its code.",
+      "description": "Which of the target's own read-only commands the engine's probe runner may execute. None when absent. The write verb format is never accepted: the audit never writes to the target. A target's commands run its code.",
       "type": "object",
       "required": ["allowed", "timeout_s"],
       "additionalProperties": false,
       "properties": {
         "allowed": {
           "type": "array",
-          "maxItems": 7,
-          "items": { "enum": ["format", "format:check", "lint", "typecheck", "test", "check", "security"] }
+          "maxItems": 6,
+          "items": { "enum": ["format:check", "lint", "typecheck", "test", "check", "security"] }
         },
         "timeout_s": { "type": "integer", "minimum": 1, "maximum": 3600 }
       }
