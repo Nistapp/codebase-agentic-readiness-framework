@@ -11,6 +11,7 @@ redefined; see [`docs/framework/glossary.md`](framework/glossary.md).
 | Term | Definition |
 |---|---|
 | Recipe | A Markdown instruction document (`SKILL.md`) that a coding agent executes. |
+| Skill | The same thing as a recipe, by the name users see: a folder with a `SKILL.md` that a coding agent loads. Pages for decision makers and evaluators (rungs 0 and 1 in [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md)) say "skill": the audit skill, the implement skill. Deeper pages say "recipe". |
 | Audit recipe | The read-only recipe that produces the audit report. |
 | Implementation recipe | `implement/SKILL.md`: the recipe that closes confirmed findings one theme at a time, a branch per theme. v0.2.0: Stages 0 to 5. |
 | Engine | The deterministic, standard-library Python audit in `audit/engine/`. |
