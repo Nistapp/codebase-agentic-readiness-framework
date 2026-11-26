@@ -3,8 +3,10 @@
 The implement recipe closes the confirmed findings of a final audit report in the audited repository. It works one
 theme at a time, on one branch per theme. It respects each finding the owner skipped, and it records existing debt
 instead of mass-fixing it. It never merges. It pushes and opens a pull request only when the owner opted in
-([ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md)). A state file in the target lets a run stop after any
-theme and resume later. The report comes from the [audit recipe](../audit/README.md).
+([ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md)). A state file beside the audit report, outside
+the target, lets a run stop after any theme and resume later
+([ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)). The report comes from
+the [audit recipe](../audit/README.md).
 
 ## Start implementing
 

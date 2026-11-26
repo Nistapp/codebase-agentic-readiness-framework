@@ -13,7 +13,7 @@ touch**. "It is a good practice" is not sufficient; "a well-run team does it" is
 mode must be concrete and attributable to the agent's ability to work.
 
 This is why the report is a *short* list compared to a general code-quality tool, and why the informational set
-is kept numberless: a scored item is a claim that its absence costs agent effectiveness.
+is kept numberless. A scored item is our claim, not yet measured, that its absence costs agent effectiveness.
 
 The diagram shows the rule as the two questions a candidate check must pass.
 

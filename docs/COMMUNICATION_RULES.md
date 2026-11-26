@@ -7,11 +7,30 @@ apply only to documentation pages.
 
 ## 1. Who you write for
 
-Write for **a new engineer who knows Git, Python and Markdown, but not this repository or its terms**.
+By default, write for **a new engineer who knows Git, Python and Markdown, but not this repository or its terms**.
 
 - Do not assume they know a term from this repository. Define it the first time, or link to the glossary.
 - Do not talk down to them. They are a skilled engineer. They only lack the context.
 - When you are not sure if a sentence is clear, ask: "Can this engineer act on it without asking me?"
+
+### 1.1 The reader ladder
+
+Not every reader goes deep. A CTO who gets a link to this repository reads for a few minutes and then decides.
+Pick the reader of a page before you write it. Each page serves one rung of this ladder.
+
+| Rung | Reader | Their question | Time they give | Example pages |
+|---|---|---|---|---|
+| 0. Decide | A CTO, CIO or head of engineering | Is this worth a look? Is it safe? What does it cost? | 2 to 5 minutes | `README.md` (first screen) |
+| 1. Evaluate | The staff engineer, security reviewer or lawyer they delegate to | How does it work? What does it change? Can we pilot it? | 15 to 60 minutes | The tutorial, user how-to guides, trust and safety |
+| 2. Go deep | An evaluator who checks the method | Is the score meaningful? How was it tested? | Hours | Reference pages (licensing included), contributor deep dives, the framework |
+| 3. Contribute | A person or an agent who changes this repository | How do I change it safely? | As long as it takes | `CONTRIBUTING.md`, `AGENTS.md`, contributor how-to guides, ADRs |
+
+- The reader sets the rung. The kind of page ([`STYLE_GUIDE.md`](STYLE_GUIDE.md) section 2) gives only the default.
+- The default reader above is the reader of rungs 2 and 3.
+- An existing page follows the rules for its rung when it is next rewritten.
+- A rung 0 or rung 1 reader may not read Python or know this repository's commands. Lead with the outcome,
+  not the mechanism.
+- A page links one rung down for the reader who wants more. It does not make a reader climb two rungs at once.
 
 ## 2. Plain-language rules
 
@@ -56,6 +75,44 @@ The "before" text breaks rules 2, 3, 4 and 6 on purpose, so the check skips it.
 > After: Run `make check` before you propose a change. CI runs the same command.
 
 <!-- prose-check on -->
+
+### 2.1 Extra rules for rung 0 and rung 1 pages
+
+Rung 0 and rung 1 readers (section 1.1) decide fast and stop early. These rules apply on top of the ten above.
+
+1. **Outcome first.** The first screen says the problem, what the reader gets, and one fact that backs it.
+   The mechanism comes later, or one rung down.
+2. **No internal codes.** Do not write a check ID, a step ID, a decision ID or a stage number. Rule 10 names a
+   code; on these pages, leave it out and link the page that holds it.
+3. **A clean first screen.** No file path, no command and no code span before the reader knows why they should
+   care. A "Try it" block may hold commands after that.
+4. **Word budgets.** The first screen of `README.md`: at most 150 words. A rung 0 page: at most 600 words.
+   A rung 1 page: at most 1,500 words. Move the rest one rung down.
+5. **The on-ramp words.** Use these freely: audit, report, finding, fix, check, score. Define other terms on
+   first use. Examples: skill, recipe, playbook, theme, harness, engine, stage and phase.
+   If a definition needs more than one sentence, move it one rung down.
+6. **Claims follow the evidence.** Say what is measured, and link the measurement. Say once, calmly, what is not
+   yet known. Do not hedge every sentence.
+7. **A short story is allowed.** One short paragraph may explain the "why" as a narrative. A list of facts can
+   read as cold to a reader who has not yet decided to care.
+8. **The project speaks, not a person.** Name the project as the source of a decision, not a maintainer. A
+   person's name in a source line reads as a one-person project.
+
+Example: the first line of a front page.
+
+<!-- prose-check off -->
+
+> Before: This framework 'prepares' a codebase or repo to enable higher quality of work from AI coding agents and
+> to prevent spaghettification of code.
+>
+> After: Your AI coding agents work inside your repositories. This framework checks what a repository gives an
+> agent: commands it can find, tests it can trust, rules it can follow. Then it fixes the gaps on branches you
+> review.
+
+<!-- prose-check on -->
+
+The "before" line breaks rules 1 and 6: it claims an outcome that nobody has measured. It also uses a term the
+reader must guess ("spaghettification").
 
 ## 3. Diagrams
 

@@ -68,7 +68,7 @@ The framework is normative. If a tool disagrees with it, the tool is wrong.
 | Page | What it holds |
 | --- | --- |
 | [Overview](framework/overview.md) | What an agentic-ready codebase is |
-| [Phased approach](framework/phased-approach.md) | The four phases; the recipes implement Phase 1 |
+| [Phased approach](framework/phased-approach.md) | Four foundation phases and three later ones; the recipes implement Phase 1 |
 | [Brownfield track](framework/brownfield-track.md) | How to make a legacy codebase agentic-ready |
 | [Tool ecosystem](framework/tool-ecosystem.md) | Index tools and other tools the framework uses |
 | [Risks and mitigations](framework/risks-and-mitigations.md) | The risk register |

@@ -6,9 +6,10 @@ This page tells you how to write a documentation page in this repository. It app
   `audit/docs/` and `implement/docs/`, and the root pages (`README.md`, `CONTRIBUTING.md`, `RELEASE_PROCESS.md`).
 - **What it does not cover:** recipe files (`SKILL.md`, checks, playbooks, prompts). They are agent directives;
   see section 2.
-- **Wording rules:** [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md) sections 1 to 3 hold the reader persona, the
-  plain-language rules and the diagram rules. This page adds only the rules for documentation pages. It links to
-  those rules and does not repeat them, because a copied rule drifts.
+- **Wording rules:** [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md) sections 1 to 3 hold the reader ladder, the
+  plain-language rules and the diagram rules. Section 2.1 adds rules for rung 0 and rung 1 pages. This page adds
+  only the rules for documentation pages. It links to those rules and does not repeat them, because a copied rule
+  drifts.
 - **Structure:** [Diátaxis](https://diataxis.fr/). Each page is one of four kinds: tutorial, how-to guide,
   reference or explanation.
 
@@ -26,17 +27,22 @@ This page tells you how to write a documentation page in this repository. It app
 
 ## 2. Kinds of page and their readers
 
-| Kind | Reader | What it gives | Tone |
-|---|---|---|---|
-| Tutorial | A newcomer | One guided success from start to end, on a sample repository | Encouraging, step by step |
-| How-to guide | An engineer with a task | The steps for one task, and how to check the result | Direct, imperative |
-| Reference | Everyone | Exact facts: tool options, schemas, mappings, harness details | Dry, complete, easy to scan |
-| User overview (explanation) | A lead or an adopter | Value, method, guarantees and limits | Short and clear |
-| Contributor deep dive (explanation) | A maintainer | How it works: contracts, rules, failure modes | Precise |
-| Agent directive | An AI coding agent | Rules and required steps | RFC 2119 words (MUST, MUST NOT) |
+| Kind | Reader | Rung | What it gives | Tone |
+|---|---|---|---|---|
+| Front page (the first screen of `README.md`) | A decision maker | 0 | The problem, what the reader gets, one fact that backs it | Plain, calm, no jargon |
+| Tutorial | A newcomer | 1 | One guided success from start to end, on a sample repository | Encouraging, step by step |
+| How-to guide | An engineer with a task | 1; 3 for a contributor task | The steps for one task, and how to check the result | Direct, imperative |
+| User overview (explanation) | A lead or an adopter | 1 | Value, method, guarantees and limits | Short and clear |
+| Reference | Everyone | 2 | Exact facts: tool options, schemas, mappings, harness details | Dry, complete, easy to scan |
+| Contributor deep dive (explanation) | A maintainer | 2 or 3 | How it works: contracts, rules, failure modes | Precise |
+| Agent directive | An AI coding agent | 3 | Rules and required steps | RFC 2119 words (MUST, MUST NOT) |
+
+The rungs are the reader ladder in [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md) section 1.1. The rung is a
+default: the reader of the page sets it.
 
 Rules:
 
+- A rung 0 or rung 1 page follows the extra rules in `COMMUNICATION_RULES.md` section 2.1.
 - A user-overview page does not go into implementation detail. It links to the contributor page instead.
 - A contributor page backs each claim with a source file, a schema field or a check ID.
 - A how-to guide and a tutorial state the prerequisites and end with a step that checks the result.
@@ -64,7 +70,8 @@ CI shows them as annotations on the pull request.
 - **Tables:** GitHub tables.
 - **Blank lines:** one before and one after each heading, code block, table and alert.
 - **Line length:** at most 120 characters in prose (`.markdownlint-cli2.jsonc`).
-- **Checks:** cite a check by its catalogue ID, for example `EXEC-02`, not by a description.
+- **Checks:** cite a check by its catalogue ID, for example `EXEC-02`, not by a description. A rung 0 or
+  rung 1 page names the check in words and links the page that holds the ID.
 - **Requirements:** cite a requirement by its ID, for example `REQ-SH-022`, from
   [`spec/readiness-requirements.md`](../spec/readiness-requirements.md).
 
@@ -112,6 +119,9 @@ b. Settings go to a reference page.\
 c. Design and behaviour go to an explanation page.
 
 5.2.4 A section that moves leaves a link table behind in the README, so old readers still find it.
+
+5.2.5 The first screen of the root README is a rung 0 page (section 2). The setup command (5.2.2) stays in the
+README, in a "Try it" block below the first screen.
 
 ## 6. One home for each rule
 
