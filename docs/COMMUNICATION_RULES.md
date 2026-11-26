@@ -74,6 +74,44 @@ The "before" text breaks rules 2, 3, 4 and 6 on purpose, so the check skips it.
 
 <!-- prose-check on -->
 
+### 2.1 Extra rules for rung 0 and rung 1 pages
+
+Rung 0 and rung 1 readers (section 1.1) decide fast and stop early. These rules apply on top of the ten above.
+
+1. **Outcome first.** The first screen says the problem, what the reader gets, and one fact that backs it.
+   The mechanism comes later, or one rung down.
+2. **No internal codes.** Do not write a check ID, a step ID, a decision ID or a stage number. Rule 10 names a
+   code; on these pages, leave it out and link the page that holds it.
+3. **A clean first screen.** No file path, no command and no code span before the reader knows why they should
+   care. A "Try it" block may hold commands after that.
+4. **Word budgets.** The first screen of `README.md`: at most 150 words. A rung 0 page: at most 600 words.
+   A rung 1 page: at most 1,500 words. Move the rest one rung down.
+5. **The on-ramp words.** Use these freely: audit, report, finding, fix, check, score. Define other terms on
+   first use. Examples: skill, recipe, playbook, theme, harness, engine, stage and phase.
+   If it needs more than one sentence, move it one rung down.
+6. **Claims follow the evidence.** Say what is measured, and link the measurement. Say once, calmly, what is not
+   yet known. Do not hedge every sentence.
+7. **A short story is allowed.** One short paragraph may explain the "why" as a narrative. A list of facts can
+   read as cold to a reader who has not yet decided to care.
+8. **The project speaks, not a person.** Name the project as the source of a decision, not a maintainer. A
+   person's name in a source line reads as a one-person project.
+
+Example: the first line of a front page.
+
+<!-- prose-check off -->
+
+> Before: This framework 'prepares' a codebase or repo to enable higher quality of work from AI coding agents and
+> to prevent spaghettification of code.
+>
+> After: Your AI coding agents work inside your repositories. This framework checks what a repository gives an
+> agent: commands it can find, tests it can trust, rules it can follow. Then it fixes the gaps on branches you
+> review.
+
+<!-- prose-check on -->
+
+The "before" line breaks rules 1 and 6: it claims an outcome that nobody has measured. It also uses a term the
+reader must guess ("spaghettification").
+
 ## 3. Diagrams
 
 A diagram often explains a flow faster than text. Use Mermaid. Pick the type by what you show:
