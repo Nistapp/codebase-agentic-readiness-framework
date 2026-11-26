@@ -1,7 +1,8 @@
 # Licensing
 
 > **Audience:** Everyone
-> **Source of truth:** the licence files in this repository: `LICENSE`, `LICENSE-CODE` and `LICENSE-TEMPLATES`.
+> **Source of truth:** this page, for which licence covers which path. The licence texts are `LICENSE`,
+> `LICENSE-CODE` and `LICENSE-TEMPLATES`.
 > **Status:** Live.
 
 ---
