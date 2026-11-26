@@ -11,8 +11,8 @@ final message instead of guessing.
 - Theme for this session: T6 (documentation contract). `{id:DOC-05}` (DOC-05) is the item.
 - T6 change list: approved as long as it stays inside the playbook.
 - Docs tooling: none. No Markdown linter, no Mermaid CLI, no link checker, and no install.
-- Prose check: copy the template under the MIT licence (`docs.prose_check=template`,
-  `docs.prose_check_licence=MIT`). There is no CI: wire the ratchet runs as Makefile targets instead.
+- Prose check: copy the template (`docs.prose_check=template`). The repository has no licence file; its licence is
+  MIT (`docs.prose_check_licence=MIT`). There is no CI: wire the ratchet runs as Makefile targets instead.
 - Existing pages are not rewritten (`format.mass_reformat` is `no`; no `extra.prose-rewrite`).
 - The docs language is English (`docs.language` is `en`).
 - `ci.pr_by_agent` is `no`: stop at the local theme branch.
