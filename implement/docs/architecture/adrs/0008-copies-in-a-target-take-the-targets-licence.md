@@ -11,8 +11,8 @@ A target can be under any licence, open or proprietary. An agent that copies a f
 or to offer the owner a short list of licences. Both give the target a file whose licence differs from the rest of
 its tree.
 
-The project's copyright holder decided the policy below. Why this policy and not another: Rationale not recorded;
-owner to fill in.
+The project's copyright holder decided the policy below. The framework exists to help other repositories adopt
+agents. What it places there must not add a second licence for their owners and counsel to review.
 
 ## Decision
 
