@@ -84,7 +84,8 @@ DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbook
 	'audit/engine/docs/how-to/read-the-report.md' 'docs/reference/versions.md' 'docs/how-to/implement-an-audit-report.md' \
 	'docs/how-to/resume-an-interrupted-run.md' 'docs/glossary.md' 'AGENTS.md' 'audit/prompts/talking-to-the-user.md' \
 	'docs/how-to/run-the-evals.md' 'docs/explanation/user-overview/02-how-the-recipes-work.md' \
-	'greenfield/bootstrap/README.md' 'greenfield/bootstrap/DESIGN.md'
+	'greenfield/bootstrap/README.md' 'greenfield/bootstrap/DESIGN.md' \
+	'docs/start/*.md' 'README.md' 'GOVERNANCE.md' 'CODE_OF_CONDUCT.md'
 
 # The prose check (dev/prose_check.py, the plain-language rules of docs/COMMUNICATION_RULES.md) is advisory: it
 # reports warnings and notices and never fails a target. `make docs-prose` runs it; CI annotates changed Markdown.
