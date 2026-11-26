@@ -21,7 +21,7 @@ An **agentic-ready codebase** provides AI coding agents with the structure they 
 | Codebase Type | Supported | Notes |
 |---------------|-----------|-------|
 | Monoliths | ✅ | Primary target |
-| Monorepos | ✅ | Supported with component-level scoping (component scoping: v0.3) |
+| Monorepos | ⚠️ | Partly. The audit scores the components that a build manifest declares, one level deep. Scoping a check to one nested component is planned ([issue #20](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/20)) |
 | Microservices | ⚠️ | Not explicitly validated but no architectural reason to exclude |
 
 ---
