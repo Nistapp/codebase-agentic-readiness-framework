@@ -7,11 +7,28 @@ apply only to documentation pages.
 
 ## 1. Who you write for
 
-Write for **a new engineer who knows Git, Python and Markdown, but not this repository or its terms**.
+By default, write for **a new engineer who knows Git, Python and Markdown, but not this repository or its terms**.
 
 - Do not assume they know a term from this repository. Define it the first time, or link to the glossary.
 - Do not talk down to them. They are a skilled engineer. They only lack the context.
 - When you are not sure if a sentence is clear, ask: "Can this engineer act on it without asking me?"
+
+### 1.1 The reader ladder
+
+Not every reader goes deep. A CTO who gets a link to this repository reads for a few minutes and then decides.
+Pick the reader of a page before you write it. Each page serves one rung of this ladder.
+
+| Rung | Reader | Their question | Time they give | Example pages |
+|---|---|---|---|---|
+| 0. Decide | A CTO, CIO or head of engineering | Is this worth a look? Is it safe? What does it cost? | 2 to 5 minutes | `README.md` (first screen) |
+| 1. Evaluate | The staff engineer, security reviewer or lawyer they delegate to | How does it work? What does it change? Can we pilot it? | 15 to 60 minutes | How-to guides, trust and safety, licensing |
+| 2. Go deep | An evaluator who checks the method | Is the score meaningful? How was it tested? | Hours | Explanation and reference pages, the framework |
+| 3. Contribute | A person or an agent who changes this repository | How do I change it safely? | As long as it takes | `CONTRIBUTING.md`, `AGENTS.md`, ADRs |
+
+- The default reader above is the reader of rungs 2 and 3.
+- A rung 0 or rung 1 reader may not read Python or know this repository's commands. Lead with the outcome,
+  not the mechanism.
+- A page links one rung down for the reader who wants more. It does not make a reader climb two rungs at once.
 
 ## 2. Plain-language rules
 
