@@ -81,7 +81,7 @@ This approach is based on the following assumptions:
 4. **Deterministic commands and automated quality gates reduce rework and agent uncertainty.**
 5. **Tests, contracts, and documentation preserve existing structure and behavior.**
 6. **These practices reduce common agentic coding problems:** context bloat, spaghetti edits, specification drift, and inconsistent quality.
-7. **Lower cost is the benefit with the best published support.** Better context reduces wasted tokens, discarded responses, repeated analysis and rework. Higher task success is plausible and less well supported.
+7. **Lower cost is the benefit with the best published support.** Better context reduces wasted tokens, discarded responses, repeated analysis and rework. Done badly, some practices raise cost instead. Higher task success is plausible and less well supported. This repository does not yet publish the studies.
 8. **These practices aim to raise the chance of correct work; they do not guarantee it.** Human review remains necessary for high-risk changes.
 9. **Once documentation is built, sophisticated context engineering techniques become possible** — above and beyond what is currently implemented in [agentic-tdd context engineering](https://github.com/Nistapp/agentic-tdd/blob/main/docs/architecture/contributor-deep-dive/03-context-engineering.md) and [planned in impact analysis](https://github.com/Nistapp/agentic-tdd/discussions/11).
 

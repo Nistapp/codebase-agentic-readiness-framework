@@ -96,8 +96,9 @@ task security      # npm run security      — dependency-CVE gate
 
 > [!IMPORTANT]
 > In our own use, agents worked with fewer wasted steps after Phase 1. That is experience, not a measurement.
-> Published studies of single practices report small gains in task success, and cost savings from about 7% to
-> about half. Nobody has measured Phase 1 as a whole.
+> Published studies of single practices report flat or small gains in task success. Some practices cut cost, by
+> about 7% to about half; a few raised it. Nobody has measured Phase 1 as a whole. This repository does not yet
+> publish the studies.
 
 ---
 
