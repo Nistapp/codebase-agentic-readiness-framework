@@ -9,6 +9,17 @@ To audit a repository, open Claude Code at the root of this repository and say "
 output to `<output-path>`". To fix the findings, say "Start implementing the fixes on `<repo-path>` based on
 `<audit-json-path>`".
 
+## Start here, by reader
+
+Short pages for a decision, in plain words. Each links to the detail.
+
+| You are | Start with | Then |
+| --- | --- | --- |
+| A CTO or CIO deciding whether to try it | [The brief](start/brief.md) | [Questions and answers](start/faq.md), [The evidence](start/evidence.md) |
+| An engineer judging how it works | [How it works](start/how-it-works.md) | [Run a pilot](start/run-a-pilot.md), [Cost and time](start/cost-and-time.md) |
+| A security reviewer | [Security and data](start/security-and-data.md) | [Governance](../GOVERNANCE.md) |
+| A lawyer | [Licence in plain words](start/licence-in-plain-words.md) | [Licensing](reference/licensing.md) |
+
 ## Tutorials
 
 | Page | What it teaches |
